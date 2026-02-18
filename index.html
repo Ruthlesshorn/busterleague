@@ -1722,6 +1722,26 @@ const PLAYERS_DATA = [
             renderAll();
         });
 
+        // Unsanitize data from Firebase
+        function unsanitizeFromFirebase(obj) {
+            if (obj === null || obj === undefined) return obj;
+            if (typeof obj !== 'object') return obj;
+            if (Array.isArray(obj)) return obj.map(unsanitizeFromFirebase);
+            
+            const unsanitized = {};
+            const keyMap = {
+                'H_9': 'H/9', 'K_9': 'K/9', 'BB_9': 'BB/9', 'HR_9': 'HR/9'
+            };
+            
+            for (const key in obj) {
+                if (obj.hasOwnProperty(key)) {
+                    const originalKey = keyMap[key] || key;
+                    unsanitized[originalKey] = unsanitizeFromFirebase(obj[key]);
+                }
+            }
+            return unsanitized;
+        }
+
         // ===== FIREBASE SYNC FOR DASHBOARD =====
         document.addEventListener('DOMContentLoaded', async function() {
             await new Promise(resolve => setTimeout(resolve, 1500));
@@ -1731,16 +1751,16 @@ const PLAYERS_DATA = [
                     // Load drafted players
                     const snapshot = await window.firebaseGet(window.firebaseRef(window.firebaseDB, 'draftedPlayers'));
                     if (snapshot.exists()) {
-                        draftedPlayers = snapshot.val();
+                        draftedPlayers = unsanitizeFromFirebase(snapshot.val());
                         console.log('Dashboard loaded', draftedPlayers.length, 'picks');
                         renderRosters();
                     }
                     
                     // Listen for changes
                     window.firebaseOnValue(window.firebaseRef(window.firebaseDB, 'draftedPlayers'), (snapshot) => {
-                        const data = snapshot.val() || [];
+                        const data = unsanitizeFromFirebase(snapshot.val() || []);
                         if (JSON.stringify(data) !== JSON.stringify(draftedPlayers)) {
-                            console.log('Dashboard updated');
+                            console.log('Dashboard updated -', data.length, 'picks');
                             draftedPlayers = data;
                             renderRosters();
                         }
