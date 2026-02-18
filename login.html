@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Buster League Draft 2026 — Login</title>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: #0d1b2e;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Background diamond pattern */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image:
+                repeating-linear-gradient(45deg, rgba(196,30,58,0.03) 0px, rgba(196,30,58,0.03) 1px, transparent 1px, transparent 40px),
+                repeating-linear-gradient(-45deg, rgba(30,60,114,0.05) 0px, rgba(30,60,114,0.05) 1px, transparent 1px, transparent 40px);
+            pointer-events: none;
+        }
+
+        .card {
+            background: white;
+            border-radius: 20px;
+            padding: 48px 40px 40px;
+            width: 100%;
+            max-width: 420px;
+            box-shadow: 0 32px 80px rgba(0,0,0,0.5);
+            position: relative;
+            animation: cardIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes cardIn {
+            from { opacity: 0; transform: translateY(30px) scale(0.96); }
+            to   { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        .card-top {
+            text-align: center;
+            margin-bottom: 36px;
+        }
+
+        .logo {
+            font-size: 3em;
+            margin-bottom: 8px;
+        }
+
+        .card-top h1 {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 2em;
+            letter-spacing: 3px;
+            color: #1e3c72;
+            line-height: 1;
+            margin-bottom: 6px;
+        }
+
+        .card-top p {
+            font-size: 0.85em;
+            color: #6c757d;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            font-weight: 500;
+        }
+
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+        label {
+            display: block;
+            font-size: 0.75em;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            color: #495057;
+            margin-bottom: 8px;
+        }
+
+        .team-select {
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid #dee2e6;
+            border-radius: 10px;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 1em;
+            font-weight: 600;
+            color: #1e3c72;
+            background: white;
+            cursor: pointer;
+            transition: border-color 0.2s;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%231e3c72' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 16px center;
+            padding-right: 40px;
+        }
+
+        .team-select:focus { outline: none; border-color: #c41e3a; }
+
+        .password-wrap { position: relative; }
+
+        .password-input {
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid #dee2e6;
+            border-radius: 10px;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 1em;
+            color: #333;
+            transition: border-color 0.2s;
+        }
+
+        .password-input:focus { outline: none; border-color: #c41e3a; }
+
+        .login-btn {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #c41e3a 0%, #d94e59 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 1.05em;
+            font-weight: 700;
+            letter-spacing: 1px;
+            cursor: pointer;
+            margin-top: 8px;
+            transition: all 0.2s;
+        }
+
+        .login-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(196,30,58,0.35); }
+        .login-btn:active { transform: translateY(0); }
+
+        .error-msg {
+            display: none;
+            background: #fff5f5;
+            border: 1px solid #f8d7da;
+            color: #c41e3a;
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-size: 0.85em;
+            font-weight: 600;
+            margin-top: 12px;
+            text-align: center;
+        }
+
+        .admin-link {
+            text-align: center;
+            margin-top: 24px;
+            padding-top: 20px;
+            border-top: 1px solid #f0f0f0;
+        }
+
+        .admin-link a {
+            color: #6c757d;
+            text-decoration: none;
+            font-size: 0.82em;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+        .admin-link a:hover { color: #1e3c72; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <div class="card-top">
+        <div class="logo">⚾</div>
+        <h1>Buster League</h1>
+        <p>Draft 2026 — Team Login</p>
+    </div>
+
+    <div class="form-group">
+        <label for="team-select">Your Team</label>
+        <select class="team-select" id="team-select">
+            <option value="">— Select your team —</option>
+            <option value="PHI">PHI</option>
+            <option value="SEA">SEA</option>
+            <option value="BAL">BAL</option>
+            <option value="CWS">CWS</option>
+            <option value="PIT">PIT</option>
+            <option value="NYM">NYM</option>
+            <option value="KC">KC</option>
+            <option value="BOS">BOS</option>
+            <option value="STL">STL</option>
+            <option value="CIN">CIN</option>
+            <option value="OAK">OAK</option>
+            <option value="LA">LA</option>
+            <option value="CHC">CHC</option>
+            <option value="DET">DET</option>
+            <option value="CLE">CLE</option>
+            <option value="HOU">HOU</option>
+            <option value="SF">SF</option>
+            <option value="TEX">TEX</option>
+            <option value="ATL">ATL</option>
+            <option value="NY">NY</option>
+            <option value="ADMIN" style="font-weight:700;color:#1e3c72;">⚙ Commissioner</option>
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label for="password">Password</label>
+        <div class="password-wrap">
+            <input type="password" class="password-input" id="password" placeholder="Enter team password" autocomplete="off">
+        </div>
+    </div>
+
+    <button class="login-btn" onclick="doLogin()">Sign In →</button>
+    <div class="error-msg" id="error-msg">Incorrect team or password. Please try again.</div>
+
+    <div class="admin-link" style="display:none;"></div>
+</div>
+
+<script>
+    // Team passwords — change these to whatever you want
+    const PASSWORDS = {
+        PHI: 'phi', SEA: 'sea', BAL: 'bal', CWS: 'cws', PIT: 'pit',
+        NYM: 'nym', KC:  'kc',  BOS: 'bos', STL: 'stl', CIN: 'cin',
+        OAK: 'oak', LA:  'la',  CHC: 'chc', DET: 'det', CLE: 'cle',
+        HOU: 'hou', SF:  'sf',  TEX: 'tex', ATL: 'atl', NY:  'ny',
+        ADMIN: 'commish'
+    };
+
+    // Auto-fill team from previous session
+    const saved = localStorage.getItem('busterLeagueTeam');
+    if (saved) document.getElementById('team-select').value = saved;
+
+    document.getElementById('password').addEventListener('keydown', e => {
+        if (e.key === 'Enter') doLogin();
+    });
+
+    function doLogin() {
+        const team = document.getElementById('team-select').value;
+        const pass = document.getElementById('password').value.trim();
+        const err  = document.getElementById('error-msg');
+
+        if (!team) { err.textContent = 'Please select your team.'; err.style.display = 'block'; return; }
+        if (PASSWORDS[team] && pass === PASSWORDS[team]) {
+            localStorage.setItem('busterLeagueTeam', team);
+            err.style.display = 'none';
+            if (team === 'ADMIN') {
+                window.location.href = 'draft.html';
+            } else {
+                window.location.href = 'myteam.html';
+            }
+        } else {
+            err.textContent = 'Incorrect password. Please try again.';
+            err.style.display = 'block';
+            document.getElementById('password').value = '';
+            document.getElementById('password').focus();
+        }
+    }
+</script>
+</body>
+</html>
