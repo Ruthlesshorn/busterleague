@@ -441,11 +441,18 @@
                     
                     // Listen for draft pick changes from other users
                     window.firebaseOnValue(window.firebaseRef(window.firebaseDB, 'draftedPlayers'), (snapshot) => {
-                        const data = snapshot.val() || [];
-                        if (JSON.stringify(data) !== JSON.stringify(draftedPlayers)) {
-                            console.log('Draft updated by another user');
-                            draftedPlayers = data;
-                            renderAll();
+                        const firebaseData = snapshot.val() || [];
+                        // Check if there are new picks (count changed)
+                        if (firebaseData.length !== draftedPlayers.length) {
+                            console.log('Draft updated by another user - reloading from localStorage');
+                            // Reload from localStorage which has the unsanitized data
+                            const saved = localStorage.getItem('busterLeagueDraft');
+                            if (saved) {
+                                const state = JSON.parse(saved);
+                                draftedPlayers = state.draftedPlayers;
+                                currentPickIndex = state.currentPickIndex;
+                                renderAll();
+                            }
                         }
                     });
                     
@@ -495,6 +502,7 @@
                     Round <span id="current-round">1</span> • Pick <span id="current-pick-number">1</span> of <span id="total-picks">20</span>
                 </div>
                 <button class="undo-button" id="undo-button" onclick="undoLastPick()" disabled style="margin-left:20px;">Undo Last Pick</button>
+                <button class="undo-button" onclick="restartDraft()" style="margin-left:10px;background:#dc3545;">Restart Draft</button>
             </div>
         </div>
 
@@ -1313,6 +1321,23 @@ const PLAYERS_DATA = [
   {"First": "Jacob", "Last": "Young", "P": "cf", "Age": 25, "B": "R", "AVG": 0.231, "OBP": 0.296, "SPC": 0.287, "OPS": 0.583, "RC": 27.2, "RC27": 2.7, "WAR-FG": 1, "L-AVG": 0.225, "L-OBP": 0.317, "L-SPC": 0.27, "L-OPS": 0.586, "L-PA": 103, "R-AVG": 0.234, "R-OBP": 0.287, "R-SPC": 0.294, "R-OPS": 0.581, "R-PA": 261, "PA": 364, "AB": 324, "HR": 2, "R": 34, "RBI": 31, "BB": 27, "K": 65, "SB": 15, "GS": 105, "ISO": 0.056, "EBH": 13, "TB": 93, "BABIP": 0.273, "wOBA": 0.264, "wRC+": 66.46, "OPS+": 68, "WAR-BR": 1.4, "SDur": "Ex", "RDur": "Fr", "Injury": "Prone", "cf": "Ex/0", "OF-Arm": "Vg", "Run": "Ex", "Stl": "Fr", "eligible_positions": ["cf"]},
 ];
 // Shared data management via localStorage
+        // Sanitize player data for Firebase (remove invalid characters from keys)
+        function sanitizeForFirebase(obj) {
+            if (obj === null || obj === undefined) return obj;
+            if (typeof obj !== 'object') return obj;
+            if (Array.isArray(obj)) return obj.map(sanitizeForFirebase);
+            
+            const sanitized = {};
+            for (const key in obj) {
+                if (obj.hasOwnProperty(key)) {
+                    // Replace invalid Firebase characters in keys
+                    const sanitizedKey = key.replace(/[.#$\/\[\]]/g, '_');
+                    sanitized[sanitizedKey] = sanitizeForFirebase(obj[key]);
+                }
+            }
+            return sanitized;
+        }
+
         function saveDraftState() {
             // Save to localStorage as backup
             localStorage.setItem('busterLeagueDraft', JSON.stringify({
@@ -1322,7 +1347,9 @@ const PLAYERS_DATA = [
             
             // Save to Firebase for real-time sync
             if (window.firebaseInitialized) {
-                window.firebaseSet(window.firebaseRef(window.firebaseDB, 'draftedPlayers'), draftedPlayers).catch(error => {
+                // Sanitize player data for Firebase
+                const sanitizedPlayers = sanitizeForFirebase(draftedPlayers);
+                window.firebaseSet(window.firebaseRef(window.firebaseDB, 'draftedPlayers'), sanitizedPlayers).catch(error => {
                     console.error('Firebase save error:', error);
                 });
                 window.firebaseSet(window.firebaseRef(window.firebaseDB, 'draftState/currentPickIndex'), currentPickIndex).catch(error => {
@@ -1633,6 +1660,37 @@ const PLAYERS_DATA = [
             saveDraftState();
             
             renderAll();
+        }
+
+        function restartDraft() {
+            const confirmation = prompt('Are you sure you want to restart the entire draft? This will clear ALL picks!\n\nType "RESTART" to confirm:');
+            
+            if (confirmation !== 'RESTART') {
+                alert('Draft restart cancelled.');
+                return;
+            }
+            
+            // Clear everything
+            draftedPlayers = [];
+            currentPickIndex = 0;
+            
+            // Save to localStorage
+            localStorage.removeItem('busterLeagueDraft');
+            saveDraftState();
+            
+            // Clear Firebase
+            if (window.firebaseInitialized) {
+                window.firebaseSet(window.firebaseRef(window.firebaseDB, 'draftedPlayers'), []).catch(error => {
+                    console.error('Firebase clear error:', error);
+                });
+                window.firebaseSet(window.firebaseRef(window.firebaseDB, 'draftState/currentPickIndex'), 0).catch(error => {
+                    console.error('Firebase clear error:', error);
+                });
+                console.log('Draft restarted - Firebase cleared');
+            }
+            
+            renderAll();
+            alert('Draft has been restarted! All picks have been cleared.');
         }
 
         function renderDraftHistory() {
