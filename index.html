@@ -214,33 +214,21 @@
         }
     </style>
     <!-- Firebase Configuration -->
-    <script type="module">
-    const firebaseConfig = {
-      apiKey: "AIzaSyBpsal5vJ1b4nEjAfyQH1baKFRcuPV4QxI",
-      authDomain: "buster-league-draft.firebaseapp.com",
-      databaseURL: "https://buster-league-draft-default-rtdb.firebaseio.com",
-      projectId: "buster-league-draft",
-      storageBucket: "buster-league-draft.firebasestorage.app",
-      messagingSenderId: "410413976342",
-      appId: "1:410413976342:web:2ed683daa1c808a2aa9e37",
-      measurementId: "G-DNJ7MC9VLW"
-    };
-
-    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
-    import { getDatabase, ref, set, get, onValue } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js';
-
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
-
-    window.firebaseApp = app;
-    window.firebaseDB = db;
-    window.firebaseRef = ref;
-    window.firebaseSet = set;
-    window.firebaseGet = get;
-    window.firebaseOnValue = onValue;
-    window.firebaseInitialized = true;
-    console.log('Firebase initialized');
+    <script type="importmap">
+    {
+      "imports": {
+        "firebase-app":      "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js",
+        "firebase-database": "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js",
+        "firebase-auth":     "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js"
+      },
+      "integrity": {
+        "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js":      "sha384-ztbLCS0Qe+xdkZU1lZIS81/tLEdaq5oHITH180tHGIFYWfg4+nIHfU3sru95qyGR",
+        "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js": "sha384-iW6C8mw21m2dcTAspuOGgmuMJ7Urr91CpdjChgFlmK3mRU2z57x9f6leS7/H89WC",
+        "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js":     "sha384-VDNmEWo1dfspnFEx9zTUaHNhDEdFPVAmGShh01rKx/nWPx5naU4mIL2bK4/O2eB7"
+      }
+    }
     </script>
+    <script type="module" src="firebase-init.js"></script>
     <script src="draft-utils.js"></script>
 </head>
 <body>
@@ -252,7 +240,8 @@
             </div>
             <div style="display: flex; gap: 10px; align-items: center;">
                 <a href="draft.html" class="nav-button" id="draft-board-btn" style="display:none;">Draft Board →</a>
-                <a href="login.html" class="nav-button secondary">Team Login</a>
+                <button class="nav-button secondary" id="signout-btn" style="display:none;" onclick="doSignOut()">Sign Out</button>
+                <a href="login.html" class="nav-button secondary" id="login-btn">Team Login</a>
                 </div>
             </div>
         </div>
@@ -323,57 +312,47 @@
         // Initialize with embedded data
         let players = [];
         let draftedPlayers = [];
-        let currentPickIndex = 0;        function renderDraftHistory() {
-            console.log('renderDraftHistory called, draftedPlayers:', draftedPlayers);
+        let currentPickIndex = 0;
+
+        function escapeHtml(s) {
+            return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;')
+                .replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+        }
+
+        function renderDraftHistory() {
             const historyDiv = document.getElementById('draft-history');
-            if (!historyDiv) {
-                console.error('draft-history element not found');
-                return;
-            }
-            console.log('Found draft-history div:', historyDiv);
-            
+            if (!historyDiv) return;
+
             const totalDraftedElem = document.getElementById('total-drafted');
-            if (totalDraftedElem) {
-                totalDraftedElem.textContent = draftedPlayers.length;
-                console.log('Updated total-drafted to:', draftedPlayers.length);
-            }
-            
+            if (totalDraftedElem) totalDraftedElem.textContent = draftedPlayers.length;
+
             const undoButton = document.getElementById('undo-button');
-            if (undoButton) {
-                undoButton.disabled = draftedPlayers.length === 0;
-            }
-            
+            if (undoButton) undoButton.disabled = draftedPlayers.length === 0;
+
             if (draftedPlayers.length === 0) {
-                console.log('No picks yet, showing placeholder');
                 historyDiv.innerHTML = '<p style="color: #6c757d;">No picks yet</p>';
                 return;
             }
-            
-            console.log('Generating HTML for', draftedPlayers.length, 'picks');
-            
+
             const html = draftedPlayers.slice().reverse().map(pick => {
                 const position = getPlayerPosition(pick.player);
                 return `
                     <div class="pick-item">
-                        <div class="pick-number">Pick ${pick.pickNumber} (Round ${pick.round})</div>
-                        <div style="font-weight: 600; margin: 5px 0;">${pick.player.First} ${pick.player.Last}</div>
+                        <div class="pick-number">Pick ${escapeHtml(pick.pickNumber)} (Round ${escapeHtml(pick.round)})</div>
+                        <div style="font-weight: 600; margin: 5px 0;">${escapeHtml(pick.player.First)} ${escapeHtml(pick.player.Last)}</div>
                         <div style="color: #6c757d; font-size: 0.9em;">
-                            ${pick.team} • ${position.toUpperCase()} • ${pick.player.Team || 'FA'}
+                            ${escapeHtml(pick.team)} &bull; ${escapeHtml(position.toUpperCase())} &bull; ${escapeHtml(pick.player.Team || 'FA')}
                         </div>
                     </div>
                 `;
             }).join('');
-            
+
             historyDiv.innerHTML = html;
         }
 
         function renderRosters() {
-            console.log('renderRosters called');
             const rostersDiv = document.getElementById('team-rosters');
-            if (!rostersDiv) {
-                console.error('team-rosters element not found');
-                return;
-            }
+            if (!rostersDiv) return;
             const selectedTeam = document.getElementById('roster-team-filter').value;
             
             // Position requirements
@@ -515,8 +494,8 @@
                             `<span style="color: #6c757d; font-size: 0.85em;"> (Pick ${item.pickNumber})</span>`;
                         
                         html += `<div style="padding: 5px 0; font-size: 0.9em; border-bottom: 1px solid #e9ecef;">
-                            ${item.player.First} ${item.player.Last} 
-                            <span style="color: #c41e3a; font-weight: 600;">${posDisplay}</span>
+                            ${escapeHtml(item.player.First)} ${escapeHtml(item.player.Last)}
+                            <span style="color: #c41e3a; font-weight: 600;">${escapeHtml(posDisplay)}</span>
                             ${typeLabel}
                         </div>`;
                     });
@@ -559,22 +538,32 @@
         // Auto-sync when data changes in another tab/window
         window.addEventListener('storage', function(e) {
             if (e.key === 'busterLeagueDraft' && e.newValue) {
-                console.log('Draft data changed in another tab, reloading...');
                 loadDraftState();
                 renderAll();
                 renderAvailablePlayers();
                 renderRosteredPlayers();
             }
         });
-        
+
         // Also check on page focus (when you switch back to this tab)
         window.addEventListener('focus', function() {
-            console.log('Page focused, checking for updates...');
             loadDraftState();
             renderAll();
             renderAvailablePlayers();
             renderRosteredPlayers();
         });
+
+        function doSignOut() {
+            if (window.firebaseAuth && window.firebaseSignOut) {
+                window.firebaseSignOut(window.firebaseAuth).finally(function() {
+                    localStorage.removeItem('busterLeagueTeam');
+                    window.location.href = 'login.html';
+                });
+            } else {
+                localStorage.removeItem('busterLeagueTeam');
+                window.location.href = 'login.html';
+            }
+        }
 
 
         const STARTING_COUNTS = {"SP": 107, "RP": 146, "C": 46, "1B": 24, "2B": 32, "3B": 33, "SS": 21, "LF": 25, "CF": 25, "RF": 29, "DH": 12};
@@ -673,10 +662,18 @@
             // Load player data from external file
             players = await fetch('players.json').then(r => r.json());
 
-            // Show Draft Board only for admin
-            const loggedTeam = localStorage.getItem('busterLeagueTeam');
-            const draftBtn = document.getElementById('draft-board-btn');
-            if (draftBtn && loggedTeam === 'ADMIN') draftBtn.style.display = '';
+            // Show Draft Board and Sign Out for authenticated admin; show login link for others
+            const user = await new Promise(resolve =>
+                window.firebaseOnAuthStateChanged(window.firebaseAuth, resolve));
+            const draftBtn   = document.getElementById('draft-board-btn');
+            const signoutBtn = document.getElementById('signout-btn');
+            const loginBtn   = document.getElementById('login-btn');
+            if (user) {
+                if (signoutBtn) signoutBtn.style.display = '';
+                if (loginBtn)   loginBtn.style.display  = 'none';
+                if (draftBtn && user.email === 'admin@busterleague.local') draftBtn.style.display = '';
+            }
+
             loadDraftState();
             // Populate team roster dropdown
             const rosterSelect = document.getElementById('roster-team-filter');
@@ -688,8 +685,7 @@
                     rosterSelect.appendChild(option);
                 });
             }
-            
-            console.log('Page loaded, rendering all...');
+
             renderAll();
             renderAvailablePlayers();
             renderRosteredPlayers();
@@ -718,31 +714,25 @@
         // ===== FIREBASE SYNC FOR DASHBOARD =====
         document.addEventListener('DOMContentLoaded', async function() {
             await new Promise(resolve => setTimeout(resolve, 1500));
-            
+
             if (window.firebaseInitialized) {
                 try {
                     // Load drafted players
                     const snapshot = await window.firebaseGet(window.firebaseRef(window.firebaseDB, 'draftedPlayers'));
                     if (snapshot.exists()) {
                         draftedPlayers = unsanitizeFromFirebase(snapshot.val());
-                        console.log('Dashboard loaded', draftedPlayers.length, 'picks');
                         renderRosters();
                     }
-                    
+
                     // Listen for changes
                     window.firebaseOnValue(window.firebaseRef(window.firebaseDB, 'draftedPlayers'), (snapshot) => {
                         const data = unsanitizeFromFirebase(snapshot.val() || []);
                         if (JSON.stringify(data) !== JSON.stringify(draftedPlayers)) {
-                            console.log('Dashboard updated -', data.length, 'picks');
                             draftedPlayers = data;
                             renderRosters();
                         }
                     });
-                    
-                    console.log('Dashboard sync enabled');
-                } catch (error) {
-                    console.error('Dashboard sync error:', error);
-                }
+                } catch (_) { /* network errors are non-fatal */ }
             }
         });
     </script>

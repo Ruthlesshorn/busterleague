@@ -454,33 +454,21 @@
 </style>
     <script src="https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <!-- Firebase Configuration -->
-    <script type="module">
-    const firebaseConfig = {
-      apiKey: "AIzaSyBpsal5vJ1b4nEjAfyQH1baKFRcuPV4QxI",
-      authDomain: "buster-league-draft.firebaseapp.com",
-      databaseURL: "https://buster-league-draft-default-rtdb.firebaseio.com",
-      projectId: "buster-league-draft",
-      storageBucket: "buster-league-draft.firebasestorage.app",
-      messagingSenderId: "410413976342",
-      appId: "1:410413976342:web:2ed683daa1c808a2aa9e37",
-      measurementId: "G-DNJ7MC9VLW"
-    };
-
-    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
-    import { getDatabase, ref, set, get, onValue } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js';
-
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
-
-    window.firebaseApp = app;
-    window.firebaseDB = db;
-    window.firebaseRef = ref;
-    window.firebaseSet = set;
-    window.firebaseGet = get;
-    window.firebaseOnValue = onValue;
-    window.firebaseInitialized = true;
-    console.log('Firebase initialized');
+    <script type="importmap">
+    {
+      "imports": {
+        "firebase-app":      "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js",
+        "firebase-database": "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js",
+        "firebase-auth":     "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js"
+      },
+      "integrity": {
+        "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js":      "sha384-ztbLCS0Qe+xdkZU1lZIS81/tLEdaq5oHITH180tHGIFYWfg4+nIHfU3sru95qyGR",
+        "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js": "sha384-iW6C8mw21m2dcTAspuOGgmuMJ7Urr91CpdjChgFlmK3mRU2z57x9f6leS7/H89WC",
+        "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js":     "sha384-VDNmEWo1dfspnFEx9zTUaHNhDEdFPVAmGShh01rKx/nWPx5naU4mIL2bK4/O2eB7"
+      }
+    }
     </script>
+    <script type="module" src="firebase-init.js"></script>
 </head>
 <body>
 <div class="container">
@@ -492,7 +480,33 @@
         </div>
         <div class="header-right">
             <a href="index.html" class="btn btn-ghost">Dashboard</a>
+            <button class="btn btn-ghost" onclick="showChangePassword()">Change Password</button>
             <button class="btn btn-white" onclick="logout()">Sign Out</button>
+        </div>
+    </div>
+
+    <!-- Change Password Modal -->
+    <div id="chpw-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:1000;display:none;align-items:center;justify-content:center;">
+        <div style="background:white;border-radius:16px;padding:36px 32px;width:100%;max-width:380px;box-shadow:0 20px 60px rgba(0,0,0,0.4);">
+            <h2 style="color:#1e3c72;margin-bottom:4px;font-size:1.2em;">Change Password</h2>
+            <p style="color:#6c757d;font-size:0.85em;margin-bottom:20px;">Enter your current password, then choose a new one.</p>
+            <div style="margin-bottom:12px;">
+                <label style="display:block;font-size:0.75em;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#495057;margin-bottom:6px;">Current Password</label>
+                <input type="password" id="chpw-current" style="width:100%;padding:10px 12px;border:2px solid #dee2e6;border-radius:8px;font-size:1em;" placeholder="Current password">
+            </div>
+            <div style="margin-bottom:12px;">
+                <label style="display:block;font-size:0.75em;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#495057;margin-bottom:6px;">New Password</label>
+                <input type="password" id="chpw-new" style="width:100%;padding:10px 12px;border:2px solid #dee2e6;border-radius:8px;font-size:1em;" placeholder="New password (min 6 chars)">
+            </div>
+            <div style="margin-bottom:18px;">
+                <label style="display:block;font-size:0.75em;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#495057;margin-bottom:6px;">Confirm New Password</label>
+                <input type="password" id="chpw-confirm" style="width:100%;padding:10px 12px;border:2px solid #dee2e6;border-radius:8px;font-size:1em;" placeholder="Confirm new password">
+            </div>
+            <div id="chpw-msg" style="display:none;padding:8px 12px;border-radius:6px;font-size:0.85em;font-weight:600;margin-bottom:14px;"></div>
+            <div style="display:flex;gap:10px;">
+                <button onclick="submitChangePassword()" style="flex:1;padding:11px;background:linear-gradient(135deg,#c41e3a,#d94e59);color:white;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:0.95em;">Update Password</button>
+                <button onclick="hideChangePassword()" style="padding:11px 18px;background:#f8f9fa;border:2px solid #dee2e6;border-radius:8px;font-weight:600;cursor:pointer;font-size:0.95em;">Cancel</button>
+            </div>
         </div>
     </div>
 
@@ -1059,13 +1073,76 @@
             return unsanitized;
         }
 
+        function escapeHtml(s) {
+            return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;')
+                .replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+        }
+
         function getMyTeam() {
-            return localStorage.getItem('busterLeagueTeam') || '';
+            const u = window.firebaseAuth && window.firebaseAuth.currentUser;
+            return u ? u.email.split('@')[0].toUpperCase() : '';
         }
 
         function logout() {
-            localStorage.removeItem('busterLeagueTeam');
-            window.location.href = 'login.html';
+            const doRedirect = function() {
+                localStorage.removeItem('busterLeagueTeam');
+                window.location.href = 'login.html';
+            };
+            if (window.firebaseAuth && window.firebaseSignOut) {
+                window.firebaseSignOut(window.firebaseAuth).then(doRedirect, doRedirect);
+            } else {
+                doRedirect();
+            }
+        }
+
+        function showChangePassword() {
+            var el = document.getElementById('chpw-overlay');
+            el.style.display = 'flex';
+            document.getElementById('chpw-current').value = '';
+            document.getElementById('chpw-new').value = '';
+            document.getElementById('chpw-confirm').value = '';
+            document.getElementById('chpw-msg').style.display = 'none';
+            document.getElementById('chpw-current').focus();
+        }
+
+        function hideChangePassword() {
+            document.getElementById('chpw-overlay').style.display = 'none';
+        }
+
+        async function submitChangePassword() {
+            var currentPass = document.getElementById('chpw-current').value;
+            var newPass     = document.getElementById('chpw-new').value;
+            var confirmPass = document.getElementById('chpw-confirm').value;
+            var msg         = document.getElementById('chpw-msg');
+
+            function showMsg(text, isError) {
+                msg.textContent = text;
+                msg.style.background = isError ? '#fff5f5' : '#f0fff4';
+                msg.style.color      = isError ? '#c41e3a' : '#276749';
+                msg.style.border     = isError ? '1px solid #f8d7da' : '1px solid #c6f6d5';
+                msg.style.display    = 'block';
+            }
+
+            if (!currentPass || !newPass || !confirmPass) { showMsg('Please fill in all fields.', true); return; }
+            if (newPass.length < 6)                        { showMsg('New password must be at least 6 characters.', true); return; }
+            if (newPass !== confirmPass)                    { showMsg('New passwords do not match.', true); return; }
+
+            var user = window.firebaseAuth && window.firebaseAuth.currentUser;
+            if (!user) { showMsg('Not signed in. Please reload the page.', true); return; }
+
+            try {
+                var credential = window.firebaseEmailAuthProvider.credential(user.email, currentPass);
+                await window.firebaseReauthenticate(user, credential);
+                await window.firebaseUpdatePassword(user, newPass);
+                showMsg('Password updated successfully!', false);
+                setTimeout(hideChangePassword, 1800);
+            } catch (e) {
+                if (e.code === 'auth/wrong-password' || e.code === 'auth/invalid-credential') {
+                    showMsg('Current password is incorrect.', true);
+                } else {
+                    showMsg('Error: ' + e.message, true);
+                }
+            }
         }
 
         function fmt(val, dec) {
@@ -1105,10 +1182,10 @@
             // Save to localStorage as backup
             localStorage.setItem('watchlist_' + getMyTeam(), JSON.stringify(wl));
             
-            // Save to Firebase for real-time sync
+            // Save to Firebase for real-time sync (path uses lowercase to match security rules)
             const team = getMyTeam();
             if (window.firebaseInitialized && team) {
-                window.firebaseSet(window.firebaseRef(window.firebaseDB, 'watchlists/' + team), wl).catch(error => {
+                window.firebaseSet(window.firebaseRef(window.firebaseDB, 'watchlists/' + team.toLowerCase()), wl).catch(error => {
                     console.error('Firebase save error:', error);
                 });
             }
@@ -1180,7 +1257,7 @@
                         var badge = r.type === 'keeper'
                             ? ' <span class="k-badge">K</span>'
                             : ' <span class="d-badge">D</span>';
-                        return '<td style="font-weight:600">' + p.First + ' ' + p.Last + badge + '</td>';
+                        return '<td style="font-weight:600">' + escapeHtml(p.First) + ' ' + escapeHtml(p.Last) + badge + '</td>';
                     }
                     if (c.key === 'P') return '<td><span class="pos-badge">' + getPosDisplay(p) + '</span></td>';
                     if (c.key === 'Age')    return '<td>' + (p.Age || '—') + '</td>';
@@ -1354,7 +1431,7 @@
                 if (d) {
                     var pos = getPlayerPosition(d.player);
                     return '<tr><td>Rd ' + slot.round + '</td><td>#' + slot.overall + '</td>'
-                        + '<td style="font-weight:600">' + d.player.First + ' ' + d.player.Last + '</td>'
+                        + '<td style="font-weight:600">' + escapeHtml(d.player.First) + ' ' + escapeHtml(d.player.Last) + '</td>'
                         + '<td><span class="pos-badge">' + pos.toUpperCase() + '</span></td></tr>';
                 }
                 return '<tr style="opacity:0.4"><td>Rd ' + slot.round + '</td><td>#' + slot.overall + '</td>'
@@ -1470,7 +1547,7 @@
                     var cells = visCols.map(function(c) {
                         if (c.key === 'watch')  return '<td>' + watchBtn(p) + '</td>';
                         if (c.key === 'dnw')    return '<td>' + dnwBtn(p) + '</td>';
-                        if (c.key === 'name')   return '<td style="font-weight:600;white-space:nowrap">' + p.First + ' ' + p.Last + '</td>';
+                        if (c.key === 'name')   return '<td style="font-weight:600;white-space:nowrap">' + escapeHtml(p.First) + ' ' + escapeHtml(p.Last) + '</td>';
                         if (c.key === 'P')      return '<td><span class="pos-badge">' + getPosDisplay(p) + '</span></td>';
                         if (c.key === 'status') return '<td>' + avLabel + '</td>';
                         if (c.key === 'Age')    return '<td>' + (p.Age || '—') + '</td>';
@@ -2677,10 +2754,14 @@
             return '<span class="dnw-badge">✕ Skip</span>';
         }
         document.addEventListener('DOMContentLoaded', async function() {
-            var team = getMyTeam();
-            if (!team) { window.location.href = 'login.html'; return; }
+            // Auth guard — verified via Firebase Auth (not localStorage)
+            const user = await new Promise(resolve =>
+                window.firebaseOnAuthStateChanged(window.firebaseAuth, resolve));
+            if (!user) { window.location.href = 'login.html'; return; }
+
+            var team = getMyTeam(); // now reads from auth.currentUser
             players = await fetch('players.json').then(r => r.json());
-            
+
             loadDraftState();
             loadColPrefs();
             loadRosterColPrefs();
@@ -2690,12 +2771,13 @@
 
             document.getElementById('search').addEventListener('input', renderPlayerSearch);
             document.getElementById('avail-filter').addEventListener('change', renderPlayerSearch);
-            
+
             // Initialize Firebase sync
+            // Watchlist paths use lowercase team to match Firebase security rules
+            var teamPath = team.toLowerCase();
             setTimeout(async function() {
                 if (window.firebaseInitialized) {
                     try {
-                        // Load drafted players from Firebase
                         const draftSnapshot = await window.firebaseGet(window.firebaseRef(window.firebaseDB, 'draftedPlayers'));
                         if (draftSnapshot.exists()) {
                             draftedPlayers = unsanitizeFromFirebase(draftSnapshot.val());
@@ -2703,15 +2785,12 @@
                                 draftedPlayers: draftedPlayers,
                                 currentPickIndex: draftedPlayers.length
                             }));
-                            console.log('Loaded', draftedPlayers.length, 'picks from Firebase');
                             renderAll();
                         }
-                        
-                        // Listen for draft changes
+
                         window.firebaseOnValue(window.firebaseRef(window.firebaseDB, 'draftedPlayers'), (snapshot) => {
                             const data = unsanitizeFromFirebase(snapshot.val() || []);
                             if (data.length !== draftedPlayers.length) {
-                                console.log('Draft updated -', data.length, 'picks');
                                 draftedPlayers = data;
                                 localStorage.setItem('busterLeagueDraft', JSON.stringify({
                                     draftedPlayers: draftedPlayers,
@@ -2720,30 +2799,23 @@
                                 renderAll();
                             }
                         });
-                        
-                        // Load initial watchlist from Firebase
-                        const snapshot = await window.firebaseGet(window.firebaseRef(window.firebaseDB, 'watchlists/' + team));
-                        if (snapshot.exists()) {
-                            localStorage.setItem('watchlist_' + team, JSON.stringify(snapshot.val()));
-                            console.log('Loaded watchlist from Firebase');
+
+                        // Watchlist uses lowercase team path (matches security rules)
+                        const wlSnapshot = await window.firebaseGet(window.firebaseRef(window.firebaseDB, 'watchlists/' + teamPath));
+                        if (wlSnapshot.exists()) {
+                            localStorage.setItem('watchlist_' + team, JSON.stringify(wlSnapshot.val()));
                             renderAll();
                         }
-                        
-                        // Listen for watchlist changes
-                        window.firebaseOnValue(window.firebaseRef(window.firebaseDB, 'watchlists/' + team), (snapshot) => {
+
+                        window.firebaseOnValue(window.firebaseRef(window.firebaseDB, 'watchlists/' + teamPath), (snapshot) => {
                             const data = snapshot.val() || [];
                             const currentWL = getWatchlist();
                             if (JSON.stringify(data) !== JSON.stringify(currentWL)) {
-                                console.log('Watchlist updated from another device');
                                 localStorage.setItem('watchlist_' + team, JSON.stringify(data));
                                 renderAll();
                             }
                         });
-                        
-                        console.log('Firebase sync enabled for team:', team);
-                    } catch (error) {
-                        console.error('Firebase sync error:', error);
-                    }
+                    } catch (_) { /* network errors are non-fatal */ }
                 }
             }, 1500);
         });
@@ -2752,6 +2824,14 @@
             if (e.key === 'busterLeagueDraft') { loadDraftState(); renderAll(); }
         });
         window.addEventListener('focus', function() { loadDraftState(); renderAll(); });
+
+        // Close change-password modal on Escape or backdrop click
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') hideChangePassword();
+        });
+        document.getElementById('chpw-overlay').addEventListener('click', function(e) {
+            if (e.target === this) hideChangePassword();
+        });
 
 </script>
 </body>

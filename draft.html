@@ -383,100 +383,21 @@
 
     </style>
     <!-- Firebase Configuration -->
-    <script type="module">
-    // Firebase configuration
-    const firebaseConfig = {
-      apiKey: "AIzaSyBpsal5vJ1b4nEjAfyQH1baKFRcuPV4QxI",
-      authDomain: "buster-league-draft.firebaseapp.com",
-      databaseURL: "https://buster-league-draft-default-rtdb.firebaseio.com",
-      projectId: "buster-league-draft",
-      storageBucket: "buster-league-draft.firebasestorage.app",
-      messagingSenderId: "410413976342",
-      appId: "1:410413976342:web:2ed683daa1c808a2aa9e37",
-      measurementId: "G-DNJ7MC9VLW"
-    };
-
-    // Import Firebase modules
-    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
-    import { getDatabase, ref, set, get, onValue } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js';
-
-    // Initialize Firebase
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
-
-    // Make Firebase available globally
-    window.firebaseApp = app;
-    window.firebaseDB = db;
-    window.firebaseRef = ref;
-    window.firebaseSet = set;
-    window.firebaseGet = get;
-    window.firebaseOnValue = onValue;
-    window.firebaseInitialized = true;
-
-    console.log('Firebase initialized successfully');
-
-        // ===== FIREBASE REAL-TIME SYNC =====
-        document.addEventListener('DOMContentLoaded', async function() {
-            console.log('Initializing Firebase real-time sync...');
-            
-            // Wait for Firebase to initialize
-            await new Promise(resolve => setTimeout(resolve, 1500));
-            
-            if (window.firebaseInitialized) {
-                try {
-                    // Load initial data from Firebase
-                    const draftSnapshot = await window.firebaseGet(window.firebaseRef(window.firebaseDB, 'draftedPlayers'));
-                    if (draftSnapshot.exists()) {
-                        draftedPlayers = draftSnapshot.val();
-                        console.log('Loaded', draftedPlayers.length, 'drafted players from Firebase');
-                    }
-                    
-                    const stateSnapshot = await window.firebaseGet(window.firebaseRef(window.firebaseDB, 'draftState/currentPickIndex'));
-                    if (stateSnapshot.exists()) {
-                        currentPickIndex = stateSnapshot.val();
-                        console.log('Current pick:', currentPickIndex);
-                    }
-                    
-                    renderAll();
-                    
-                    // Listen for draft pick changes from other users
-                    window.firebaseOnValue(window.firebaseRef(window.firebaseDB, 'draftedPlayers'), (snapshot) => {
-                        const firebaseData = snapshot.val() || [];
-                        // Check if there are new picks (count changed)
-                        if (firebaseData.length !== draftedPlayers.length) {
-                            console.log('Draft updated by another user -', firebaseData.length, 'picks');
-                            // Unsanitize the Firebase data (convert H_9 back to H/9, etc.)
-                            const unsanitizedData = unsanitizeFromFirebase(firebaseData);
-                            draftedPlayers = unsanitizedData;
-                            // Also update localStorage for this browser
-                            localStorage.setItem('busterLeagueDraft', JSON.stringify({
-                                draftedPlayers: draftedPlayers,
-                                currentPickIndex: firebaseData.length
-                            }));
-                            currentPickIndex = firebaseData.length;
-                            renderAll();
-                        }
-                    });
-                    
-                    // Listen for draft state changes
-                    window.firebaseOnValue(window.firebaseRef(window.firebaseDB, 'draftState/currentPickIndex'), (snapshot) => {
-                        const pickIndex = snapshot.val();
-                        if (pickIndex !== null && pickIndex !== currentPickIndex) {
-                            console.log('Pick position updated by another user');
-                            currentPickIndex = pickIndex;
-                            renderAll();
-                        }
-                    });
-                    
-                    console.log('Firebase real-time sync enabled');
-                } catch (error) {
-                    console.error('Firebase init error:', error);
-                }
-            } else {
-                console.warn('Firebase not available');
-            }
-        });
+    <script type="importmap">
+    {
+      "imports": {
+        "firebase-app":      "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js",
+        "firebase-database": "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js",
+        "firebase-auth":     "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js"
+      },
+      "integrity": {
+        "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js":      "sha384-ztbLCS0Qe+xdkZU1lZIS81/tLEdaq5oHITH180tHGIFYWfg4+nIHfU3sru95qyGR",
+        "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js": "sha384-iW6C8mw21m2dcTAspuOGgmuMJ7Urr91CpdjChgFlmK3mRU2z57x9f6leS7/H89WC",
+        "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js":     "sha384-VDNmEWo1dfspnFEx9zTUaHNhDEdFPVAmGShh01rKx/nWPx5naU4mIL2bK4/O2eB7"
+      }
+    }
     </script>
+    <script type="module" src="firebase-init.js"></script>
     <script src="draft-utils.js"></script>
 </head>
 <body>
@@ -489,7 +410,7 @@
                 </div>
                 <div style="display: flex; gap: 10px; align-items: center;">
                 <a href="index.html" class="nav-button">← Dashboard</a>
-                <a href="login.html" class="nav-button secondary">Team Login</a>
+                <button class="nav-button secondary" onclick="doSignOut()">Sign Out</button>
                 </div>
             </div>
             </div>
@@ -682,7 +603,48 @@
                 });
             }
         }
-        // Team names in draft order
+        // ===== FIREBASE REAL-TIME SYNC =====
+        document.addEventListener('DOMContentLoaded', async function() {
+            await new Promise(resolve => setTimeout(resolve, 1500));
+
+            if (window.firebaseInitialized) {
+                try {
+                    const draftSnapshot = await window.firebaseGet(window.firebaseRef(window.firebaseDB, 'draftedPlayers'));
+                    if (draftSnapshot.exists()) {
+                        draftedPlayers = draftSnapshot.val();
+                    }
+
+                    const stateSnapshot = await window.firebaseGet(window.firebaseRef(window.firebaseDB, 'draftState/currentPickIndex'));
+                    if (stateSnapshot.exists()) {
+                        currentPickIndex = stateSnapshot.val();
+                    }
+
+                    renderAll();
+
+                    window.firebaseOnValue(window.firebaseRef(window.firebaseDB, 'draftedPlayers'), (snapshot) => {
+                        const firebaseData = snapshot.val() || [];
+                        if (firebaseData.length !== draftedPlayers.length) {
+                            const unsanitizedData = unsanitizeFromFirebase(firebaseData);
+                            draftedPlayers = unsanitizedData;
+                            localStorage.setItem('busterLeagueDraft', JSON.stringify({
+                                draftedPlayers: draftedPlayers,
+                                currentPickIndex: firebaseData.length
+                            }));
+                            currentPickIndex = firebaseData.length;
+                            renderAll();
+                        }
+                    });
+
+                    window.firebaseOnValue(window.firebaseRef(window.firebaseDB, 'draftState/currentPickIndex'), (snapshot) => {
+                        const pickIndex = snapshot.val();
+                        if (pickIndex !== null && pickIndex !== currentPickIndex) {
+                            currentPickIndex = pickIndex;
+                            renderAll();
+                        }
+                    });
+                } catch (_) { /* network errors are non-fatal */ }
+            }
+        });
 
         // Initialize with embedded data
         let players = [];
@@ -691,7 +653,30 @@
         let sortColumn = null;
         let sortDirection = 'asc';
 
-        console.log(`Loaded ${players.length} players`);        function filterPlayers() {
+        function escapeHtml(s) {
+            return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;')
+                .replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+        }
+
+        function doSignOut() {
+            if (window.firebaseAuth && window.firebaseSignOut) {
+                window.firebaseSignOut(window.firebaseAuth).finally(function() {
+                    localStorage.removeItem('busterLeagueTeam');
+                    window.location.href = 'login.html';
+                });
+            } else {
+                localStorage.removeItem('busterLeagueTeam');
+                window.location.href = 'login.html';
+            }
+        }
+
+        // Event delegation for draft buttons (XSS fix: no inline onclick with player data)
+        document.addEventListener('click', function(e) {
+            const btn = e.target.closest('.draft-button');
+            if (btn) draftPlayerByKey(btn.dataset.key);
+        });
+
+        function filterPlayers() {
             const posFilterElem = document.getElementById('position-filter');
             const searchElem = document.getElementById('search');
             const showDraftedElem = document.getElementById('show-drafted');
@@ -806,24 +791,24 @@
                 const ratings = positions.map(pos => player[pos] || '-');
                 
                 return `
-                    <tr class="${isDrafted || isPreDraft ? 'drafted' : ''}" data-player="${playerKey}">
-                        <td>${player.First} ${player.Last}</td>
-                        <td>${player.Team || '-'}</td>
-                        <td><span class="position-badge">${posDisplay}</span></td>
-                        <td>${ratings[0]}</td>
-                        <td>${ratings[1]}</td>
-                        <td>${ratings[2]}</td>
-                        <td>${ratings[3]}</td>
-                        <td>${ratings[4]}</td>
-                        <td>${ratings[5]}</td>
-                        <td>${ratings[6]}</td>
-                        <td>${ratings[7]}</td>
+                    <tr class="${isDrafted || isPreDraft ? 'drafted' : ''}" data-player="${escapeHtml(playerKey)}">
+                        <td>${escapeHtml(player.First)} ${escapeHtml(player.Last)}</td>
+                        <td>${escapeHtml(player.Team || '-')}</td>
+                        <td><span class="position-badge">${escapeHtml(posDisplay)}</span></td>
+                        <td>${escapeHtml(ratings[0])}</td>
+                        <td>${escapeHtml(ratings[1])}</td>
+                        <td>${escapeHtml(ratings[2])}</td>
+                        <td>${escapeHtml(ratings[3])}</td>
+                        <td>${escapeHtml(ratings[4])}</td>
+                        <td>${escapeHtml(ratings[5])}</td>
+                        <td>${escapeHtml(ratings[6])}</td>
+                        <td>${escapeHtml(ratings[7])}</td>
                         <td>
-                            ${isPreDraft ? 
-                                `<span class="drafted-by">Keeper: ${player.Team}</span>` :
-                                isDrafted ? 
-                                `<span class="drafted-by">${draftedInfo.team}</span>` : 
-                                `<button class="draft-button" onclick="draftPlayerByKey('${playerKey}')">Draft</button>`
+                            ${isPreDraft ?
+                                `<span class="drafted-by">Keeper: ${escapeHtml(player.Team)}</span>` :
+                                isDrafted ?
+                                `<span class="drafted-by">${escapeHtml(draftedInfo.team)}</span>` :
+                                `<button class="draft-button" data-key="${escapeHtml(playerKey)}">Draft</button>`
                             }
                         </td>
                     </tr>
@@ -856,7 +841,7 @@
                 window.firebaseSet(window.firebaseRef(window.firebaseDB, 'draftState/currentPickIndex'), 0).catch(error => {
                     console.error('Firebase clear error:', error);
                 });
-                console.log('Draft restarted - Firebase cleared');
+                // Firebase cleared;
             }
             
             renderAll();
@@ -864,34 +849,31 @@
         }
 
         function renderDraftHistory() {
-            console.log('renderDraftHistory called, draftedPlayers:', draftedPlayers ? draftedPlayers.length : 0);
             const historyDiv = document.getElementById('draft-history');
-            if (!historyDiv) {
-                console.error('draft-history element not found');
-                return;
-            }
+            if (!historyDiv) return;
             document.getElementById('total-drafted').textContent = draftedPlayers.length;
-            
+
             if (draftedPlayers.length === 0) {
                 historyDiv.innerHTML = '<p style="color: #6c757d;">No picks yet</p>';
+                document.getElementById('undo-button').disabled = true;
                 return;
             }
-            
+
             const html = draftedPlayers.slice().reverse().map(pick => {
                 const position = getPlayerPosition(pick.player);
                 return `
                     <div class="pick-item">
-                        <div class="pick-number">Pick ${pick.pickNumber} (Round ${pick.round})</div>
-                        <div style="font-weight: 600; margin: 5px 0;">${pick.player.First} ${pick.player.Last}</div>
+                        <div class="pick-number">Pick ${escapeHtml(pick.pickNumber)} (Round ${escapeHtml(pick.round)})</div>
+                        <div style="font-weight: 600; margin: 5px 0;">${escapeHtml(pick.player.First)} ${escapeHtml(pick.player.Last)}</div>
                         <div style="color: #6c757d; font-size: 0.9em;">
-                            ${pick.team} • ${position.toUpperCase()} • ${pick.player.Team || 'FA'}
+                            ${escapeHtml(pick.team)} &bull; ${escapeHtml(position.toUpperCase())} &bull; ${escapeHtml(pick.player.Team || 'FA')}
                         </div>
                     </div>
                 `;
             }).join('');
-            
+
             historyDiv.innerHTML = html;
-            document.getElementById('undo-button').disabled = draftedPlayers.length === 0;
+            document.getElementById('undo-button').disabled = false;
         }
 
         function renderRosters() {
@@ -1037,8 +1019,8 @@
                             `<span style="color: #6c757d; font-size: 0.85em;"> (Pick ${item.pickNumber})</span>`;
                         
                         html += `<div style="padding: 5px 0; font-size: 0.9em; border-bottom: 1px solid #e9ecef;">
-                            ${item.player.First} ${item.player.Last} 
-                            <span style="color: #c41e3a; font-weight: 600;">${posDisplay}</span>
+                            ${escapeHtml(item.player.First)} ${escapeHtml(item.player.Last)}
+                            <span style="color: #c41e3a; font-weight: 600;">${escapeHtml(posDisplay)}</span>
                             ${typeLabel}
                         </div>`;
                     });
@@ -1135,8 +1117,8 @@
                         '<span style="background:#28a745;color:white;padding:2px 6px;border-radius:3px;font-size:0.75em;margin-left:5px;">K</span>' : '';
                     
                     rosterHtml += `<div style="padding:3px 0;border-bottom:1px solid #e9ecef;">
-                        ${item.player.First} ${item.player.Last} 
-                        <span style="color:#c41e3a;font-weight:600;">${posDisplay}</span>
+                        ${escapeHtml(item.player.First)} ${escapeHtml(item.player.Last)}
+                        <span style="color:#c41e3a;font-weight:600;">${escapeHtml(posDisplay)}</span>
                         ${typeLabel}
                     </div>`;
                 });
@@ -1145,7 +1127,6 @@
         }
 
         function renderAll() {
-            console.log('renderAll called');
             updateDraftStatus();
             updateOnClockTeamInfo();
             renderDraftOrder(10);
@@ -1192,15 +1173,12 @@
         // Auto-sync when data changes in another tab/window
         window.addEventListener('storage', function(e) {
             if (e.key === 'busterLeagueDraft' && e.newValue) {
-                console.log('Draft data changed in another tab, reloading...');
                 loadDraftState();
                 renderAll();
             }
         });
-        
-        // Also check on page focus (when you switch back to this tab)
+
         window.addEventListener('focus', function() {
-            console.log('Page focused, checking for updates...');
             loadDraftState();
             renderAll();
         });
@@ -1217,9 +1195,10 @@
             }
         });
         window.addEventListener('DOMContentLoaded', async () => {
-            // Admin-only guard
-            const loggedTeam = localStorage.getItem('busterLeagueTeam');
-            if (loggedTeam !== 'ADMIN') {
+            // Admin-only guard — verified via Firebase Auth (not localStorage)
+            const user = await new Promise(resolve =>
+                window.firebaseOnAuthStateChanged(window.firebaseAuth, resolve));
+            if (!user || user.email !== 'admin@busterleague.local') {
                 document.body.innerHTML = `
                     <div style="display:flex;align-items:center;justify-content:center;min-height:100vh;background:linear-gradient(135deg,#1e3c72,#2a5298);flex-direction:column;gap:20px;">
                         <div style="background:white;border-radius:16px;padding:48px 40px;text-align:center;max-width:380px;box-shadow:0 20px 60px rgba(0,0,0,0.4);">
@@ -1243,7 +1222,7 @@
                     rosterSelect.appendChild(option);
                 });
             }
-            
+
             renderAll();
         });
 </script>
