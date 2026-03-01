@@ -133,7 +133,7 @@
             transition: all 0.3s; pointer-events: none; z-index: 9999;
         }
         .save-toast.show { transform: translateY(0); opacity: 1; }
-    
+
         /* Position requirements grid (matches team dashboard) */
         .needs-grid {
             display: grid;
@@ -205,6 +205,53 @@
             display: flex;
             align-items: center;
             gap: 10px;
+        }
+        .btn-collapse {
+            background: none;
+            border: none;
+            padding: 0 2px;
+            cursor: pointer;
+            color: #6c757d;
+            font-size: 1em;
+            flex-shrink: 0;
+            transition: transform 0.2s;
+            line-height: 1;
+        }
+        .btn-collapse:hover { color: #1e3c72; }
+        .full-card.collapsed .btn-collapse { transform: rotate(-90deg); }
+        .full-card.collapsed > *:not(h2) { display: none; }
+        .full-card.collapsed h2 { margin-bottom: 0; border-bottom: none; padding-bottom: 0; }
+        .btn-expand {
+            margin-left: auto;
+            background: none;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 2px 8px;
+            font-size: 1em;
+            line-height: 1.4;
+            cursor: pointer;
+            color: #6c757d;
+            flex-shrink: 0;
+        }
+        .btn-expand:hover { background: #f0f0f0; color: #1e3c72; }
+        .expand-backdrop {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.45);
+            z-index: 1000;
+            cursor: pointer;
+        }
+        .expand-backdrop.visible { display: block; }
+        .full-card.expanded {
+            position: fixed;
+            inset: 12px;
+            z-index: 1001;
+            margin: 0;
+            overflow-y: auto;
+        }
+        .full-card.expanded .player-table-wrap {
+            max-height: calc(100vh - 180px);
         }
         .full-card h2 span {
             font-size: 0.85em;
@@ -471,6 +518,7 @@
     <script type="module" src="firebase-init.js"></script>
 </head>
 <body>
+<div id="expand-backdrop" class="expand-backdrop" onclick="collapseExpandedCard()"></div>
 <div class="container">
 
     <div class="header">
@@ -530,7 +578,7 @@
     <!-- Full-width Hitters -->
     <div class="full-card">
         <div id="roster-pos-filter-hitter" style="margin-bottom:6px;"></div>
-        <h2>Rostered Hitters <span id="hitter-count-label"></span><button class="btn-col-picker" style="font-size:0.7em;padding:5px 12px;" onclick="toggleRosterColPicker('hitter')">⚙ Columns</button></h2><div id="col-picker-roster-hitter" style="display:none;"><div class="col-picker-inner"><div class="col-picker-header"><span>Hitter Columns</span><div style="display:flex;gap:8px;"><button class="btn-tiny" onclick="selectAllRosterCols('hitter')">All</button><button class="btn-tiny" onclick="selectNoneRosterCols('hitter')">None</button><button class="btn-tiny" id="roster-reorder-btn-hitter" onclick="toggleRosterReorder('hitter')" style="background:#e8eef8;border-color:#1e3c72;color:#1e3c72;">⇅ Reorder</button><button class="btn-tiny btn-save" onclick="saveRosterColPrefs()">💾 Save</button></div></div><div id="col-checkboxes-roster-hitter" class="col-checkbox-grid"></div></div></div>
+        <h2><button class="btn-collapse" title="Collapse" onclick="toggleCollapseCard(this)">▾</button>Rostered Hitters <span id="hitter-count-label"></span><button class="btn-col-picker" style="font-size:0.7em;padding:5px 12px;" onclick="toggleRosterColPicker('hitter')">⚙ Columns</button><button class="btn-expand" title="Expand" onclick="toggleExpandCard(this)">⛶</button></h2><div id="col-picker-roster-hitter" style="display:none;"><div class="col-picker-inner"><div class="col-picker-header"><span>Hitter Columns</span><div style="display:flex;gap:8px;"><button class="btn-tiny" onclick="selectAllRosterCols('hitter')">All</button><button class="btn-tiny" onclick="selectNoneRosterCols('hitter')">None</button><button class="btn-tiny" id="roster-reorder-btn-hitter" onclick="toggleRosterReorder('hitter')" style="background:#e8eef8;border-color:#1e3c72;color:#1e3c72;">⇅ Reorder</button><button class="btn-tiny btn-save" onclick="saveRosterColPrefs()">💾 Save</button></div></div><div id="col-checkboxes-roster-hitter" class="col-checkbox-grid"></div></div></div>
         <div class="player-table-wrap" style="overflow-x:auto;">
             <table class="player-table">
                 <thead id="hitter-roster-thead"></thead>
@@ -542,7 +590,7 @@
     <!-- Full-width Pitchers -->
     <div class="full-card">
         <div id="roster-pos-filter-pitcher" style="margin-bottom:6px;"></div>
-        <h2>Rostered Pitchers <span id="pitcher-count-label"></span><button class="btn-col-picker" style="font-size:0.7em;padding:5px 12px;" onclick="toggleRosterColPicker('pitcher')">⚙ Columns</button></h2><div id="col-picker-roster-pitcher" style="display:none;"><div class="col-picker-inner"><div class="col-picker-header"><span>Pitcher Columns</span><div style="display:flex;gap:8px;"><button class="btn-tiny" onclick="selectAllRosterCols('pitcher')">All</button><button class="btn-tiny" onclick="selectNoneRosterCols('pitcher')">None</button><button class="btn-tiny" id="roster-reorder-btn-pitcher" onclick="toggleRosterReorder('pitcher')" style="background:#e8eef8;border-color:#1e3c72;color:#1e3c72;">⇅ Reorder</button><button class="btn-tiny btn-save" onclick="saveRosterColPrefs()">💾 Save</button></div></div><div id="col-checkboxes-roster-pitcher" class="col-checkbox-grid"></div></div></div>
+        <h2><button class="btn-collapse" title="Collapse" onclick="toggleCollapseCard(this)">▾</button>Rostered Pitchers <span id="pitcher-count-label"></span><button class="btn-col-picker" style="font-size:0.7em;padding:5px 12px;" onclick="toggleRosterColPicker('pitcher')">⚙ Columns</button><button class="btn-expand" title="Expand" onclick="toggleExpandCard(this)">⛶</button></h2><div id="col-picker-roster-pitcher" style="display:none;"><div class="col-picker-inner"><div class="col-picker-header"><span>Pitcher Columns</span><div style="display:flex;gap:8px;"><button class="btn-tiny" onclick="selectAllRosterCols('pitcher')">All</button><button class="btn-tiny" onclick="selectNoneRosterCols('pitcher')">None</button><button class="btn-tiny" id="roster-reorder-btn-pitcher" onclick="toggleRosterReorder('pitcher')" style="background:#e8eef8;border-color:#1e3c72;color:#1e3c72;">⇅ Reorder</button><button class="btn-tiny btn-save" onclick="saveRosterColPrefs()">💾 Save</button></div></div><div id="col-checkboxes-roster-pitcher" class="col-checkbox-grid"></div></div></div>
         <div class="player-table-wrap" style="overflow-x:auto;">
             <table class="player-table">
                 <thead id="pitcher-roster-thead"></thead>
@@ -553,9 +601,10 @@
 
     <!-- Watchlist -->
     <div class="full-card">
-        <h2>⭐ My Watchlist <span id="watchlist-count"></span>
+        <h2><button class="btn-collapse" title="Collapse" onclick="toggleCollapseCard(this)">▾</button>⭐ My Watchlist <span id="watchlist-count"></span>
             <button class="btn-col-picker" style="font-size:0.7em;padding:5px 12px;margin-left:10px;" onclick="toggleWatchlistColPicker('hitter')">⚙ Hitter Cols</button>
             <button class="btn-col-picker" style="font-size:0.7em;padding:5px 12px;" onclick="toggleWatchlistColPicker('pitcher')">⚙ Pitcher Cols</button>
+            <button class="btn-expand" title="Expand" onclick="toggleExpandCard(this)">⛶</button>
         </h2>
 
         <!-- Watchlist hitter col picker -->
@@ -643,31 +692,12 @@
 
     <!-- Player Search -->
     <div class="full-card">
-        <h2>Player Search <span id="player-count-label"></span>
+        <h2><button class="btn-collapse" title="Collapse" onclick="toggleCollapseCard(this)">▾</button>Player Search <span id="player-count-label"></span>
             <button class="btn-col-picker" style="font-size:0.7em;padding:5px 12px;margin-left:10px;" onclick="toggleSearchColPicker('hitter')">⚙ Hitter Cols</button>
             <button class="btn-col-picker" style="font-size:0.7em;padding:5px 12px;" onclick="toggleSearchColPicker('pitcher')">⚙ Pitcher Cols</button>
+            <button class="btn-expand" title="Expand" onclick="toggleExpandCard(this)">⛶</button>
         </h2>
 
-        <!-- Search position filter chips -->
-        <div class="wl-pos-filter" id="search-pos-filter">
-            <span class="wl-pos-filter-label">Filter:</span>
-            <span class="pos-chip chip-all active" onclick="toggleSearchPos('all')">All</span>
-            <span class="pos-chip chip-sp" onclick="toggleSearchPos('PITCHERS')">All P</span>
-            <span class="pos-chip" onclick="toggleSearchPos('HITTERS')">All H</span>
-            <span class="pos-chip" onclick="toggleSearchPos('OF')">All OF</span>
-            <span class="pos-chip chip-sp" onclick="toggleSearchPos('SP')">SP</span>
-            <span class="pos-chip chip-rp" onclick="toggleSearchPos('RP')">RP</span>
-            <span class="pos-chip" onclick="toggleSearchPos('C')">C</span>
-            <span class="pos-chip" onclick="toggleSearchPos('1B')">1B</span>
-            <span class="pos-chip" onclick="toggleSearchPos('2B')">2B</span>
-            <span class="pos-chip" onclick="toggleSearchPos('3B')">3B</span>
-            <span class="pos-chip" onclick="toggleSearchPos('SS')">SS</span>
-            <span class="pos-chip" onclick="toggleSearchPos('LF')">LF</span>
-            <span class="pos-chip" onclick="toggleSearchPos('CF')">CF</span>
-            <span class="pos-chip" onclick="toggleSearchPos('RF')">RF</span>
-            <span class="pos-chip" onclick="toggleSearchPos('DH')">DH</span>
-            <span class="wl-filter-info" id="search-filter-info"></span>
-        </div>
         <div class="search-controls" style="margin-top:6px;">
             <input type="text" id="search" placeholder="Search by name…">
             <select id="avail-filter">
@@ -727,9 +757,8 @@
                            onchange="saveRankingsName(0)">
                     <div id="rlist-loaded-0" class="rlist-loaded" style="display:none;">
                         <span id="rlist-count-0"></span>
-                        <button class="btn-tiny" style="background:#dc3545;color:white;padding:4px 8px;" onclick="clearRankingsList(0)">&#10003; Clear</button>
-                        <button class="btn-tiny" style="background:#28a745;color:white;padding:4px 8px;" onclick="applyRankingsList(0)">&#10004; Import</button>
                     </div>
+                    <button class="btn-tiny" style="background:#dc3545;color:white;padding:4px 8px;" onclick="clearRankingsList(0)">&#10003; Clear</button>
                 </div>
                 <div class="rankings-status" id="rlist-status-0"></div>
                 <div class="rankings-drop-zone" id="rlist-dz-0"
@@ -769,9 +798,8 @@
                            onchange="saveRankingsName(1)">
                     <div id="rlist-loaded-1" class="rlist-loaded" style="display:none;">
                         <span id="rlist-count-1"></span>
-                        <button class="btn-tiny" style="background:#dc3545;color:white;padding:4px 8px;" onclick="clearRankingsList(1)">&#10003; Clear</button>
-                        <button class="btn-tiny" style="background:#28a745;color:white;padding:4px 8px;" onclick="applyRankingsList(1)">&#10004; Import</button>
                     </div>
+                    <button class="btn-tiny" style="background:#dc3545;color:white;padding:4px 8px;" onclick="clearRankingsList(1)">&#10003; Clear</button>
                 </div>
                 <div class="rankings-status" id="rlist-status-1"></div>
                 <div class="rankings-drop-zone" id="rlist-dz-1"
@@ -811,9 +839,8 @@
                            onchange="saveRankingsName(2)">
                     <div id="rlist-loaded-2" class="rlist-loaded" style="display:none;">
                         <span id="rlist-count-2"></span>
-                        <button class="btn-tiny" style="background:#dc3545;color:white;padding:4px 8px;" onclick="clearRankingsList(2)">&#10003; Clear</button>
-                        <button class="btn-tiny" style="background:#28a745;color:white;padding:4px 8px;" onclick="applyRankingsList(2)">&#10004; Import</button>
                     </div>
+                    <button class="btn-tiny" style="background:#dc3545;color:white;padding:4px 8px;" onclick="clearRankingsList(2)">&#10003; Clear</button>
                 </div>
                 <div class="rankings-status" id="rlist-status-2"></div>
                 <div class="rankings-drop-zone" id="rlist-dz-2"
@@ -853,9 +880,8 @@
                            onchange="saveRankingsName(3)">
                     <div id="rlist-loaded-3" class="rlist-loaded" style="display:none;">
                         <span id="rlist-count-3"></span>
-                        <button class="btn-tiny" style="background:#dc3545;color:white;padding:4px 8px;" onclick="clearRankingsList(3)">&#10003; Clear</button>
-                        <button class="btn-tiny" style="background:#28a745;color:white;padding:4px 8px;" onclick="applyRankingsList(3)">&#10004; Import</button>
                     </div>
+                    <button class="btn-tiny" style="background:#dc3545;color:white;padding:4px 8px;" onclick="clearRankingsList(3)">&#10003; Clear</button>
                 </div>
                 <div class="rankings-status" id="rlist-status-3"></div>
                 <div class="rankings-drop-zone" id="rlist-dz-3"
@@ -895,9 +921,8 @@
                            onchange="saveRankingsName(4)">
                     <div id="rlist-loaded-4" class="rlist-loaded" style="display:none;">
                         <span id="rlist-count-4"></span>
-                        <button class="btn-tiny" style="background:#dc3545;color:white;padding:4px 8px;" onclick="clearRankingsList(4)">&#10003; Clear</button>
-                        <button class="btn-tiny" style="background:#28a745;color:white;padding:4px 8px;" onclick="applyRankingsList(4)">&#10004; Import</button>
                     </div>
+                    <button class="btn-tiny" style="background:#dc3545;color:white;padding:4px 8px;" onclick="clearRankingsList(4)">&#10003; Clear</button>
                 </div>
                 <div class="rankings-status" id="rlist-status-4"></div>
                 <div class="rankings-drop-zone" id="rlist-dz-4"
@@ -937,9 +962,8 @@
                            onchange="saveRankingsName(5)">
                     <div id="rlist-loaded-5" class="rlist-loaded" style="display:none;">
                         <span id="rlist-count-5"></span>
-                        <button class="btn-tiny" style="background:#dc3545;color:white;padding:4px 8px;" onclick="clearRankingsList(5)">&#10003; Clear</button>
-                        <button class="btn-tiny" style="background:#28a745;color:white;padding:4px 8px;" onclick="applyRankingsList(5)">&#10004; Import</button>
                     </div>
+                    <button class="btn-tiny" style="background:#dc3545;color:white;padding:4px 8px;" onclick="clearRankingsList(5)">&#10003; Clear</button>
                 </div>
                 <div class="rankings-status" id="rlist-status-5"></div>
                 <div class="rankings-drop-zone" id="rlist-dz-5"
@@ -981,6 +1005,21 @@
         </div>
 
         <div id="search-hitters-wrap">
+            <div class="wl-pos-filter" id="search-pos-filter-hitter">
+                <span class="wl-pos-filter-label">Hitters:</span>
+                <span class="pos-chip chip-all active" onclick="toggleSearchPosHitter('all')">All H</span>
+                <span class="pos-chip" onclick="toggleSearchPosHitter('OF')">All OF</span>
+                <span class="pos-chip" onclick="toggleSearchPosHitter('C')">C</span>
+                <span class="pos-chip" onclick="toggleSearchPosHitter('1B')">1B</span>
+                <span class="pos-chip" onclick="toggleSearchPosHitter('2B')">2B</span>
+                <span class="pos-chip" onclick="toggleSearchPosHitter('3B')">3B</span>
+                <span class="pos-chip" onclick="toggleSearchPosHitter('SS')">SS</span>
+                <span class="pos-chip" onclick="toggleSearchPosHitter('LF')">LF</span>
+                <span class="pos-chip" onclick="toggleSearchPosHitter('CF')">CF</span>
+                <span class="pos-chip" onclick="toggleSearchPosHitter('RF')">RF</span>
+                <span class="pos-chip" onclick="toggleSearchPosHitter('DH')">DH</span>
+                <span class="wl-filter-info" id="search-filter-info-hitter"></span>
+            </div>
             <h3 style="font-size:0.85em;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:#495057;margin:10px 0 6px;">Hitters <span id="search-hitter-count"></span></h3>
             <div class="player-table-wrap" style="overflow-x:auto;">
                 <table class="player-table">
@@ -991,6 +1030,13 @@
         </div>
 
         <div id="search-pitchers-wrap" style="margin-top:16px;">
+            <div class="wl-pos-filter" id="search-pos-filter-pitcher">
+                <span class="wl-pos-filter-label">Pitchers:</span>
+                <span class="pos-chip chip-all active" onclick="toggleSearchPosPitcher('all')">All P</span>
+                <span class="pos-chip chip-sp" onclick="toggleSearchPosPitcher('SP')">SP</span>
+                <span class="pos-chip chip-rp" onclick="toggleSearchPosPitcher('RP')">RP</span>
+                <span class="wl-filter-info" id="search-filter-info-pitcher"></span>
+            </div>
             <h3 style="font-size:0.85em;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:#495057;margin:10px 0 6px;">Pitchers <span id="search-pitcher-count"></span></h3>
             <div class="player-table-wrap" style="overflow-x:auto;">
                 <table class="player-table">
@@ -1011,7 +1057,7 @@
         const REQUIREMENTS = { C: 3, SP: 8, RP: 8 };
         const POS_LABELS = { C:'C', SP:'SP', RP:'RP', '1b':'1B', '2b':'2B', '3b':'3B', ss:'SS', lf:'LF', cf:'CF', rf:'RF', dh:'DH' };
         const ALL_POS = ['C','SP','RP','1b','2b','3b','ss','lf','cf','rf','dh'];
-        const NUM_ROUNDS = 30;
+        const NUM_ROUNDS = 25;
 
         let players = [];
         let draftedPlayers = [];
@@ -1058,12 +1104,12 @@
             if (obj === null || obj === undefined) return obj;
             if (typeof obj !== 'object') return obj;
             if (Array.isArray(obj)) return obj.map(unsanitizeFromFirebase);
-            
+
             const unsanitized = {};
             const keyMap = {
                 'H_9': 'H/9', 'K_9': 'K/9', 'BB_9': 'BB/9', 'HR_9': 'HR/9'
             };
-            
+
             for (const key in obj) {
                 if (obj.hasOwnProperty(key)) {
                     const originalKey = keyMap[key] || key;
@@ -1178,10 +1224,10 @@
             var wl = getWatchlist();
             var idx = wl.indexOf(key);
             if (idx !== -1) { wl.splice(idx, 1); } else { wl.push(key); }
-            
+
             // Save to localStorage as backup
             localStorage.setItem('watchlist_' + getMyTeam(), JSON.stringify(wl));
-            
+
             // Save to Firebase for real-time sync (path uses lowercase to match security rules)
             const team = getMyTeam();
             if (window.firebaseInitialized && team) {
@@ -1189,7 +1235,7 @@
                     console.error('Firebase save error:', error);
                 });
             }
-            
+
             renderAll();
         }
 
@@ -1305,7 +1351,7 @@
                 html += '<button class="pos-chip' + (active ? ' active' : '') + '" onclick="toggleRosterPosHitter(\'' + pos + '\')">' + pos + '</button>';
             });
             document.getElementById('roster-pos-filter-hitter').innerHTML = html;
-            
+
             if (rosterActivePosFiltersHitter.size) {
                 document.getElementById('roster-filter-info-hitter').textContent = 'Showing: ' + Array.from(rosterActivePosFiltersHitter).join(', ');
             }
@@ -1319,7 +1365,7 @@
                 html += '<button class="pos-chip' + (active ? ' active' : '') + '" onclick="toggleRosterPosPitcher(\'' + pos + '\')">' + pos + '</button>';
             });
             document.getElementById('roster-pos-filter-pitcher').innerHTML = html;
-            
+
             if (rosterActivePosFiltersPitcher.size) {
                 document.getElementById('roster-filter-info-pitcher').textContent = 'Showing: ' + Array.from(rosterActivePosFiltersPitcher).join(', ');
             }
@@ -1328,7 +1374,7 @@
         function rosterPlayerMatchesFilterHitter(p) {
             if (!rosterActivePosFiltersHitter.size) return true;
             if (rosterActivePosFiltersHitter.has('All')) return true;
-            
+
             var eligible = getEligiblePositions(p);
             return eligible.some(function(pos) {
                 return rosterActivePosFiltersHitter.has(pos.toUpperCase());
@@ -1338,7 +1384,7 @@
         function rosterPlayerMatchesFilterPitcher(p) {
             if (!rosterActivePosFiltersPitcher.size) return true;
             if (rosterActivePosFiltersPitcher.has('All')) return true;
-            
+
             var pos = (p.P || '').toUpperCase();
             return rosterActivePosFiltersPitcher.has(pos);
         }
@@ -1352,11 +1398,11 @@
             };
             var allHitters  = rows.filter(function(r) { return !isP(r); });
             var allPitchers = rows.filter(isP);
-            
+
             // Apply position filters
             var hitters = allHitters.filter(function(r) { return rosterPlayerMatchesFilterHitter(r.player); });
             var pitchers = allPitchers.filter(function(r) { return rosterPlayerMatchesFilterPitcher(r.player); });
-            
+
             // Update filter chips
             updateRosterPosChipsHitter();
             updateRosterPosChipsPitcher();
@@ -1644,12 +1690,21 @@
         function getSearchOrderedCols(type, hiddenSet) {
             var allCols = type === 'hitter' ? ALL_HITTER_COLS : ALL_PITCHER_COLS;
             var order   = type === 'hitter' ? searchColOrderHitter : searchColOrderPitcher;
+            var always  = ['watch','dnw','name','P','status'];
             var ordered;
             if (order && order.length) {
                 var colMap = {};
                 allCols.forEach(function(c) { colMap[c.key] = c; });
-                ordered = order.map(function(k) { return colMap[k]; }).filter(Boolean);
-                allCols.forEach(function(c) { if (order.indexOf(c.key) === -1) ordered.push(c); });
+                // Non-always cols in user-defined order
+                var nonAlways = order.map(function(k) { return colMap[k]; })
+                    .filter(function(c) { return c && always.indexOf(c.key) === -1; });
+                // Append any non-always cols not present in saved order
+                allCols.forEach(function(c) {
+                    if (order.indexOf(c.key) === -1 && always.indexOf(c.key) === -1) nonAlways.push(c);
+                });
+                // Always-on cols first, then user-ordered stat cols
+                var alwaysCols = allCols.filter(function(c) { return always.indexOf(c.key) !== -1; });
+                ordered = alwaysCols.concat(nonAlways);
             } else { ordered = allCols.slice(); }
             return ordered.filter(function(c) { return !hiddenSet.has(c.key); });
         }
@@ -1679,10 +1734,10 @@
                     return '<div class="col-order-chip' + (isHid ? ' hidden-col' : '') + '" draggable="true"'
                         + ' data-key="' + c.key + '" data-type="' + type + '"'
                         + ' ondragstart="searchDragStart(event)" ondragover="searchDragOver(event)"'
-                        + ' ondrop="searchDrop(event)" ondragleave="this.classList.remove(\'drag-over\')">' 
+                        + ' ondrop="searchDrop(event)" ondragleave="this.classList.remove(\'drag-over\')">'
                         + '<span class="drag-handle">&#9776;</span>'
                         + '<span>' + c.label + '</span>'
-                        + '<span class="col-eye" onclick="toggleSearchColVisibility(\'' + c.key + '\',\'' + type + '\')">'  
+                        + '<span class="col-eye" onclick="toggleSearchColVisibility(\'' + c.key + '\',\'' + type + '\')">'
                         + (isHid ? '&#128065;&#65039;' : '&#128065;') + '</span>'
                         + '</div>';
                 }).join('');
@@ -1843,6 +1898,7 @@
             searchDragSrcKey  = e.currentTarget.getAttribute('data-key');
             searchDragSrcType = e.currentTarget.getAttribute('data-type');
             e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', searchDragSrcKey);
         }
         function searchDragOver(e) {
             e.preventDefault();
@@ -1866,6 +1922,7 @@
             if (tType === 'hitter') searchColOrderHitter = order; else searchColOrderPitcher = order;
             buildSearchColCheckboxes(tType);
             renderPlayerSearch();
+            saveColPrefs();
         }
         function toggleSearchColVisibility(key, type) {
             var hidden = type === 'hitter' ? hiddenHitterCols : hiddenPitcherCols;
@@ -1944,7 +2001,6 @@
             var search      = (document.getElementById('search').value || '').toLowerCase();
             var availFilter = (document.getElementById('avail-filter') || {value:'available'}).value || 'available';
             return players.filter(function(p) {
-                if (!searchPlayerMatchesFilter(p)) return false;
                 if (search && (p.First + ' ' + p.Last).toLowerCase().indexOf(search) === -1) return false;
                 if (availFilter === 'available' && getAvailability(p) !== 'available') return false;
                 if (availFilter === 'available' && isDNW(p)) return false;
@@ -1953,12 +2009,10 @@
             });
         }
 
-        function renderPlayerSearch() {
-            var filtered = getFilteredPlayers();
-
+        function sortFiltered(filtered) {
             if (searchSortCol && searchSortCol.startsWith('_rank')) {
                 var li = searchSortList;
-                filtered = filtered.slice().sort(function(a, b) {
+                return filtered.slice().sort(function(a, b) {
                     var ar = getPlayerRank(a, li), br = getPlayerRank(b, li);
                     if (ar === null && br === null) return 0;
                     if (ar === null) return 1;
@@ -1968,16 +2022,21 @@
                     return searchSortDir === 'asc' ? cmp : -cmp;
                 });
             } else if (searchSortCol) {
-                filtered = filtered.slice().sort(function(a, b) {
+                return filtered.slice().sort(function(a, b) {
                     var av = parseFloat(a[searchSortCol]), bv = parseFloat(b[searchSortCol]);
                     var an = isNaN(av) ? (searchSortDir==='asc'?Infinity:-Infinity) : av;
                     var bn = isNaN(bv) ? (searchSortDir==='asc'?Infinity:-Infinity) : bv;
                     return searchSortDir === 'asc' ? an - bn : bn - an;
                 });
             }
+            return filtered;
+        }
 
-            var hitters  = filtered.filter(function(p) { return !isPitcher(p); });
-            var pitchers = filtered.filter(function(p) { return  isPitcher(p); });
+        function renderPlayerSearch() {
+            var filtered = getFilteredPlayers();
+
+            var hitters  = sortFiltered(filtered.filter(function(p) { return !isPitcher(p) && searchHitterMatchesFilter(p); }));
+            var pitchers = sortFiltered(filtered.filter(function(p) { return  isPitcher(p) && searchPitcherMatchesFilter(p); }));
 
             var hCount = document.getElementById('search-hitter-count');
             var pCount = document.getElementById('search-pitcher-count');
@@ -2054,21 +2113,21 @@
             var order   = type === 'hitter' ? rosterColOrderHitter : rosterColOrderPitcher;
             var always = ['name', 'P'];
             var orderable = allCols.filter(function(c) { return always.indexOf(c.key) === -1; });
-            
+
             if (!order) {
                 return orderable.filter(function(c) { return !hiddenSet.has(c.key); });
             }
-            
+
             var ordered = [];
             order.forEach(function(key) {
                 var col = orderable.find(function(c) { return c.key === key; });
                 if (col && !hiddenSet.has(key)) ordered.push(col);
             });
-            
+
             orderable.forEach(function(c) {
                 if (order.indexOf(c.key) === -1 && !hiddenSet.has(c.key)) ordered.push(c);
             });
-            
+
             return ordered;
         }
 
@@ -2076,6 +2135,8 @@
         function rosterDragStart(e) {
             rosterDragSrcKey  = e.currentTarget.getAttribute('data-key');
             rosterDragSrcType = e.currentTarget.getAttribute('data-type');
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', rosterDragSrcKey);
         }
 
         function rosterDragOver(e) {
@@ -2090,34 +2151,35 @@
         function rosterDrop(e) {
             e.preventDefault();
             e.currentTarget.classList.remove('drag-over');
-            
+
             var targetKey  = e.currentTarget.getAttribute('data-key');
             var targetType = e.currentTarget.getAttribute('data-type');
-            
+
             if (rosterDragSrcKey === targetKey || rosterDragSrcType !== targetType) return;
-            
+
             var allCols = targetType === 'hitter' ? HITTER_COLS : PITCHER_COLS;
             var always = ['name', 'P'];
             var orderable = allCols.filter(function(c) { return always.indexOf(c.key) === -1; });
             var order = targetType === 'hitter' ? rosterColOrderHitter : rosterColOrderPitcher;
-            
+
             if (!order) {
                 order = orderable.map(function(c) { return c.key; });
             }
-            
+
             var srcIdx = order.indexOf(rosterDragSrcKey);
             var tgtIdx = order.indexOf(targetKey);
-            
+
             if (srcIdx !== -1) order.splice(srcIdx, 1);
             else order = order.filter(function(k) { return k !== rosterDragSrcKey; }).concat([rosterDragSrcKey]);
-            
+
             tgtIdx = order.indexOf(targetKey);
             order.splice(tgtIdx, 0, rosterDragSrcKey);
-            
+
             if (targetType === 'hitter') rosterColOrderHitter = order;
             else rosterColOrderPitcher = order;
-            
+
             buildRosterColCheckboxes(targetType);
+            saveRosterColPrefs();
         }
 
         function toggleRosterColVisibility(key, type) {
@@ -2133,17 +2195,17 @@
             var hidden = type === 'hitter' ? hiddenRosterHitterCols : hiddenRosterPitcherCols;
             var always = ['name', 'P'];
             var inReorderMode = rosterReorderMode[type];
-            
+
             if (inReorderMode) {
                 var order = type === 'hitter' ? rosterColOrderHitter : rosterColOrderPitcher;
                 var orderable = cols.filter(function(c) { return always.indexOf(c.key) === -1; });
-                
+
                 if (!order) {
                     order = orderable.map(function(c) { return c.key; });
                     if (type === 'hitter') rosterColOrderHitter = order;
                     else rosterColOrderPitcher = order;
                 }
-                
+
                 var chips = order.map(function(key) {
                     var col = orderable.find(function(c) { return c.key === key; });
                     if (!col) return '';
@@ -2157,7 +2219,7 @@
                         + '<span class="eye-toggle" onclick="toggleRosterColVisibility(\'' + key + '\', \'' + type + '\')">' + eyeIcon + '</span>'
                         + '</div>';
                 }).join('');
-                
+
                 document.getElementById('col-checkboxes-roster-' + type).innerHTML = chips;
             } else {
                 document.getElementById('col-checkboxes-roster-' + type).innerHTML = cols
@@ -2194,8 +2256,12 @@
         function renderAll() {
             renderHeader();
             renderRoster();
+            updateRosterPosChipsHitter();
+            updateRosterPosChipsPitcher();
             renderMyPicks();
             renderWatchlist();
+            updateSearchPosChipsHitter();
+            updateSearchPosChipsPitcher();
             renderPlayerSearch();
         }
 
@@ -2225,7 +2291,7 @@
 
 
         function refreshRankingsTabs() {
-            for (var i = 0; i < 3; i++) {
+            for (var i = 0; i < 6; i++) {
                 var count = Object.keys(rLists[i].data).length;
                 var loadedEl = document.getElementById('rlist-loaded-' + i);
                 var countEl  = document.getElementById('rlist-count-' + i);
@@ -2248,6 +2314,7 @@
             if (!el) return;
             rNames[i] = el.value;
             localStorage.setItem(rNameKey(i), rNames[i]);
+            saveRankingsToFirebase(i);
             refreshRankingsTabs();
         }
 
@@ -2303,18 +2370,35 @@
                 var fn=String(row[fCol]||'').trim(), ln=String(row[lCol]||'').trim();
                 var rv=parseFloat(String(row[rCol]||'').replace(/,/g,''));
                 if(!fn||!ln||isNaN(rv)){skipped++;return;}
-                data[fn.toLowerCase()+'|'+ln.toLowerCase()]=rv;
+                data[mkPlayerKey(fn, ln)]=rv;
                 imported++;
             });
             rLists[listIdx].data  = data;
             rLists[listIdx].order = order;
-            localStorage.setItem(rKey(listIdx), JSON.stringify(data));
-            localStorage.setItem(rKey(listIdx)+'_order', order);
+            localStorage.setItem(rKey(listIdx), JSON.stringify({data: data, order: order}));
+            saveRankingsToFirebase(listIdx);
             setRStatus(listIdx, '✔ '+imported+' players imported'+(skipped?' ('+skipped+' skipped).':'.'), 'ok');
             pendingRows[listIdx] = null;
             resetRankingsFile(listIdx);
             refreshRankingsTabs();
             renderPlayerSearch();
+        }
+
+        function confirmRankingsImport(listIdx) { applyRankingsList(listIdx); }
+        function cancelRankingsImport(listIdx)  { resetRankingsFile(listIdx); setRStatus(listIdx,'',''); }
+
+        function saveRankingsToFirebase(listIdx) {
+            var team = getMyTeam();
+            if (!window.firebaseInitialized || !team) return;
+            var payload = {
+                data:  rLists[listIdx].data,
+                order: rLists[listIdx].order || 'asc',
+                name:  rNames[listIdx] || ''
+            };
+            window.firebaseSet(
+                window.firebaseRef(window.firebaseDB, 'rankings/' + team.toLowerCase() + '/' + listIdx),
+                payload
+            ).catch(function(e) { console.error('Firebase rankings save error:', e); });
         }
 
         function resetRankingsFile(listIdx) {
@@ -2329,6 +2413,7 @@
         function clearRankingsList(listIdx) {
             rLists[listIdx].data = {};
             localStorage.removeItem(rKey(listIdx));
+            saveRankingsToFirebase(listIdx);
             setRStatus(listIdx,'','');
             refreshRankingsTabs();
             if (searchSortCol === '_rank'+listIdx) { searchSortCol = null; }
@@ -2342,8 +2427,13 @@
             el.className = 'rankings-status'+(type?' '+type:'');
         }
 
+        function mkPlayerKey(first, last) {
+            return (first||'').toLowerCase().replace(/[.#$\/\[\]]/g,'') + '|' +
+                   (last||'').toLowerCase().replace(/[.#$\/\[\]]/g,'');
+        }
+
         function getPlayerRank(p, listIdx) {
-            var key=(p.First||'').toLowerCase()+'|'+(p.Last||'').toLowerCase();
+            var key = mkPlayerKey(p.First, p.Last);
             var v = rLists[listIdx].data[key];
             return v !== undefined ? v : null;
         }
@@ -2359,11 +2449,12 @@
         }
 
         function setSearchSort(col, listIdx) {
-            if (searchSortCol === col && searchSortList === listIdx) {
+            var li = listIdx !== undefined ? listIdx : -1;
+            if (searchSortCol === col && searchSortList === li) {
                 searchSortDir = searchSortDir === 'asc' ? 'desc' : 'asc';
             } else {
                 searchSortCol  = col;
-                searchSortList = listIdx !== undefined ? listIdx : 0;
+                searchSortList = li;
                 searchSortDir  = col.startsWith('_rank') ? 'asc' : 'desc';
             }
             renderPlayerSearch();
@@ -2378,6 +2469,12 @@
                 refreshRankingsTabs();
                 switchRankingsTab(activeRankTab);
             }
+        }
+
+        function handleRankingsDrop(e, listIdx) {
+            e.currentTarget.classList.remove('drag-over');
+            var file = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+            if (file) handleRankingsFile(file, listIdx);
         }
 
         function handleRankingsFile(file, listIdx) {
@@ -2441,12 +2538,12 @@
                 }
                 var savedName = localStorage.getItem(rNameKey(i));
                 if (savedName) rNames[i] = savedName;
-                
+
                 var loadedEl = document.getElementById('rlist-loaded-' + i);
                 var countEl  = document.getElementById('rlist-count-' + i);
                 var nameEl   = document.getElementById('rname-' + i);
                 if (nameEl) nameEl.value = rNames[i];
-                
+
                 var count = Object.keys(rLists[i].data).length;
                 if (count && loadedEl && countEl) {
                     countEl.textContent = count + ' players loaded';
@@ -2483,6 +2580,17 @@
             localStorage.setItem(wlColPrefsKey('pitcher'), JSON.stringify(Array.from(hiddenWLPitcherCols)));
             if (wlColOrderHitter)  localStorage.setItem(wlColOrderKey('hitter'),  JSON.stringify(wlColOrderHitter));
             if (wlColOrderPitcher) localStorage.setItem(wlColOrderKey('pitcher'), JSON.stringify(wlColOrderPitcher));
+            var team = getMyTeam();
+            if (window.firebaseInitialized && team) {
+                var payload = {
+                    hitter:       Array.from(hiddenWLHitterCols),
+                    pitcher:      Array.from(hiddenWLPitcherCols),
+                    hitterOrder:  wlColOrderHitter  || null,
+                    pitcherOrder: wlColOrderPitcher || null
+                };
+                window.firebaseSet(window.firebaseRef(window.firebaseDB, 'colprefs/' + team.toLowerCase()), payload)
+                    .catch(function(e) { console.error('Firebase colprefs save error:', e); });
+            }
             var toast = document.getElementById('save-toast');
             if (toast) { toast.classList.add('show'); setTimeout(function() { toast.classList.remove('show'); }, 2000); }
         }
@@ -2557,6 +2665,7 @@
             wlDragSrcKey  = e.currentTarget.getAttribute('data-key');
             wlDragSrcType = e.currentTarget.getAttribute('data-type');
             e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', wlDragSrcKey);
         }
         function wlDragOver(e) {
             e.preventDefault();
@@ -2580,6 +2689,7 @@
             if (tType === 'hitter') wlColOrderHitter = order; else wlColOrderPitcher = order;
             buildWLColCheckboxes(tType);
             renderWatchlist();
+            saveWLColPrefs();
         }
         function toggleWLColVisibility(key, type) {
             var hidden = type === 'hitter' ? hiddenWLHitterCols : hiddenWLPitcherCols;
@@ -2669,54 +2779,83 @@
 
 
         // Search position filter (chip-based)
-        var searchActivePosFilters = new Set();
+        var searchActivePosFiltersHitter = new Set();
+        var searchActivePosFiltersPitcher = new Set();
 
-        function toggleSearchPos(pos) {
-            if (pos === 'all') {
-                searchActivePosFilters.clear();
-            } else {
-                if (searchActivePosFilters.has(pos)) searchActivePosFilters.delete(pos);
-                else searchActivePosFilters.add(pos);
+        function toggleSearchPosHitter(pos) {
+            if (pos === 'all') { searchActivePosFiltersHitter.clear(); }
+            else {
+                if (searchActivePosFiltersHitter.has(pos)) searchActivePosFiltersHitter.delete(pos);
+                else searchActivePosFiltersHitter.add(pos);
             }
-            updateSearchPosChips();
+            updateSearchPosChipsHitter();
             renderPlayerSearch();
         }
 
-        function updateSearchPosChips() {
-            var strip = document.getElementById('search-pos-filter');
+        function toggleSearchPosPitcher(pos) {
+            if (pos === 'all') { searchActivePosFiltersPitcher.clear(); }
+            else {
+                if (searchActivePosFiltersPitcher.has(pos)) searchActivePosFiltersPitcher.delete(pos);
+                else searchActivePosFiltersPitcher.add(pos);
+            }
+            updateSearchPosChipsPitcher();
+            renderPlayerSearch();
+        }
+
+        function updateSearchPosChipsHitter() {
+            var strip = document.getElementById('search-pos-filter-hitter');
             if (!strip) return;
-            var chips = strip.querySelectorAll('.pos-chip');
-            var allActive = searchActivePosFilters.size === 0;
-            chips.forEach(function(chip) {
-                var onclick = chip.getAttribute('onclick') || '';
-                var m = onclick.match(/toggleSearchPos\('([^']+)'\)/);
+            var allActive = searchActivePosFiltersHitter.size === 0;
+            strip.querySelectorAll('.pos-chip').forEach(function(chip) {
+                var m = (chip.getAttribute('onclick') || '').match(/toggleSearchPosHitter\('([^']+)'\)/);
+                if (!m) return;
+                var pos = m[1];
+                if (pos === 'all') {
+                    chip.className = 'pos-chip chip-all' + (allActive ? ' active' : '');
+                } else {
+                    chip.className = 'pos-chip' + (searchActivePosFiltersHitter.has(pos) ? ' active' : '');
+                }
+            });
+            var infoEl = document.getElementById('search-filter-info-hitter');
+            if (infoEl) infoEl.textContent = allActive ? '' : Array.from(searchActivePosFiltersHitter).join(', ');
+        }
+
+        function updateSearchPosChipsPitcher() {
+            var strip = document.getElementById('search-pos-filter-pitcher');
+            if (!strip) return;
+            var allActive = searchActivePosFiltersPitcher.size === 0;
+            strip.querySelectorAll('.pos-chip').forEach(function(chip) {
+                var m = (chip.getAttribute('onclick') || '').match(/toggleSearchPosPitcher\('([^']+)'\)/);
                 if (!m) return;
                 var pos = m[1];
                 if (pos === 'all') {
                     chip.className = 'pos-chip chip-all' + (allActive ? ' active' : '');
                 } else {
                     var extraCls = pos === 'SP' ? ' chip-sp' : pos === 'RP' ? ' chip-rp' : '';
-                    chip.className = 'pos-chip' + extraCls + (searchActivePosFilters.has(pos) ? ' active' : '');
+                    chip.className = 'pos-chip' + extraCls + (searchActivePosFiltersPitcher.has(pos) ? ' active' : '');
                 }
             });
-            var infoEl = document.getElementById('search-filter-info');
-            if (infoEl) infoEl.textContent = allActive ? '' : 'Showing: ' + Array.from(searchActivePosFilters).join(', ');
+            var infoEl = document.getElementById('search-filter-info-pitcher');
+            if (infoEl) infoEl.textContent = allActive ? '' : Array.from(searchActivePosFiltersPitcher).join(', ');
         }
 
-        function searchPlayerMatchesFilter(p) {
-            if (searchActivePosFilters.size === 0) return true;
+        function searchHitterMatchesFilter(p) {
+            if (searchActivePosFiltersHitter.size === 0) return true;
             var pos = (getPlayerPosition(p) || '').toUpperCase();
-            var isPit = pos === 'SP' || pos === 'RP';
-            var isOF  = pos === 'LF' || pos === 'CF' || pos === 'RF';
-            if (searchActivePosFilters.has('PITCHERS') && isPit)  return true;
-            if (searchActivePosFilters.has('HITTERS')  && !isPit) return true;
-            if (searchActivePosFilters.has('OF')        && isOF)  return true;
+            var isOF = pos === 'LF' || pos === 'CF' || pos === 'RF';
+            if (searchActivePosFiltersHitter.has('OF') && isOF) return true;
             var eligible = getEligiblePositions(p).map(function(e) { return e.toUpperCase(); });
             if (!eligible.length) eligible = [pos];
             for (var i = 0; i < eligible.length; i++) {
-                if (searchActivePosFilters.has(eligible[i])) return true;
+                if (searchActivePosFiltersHitter.has(eligible[i])) return true;
             }
             return false;
+        }
+
+        function searchPitcherMatchesFilter(p) {
+            if (searchActivePosFiltersPitcher.size === 0) return true;
+            var pos = (getPlayerPosition(p) || '').toUpperCase();
+            return searchActivePosFiltersPitcher.has(pos);
         }
 
         // â”€â”€ Do Not Want â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -2726,6 +2865,7 @@
         }
         function isDNW(p) { return getDNWList().indexOf(watchKey(p)) !== -1; }
         function toggleDNW(key) {
+            var team = getMyTeam();
             var dnw = getDNWList();
             var idx = dnw.indexOf(key);
             if (idx !== -1) {
@@ -2737,10 +2877,18 @@
                 var wi  = wl.indexOf(key);
                 if (wi !== -1) {
                     wl.splice(wi, 1);
-                    localStorage.setItem('watchlist_' + getMyTeam(), JSON.stringify(wl));
+                    localStorage.setItem('watchlist_' + team, JSON.stringify(wl));
+                    if (window.firebaseInitialized && team) {
+                        window.firebaseSet(window.firebaseRef(window.firebaseDB, 'watchlists/' + team.toLowerCase()), wl)
+                            .catch(function(e) { console.error('Firebase watchlist sync error:', e); });
+                    }
                 }
             }
-            localStorage.setItem('dnw_' + getMyTeam(), JSON.stringify(dnw));
+            localStorage.setItem('dnw_' + team, JSON.stringify(dnw));
+            if (window.firebaseInitialized && team) {
+                window.firebaseSet(window.firebaseRef(window.firebaseDB, 'dnw/' + team.toLowerCase()), dnw)
+                    .catch(function(e) { console.error('Firebase DNW save error:', e); });
+            }
             renderAll();
         }
         function dnwBtn(p) {
@@ -2801,13 +2949,75 @@
                         }
                     });
 
-                    // Watchlist uses lowercase team path (matches security rules)
-                    const wlSnapshot = await window.firebaseGet(window.firebaseRef(window.firebaseDB, 'watchlists/' + teamPath));
-                    if (wlSnapshot.exists()) {
-                        localStorage.setItem('watchlist_' + team, JSON.stringify(wlSnapshot.val()));
+                    // Load initial watchlist from Firebase
+                    const watchlistSnap = await window.firebaseGet(window.firebaseRef(window.firebaseDB, 'watchlists/' + teamPath));
+                    if (watchlistSnap.exists()) {
+                        localStorage.setItem('watchlist_' + team, JSON.stringify(watchlistSnap.val()));
+                        console.log('Loaded watchlist from Firebase');
                         renderAll();
                     }
 
+                    // Listen for watchlist changes
+                    window.firebaseOnValue(window.firebaseRef(window.firebaseDB, 'watchlists/' + teamPath), (snapshot) => {
+                        const data = snapshot.val() || [];
+                        const currentWL = getWatchlist();
+                        if (JSON.stringify(data) !== JSON.stringify(currentWL)) {
+                            console.log('Watchlist updated from another device');
+                            localStorage.setItem('watchlist_' + team, JSON.stringify(data));
+                            renderAll();
+                        }
+                    });
+
+                    // Load rankings from Firebase (one-time fetch)
+                    const rankSnap = await window.firebaseGet(window.firebaseRef(window.firebaseDB, 'rankings/' + teamPath));
+                    if (rankSnap.exists()) {
+                        var fbRankings = rankSnap.val();
+                        for (var i = 0; i < 6; i++) {
+                            var list = fbRankings[i];
+                            if (list) {
+                                rLists[i].data  = list.data  || {};
+                                rLists[i].order = list.order || 'asc';
+                                if (list.name) rNames[i] = list.name;
+                                localStorage.setItem(rKey(i),     JSON.stringify({data: rLists[i].data, order: rLists[i].order}));
+                                localStorage.setItem(rNameKey(i), rNames[i]);
+                            }
+                        }
+                        console.log('Loaded rankings from Firebase');
+                        refreshRankingsTabs();
+                        renderPlayerSearch();
+                    }
+
+                    // Load DNW list from Firebase
+                    const dnwSnap = await window.firebaseGet(window.firebaseRef(window.firebaseDB, 'dnw/' + teamPath));
+                    if (dnwSnap.exists()) {
+                        localStorage.setItem('dnw_' + team, JSON.stringify(dnwSnap.val()));
+                        console.log('Loaded DNW list from Firebase');
+                        renderAll();
+                    }
+                    // Listen for DNW changes
+                    window.firebaseOnValue(window.firebaseRef(window.firebaseDB, 'dnw/' + teamPath), (snapshot) => {
+                        const data = snapshot.val() || [];
+                        const current = getDNWList();
+                        if (JSON.stringify(data) !== JSON.stringify(current)) {
+                            localStorage.setItem('dnw_' + team, JSON.stringify(data));
+                            renderAll();
+                        }
+                    });
+
+                    // Load column preferences from Firebase (one-time fetch)
+                    const colSnap = await window.firebaseGet(window.firebaseRef(window.firebaseDB, 'colprefs/' + teamPath));
+                    if (colSnap.exists()) {
+                        const cp = colSnap.val();
+                        if (cp.hitter)       localStorage.setItem(wlColPrefsKey('hitter'),  JSON.stringify(cp.hitter));
+                        if (cp.pitcher)      localStorage.setItem(wlColPrefsKey('pitcher'), JSON.stringify(cp.pitcher));
+                        if (cp.hitterOrder)  localStorage.setItem(wlColOrderKey('hitter'),  JSON.stringify(cp.hitterOrder));
+                        if (cp.pitcherOrder) localStorage.setItem(wlColOrderKey('pitcher'), JSON.stringify(cp.pitcherOrder));
+                        loadWLColPrefs();
+                        console.log('Loaded column prefs from Firebase');
+                        renderAll();
+                    }
+
+                    console.log('Firebase sync enabled for team:', team);
                     window.firebaseOnValue(window.firebaseRef(window.firebaseDB, 'watchlists/' + teamPath), (snapshot) => {
                         const data = snapshot.val() || [];
                         const currentWL = getWatchlist();
@@ -2816,7 +3026,9 @@
                             renderAll();
                         }
                     });
-                } catch (_) { /* network errors are non-fatal */ }
+                } catch (error) {
+                    console.error('Firebase sync error:', error);
+                }
             }
         });
 
@@ -2825,9 +3037,29 @@
         });
         window.addEventListener('focus', function() { loadDraftState(); renderAll(); });
 
-        // Close change-password modal on Escape or backdrop click
+        function toggleCollapseCard(btn) {
+            btn.closest('.full-card').classList.toggle('collapsed');
+        }
+
+        function toggleExpandCard(btn) {
+            var card = btn.closest('.full-card');
+            var expanding = !card.classList.contains('expanded');
+            collapseExpandedCard();
+            if (expanding) {
+                card.classList.add('expanded');
+                btn.textContent = '✕';
+                document.getElementById('expand-backdrop').classList.add('visible');
+            }
+        }
+        function collapseExpandedCard() {
+            document.querySelectorAll('.full-card.expanded').forEach(function(c) { c.classList.remove('expanded'); });
+            document.querySelectorAll('.btn-expand').forEach(function(b) { b.textContent = '⛶'; });
+            document.getElementById('expand-backdrop').classList.remove('visible');
+        }
+
+        // Close change-password modal or expanded card on Escape
         document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') hideChangePassword();
+            if (e.key === 'Escape') { hideChangePassword(); collapseExpandedCard(); }
         });
         document.getElementById('chpw-overlay').addEventListener('click', function(e) {
             if (e.target === this) hideChangePassword();

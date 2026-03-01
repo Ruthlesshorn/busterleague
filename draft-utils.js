@@ -3,6 +3,8 @@
 // Depends on the following globals defined in each page's inline <script>:
 //   players, draftedPlayers, currentPickIndex, saveDraftState(), renderAll()
 
+const MAX_ROUNDS = 25;
+
 const teams = [
     'PHI', 'SEA', 'BAL', 'CWS', 'PIT', 'NYM', 'KC', 'BOS', 'STL', 'CIN',
     'OAK', 'LA', 'CHC', 'DET', 'CLE', 'HOU', 'SF', 'TEX', 'ATL', 'NYY'
@@ -24,7 +26,7 @@ function getNextTeams(count = 10) {
     const nextTeams = [];
     for (let i = 1; i <= count; i++) {
         const pickIndex = currentPickIndex + i;
-        if (pickIndex >= teams.length * 100) break; // Prevent infinite rounds
+        if (pickIndex >= teams.length * MAX_ROUNDS) break;
 
         const round = Math.floor(pickIndex / teams.length) + 1;
         const pickInRound = pickIndex % teams.length;
@@ -81,6 +83,12 @@ function draftPlayerByKey(playerKey) {
 
     if (isPreDrafted(player)) {
         alert(`${player.First} ${player.Last} is a keeper for ${player.Team}.`);
+        return;
+    }
+
+    const currentRound = Math.floor(currentPickIndex / teams.length) + 1;
+    if (currentRound > MAX_ROUNDS) {
+        alert(`Draft is complete — all ${MAX_ROUNDS} rounds have been drafted.`);
         return;
     }
 

@@ -1,19 +1,35 @@
 {
   "rules": {
-    ".read": false,
-    ".write": false,
     "draftedPlayers": {
-      ".read": "auth != null",
-      ".write": "auth != null && auth.token.email === 'admin@busterleague.local'"
+      ".read":  "auth != null",
+      ".write": "auth != null && auth.token.email == 'admin@busterleague.local'"
     },
     "draftState": {
-      ".read": "auth != null",
-      ".write": "auth != null && auth.token.email === 'admin@busterleague.local'"
+      ".read":  "auth != null && auth.token.email == 'admin@busterleague.local'",
+      ".write": "auth != null && auth.token.email == 'admin@busterleague.local'"
     },
     "watchlists": {
       "$team": {
-        ".read":  "auth != null && (auth.token.email === ($team + '@busterleague.local') || auth.token.email === 'admin@busterleague.local')",
-        ".write": "auth != null && auth.token.email === ($team + '@busterleague.local')"
+        ".read":  "auth != null && auth.token.email == ($team + '@busterleague.local')",
+        ".write": "auth != null && auth.token.email == ($team + '@busterleague.local')"
+      }
+    },
+    "rankings": {
+      "$team": {
+        ".read":  "auth != null && auth.token.email == ($team + '@busterleague.local')",
+        ".write": "auth != null && auth.token.email == ($team + '@busterleague.local')"
+      }
+    },
+    "dnw": {
+      "$team": {
+        ".read":  "auth != null && auth.token.email == ($team + '@busterleague.local')",
+        ".write": "auth != null && auth.token.email == ($team + '@busterleague.local')"
+      }
+    },
+    "colprefs": {
+      "$team": {
+        ".read":  "auth != null && auth.token.email == ($team + '@busterleague.local')",
+        ".write": "auth != null && auth.token.email == ($team + '@busterleague.local')"
       }
     }
   }

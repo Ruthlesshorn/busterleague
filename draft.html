@@ -353,6 +353,19 @@
     
         /* Dropdown nav */
         .nav-buttons { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+        .nav-button {
+            background: rgba(255,255,255,0.15);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.4);
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 0.9em;
+            font-weight: 600;
+            text-decoration: none;
+            cursor: pointer;
+            display: inline-block;
+        }
+        .nav-button:hover { background: rgba(255,255,255,0.25); }
         .dropdown { position: relative; }
         .dropdown-menu {
             display: none;
@@ -413,8 +426,6 @@
                 <button class="nav-button secondary" onclick="doSignOut()">Sign Out</button>
                 </div>
             </div>
-            </div>
-            
         </div>
 
         <div class="draft-status">
