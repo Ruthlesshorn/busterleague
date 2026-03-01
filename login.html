@@ -204,7 +204,7 @@
             <option value="SF">SF</option>
             <option value="TEX">TEX</option>
             <option value="ATL">ATL</option>
-            <option value="NY">NY</option>
+            <option value="NYY">NYY</option>
             <option value="ADMIN" style="font-weight:700;color:#1e3c72;">⚙ Commissioner</option>
         </select>
     </div>
@@ -222,17 +222,23 @@
     <div class="admin-link" style="display:none;"></div>
 </div>
 
+<script type="importmap">
+{
+  "imports": {
+    "firebase-app":      "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js",
+    "firebase-database": "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js",
+    "firebase-auth":     "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js"
+  },
+  "integrity": {
+    "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js":      "sha384-ztbLCS0Qe+xdkZU1lZIS81/tLEdaq5oHITH180tHGIFYWfg4+nIHfU3sru95qyGR",
+    "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js": "sha384-iW6C8mw21m2dcTAspuOGgmuMJ7Urr91CpdjChgFlmK3mRU2z57x9f6leS7/H89WC",
+    "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js":     "sha384-VDNmEWo1dfspnFEx9zTUaHNhDEdFPVAmGShh01rKx/nWPx5naU4mIL2bK4/O2eB7"
+  }
+}
+</script>
+<script type="module" src="firebase-init.js"></script>
 <script>
-    // Team passwords — change these to whatever you want
-    const PASSWORDS = {
-        PHI: 'phi', SEA: 'sea', BAL: 'bal', CWS: 'cws', PIT: 'pit',
-        NYM: 'nym', KC:  'kc',  BOS: 'bos', STL: 'stl', CIN: 'cin',
-        OAK: 'oak', LA:  'la',  CHC: 'chc', DET: 'det', CLE: 'cle',
-        HOU: 'hou', SF:  'sf',  TEX: 'tex', ATL: 'atl', NY:  'ny',
-        ADMIN: 'commish'
-    };
-
-    // Auto-fill team from previous session
+    // Auto-fill team from previous session (convenience only — auth is handled by Firebase)
     const saved = localStorage.getItem('busterLeagueTeam');
     if (saved) document.getElementById('team-select').value = saved;
 
@@ -240,27 +246,37 @@
         if (e.key === 'Enter') doLogin();
     });
 
-    function doLogin() {
+    async function doLogin() {
         const team = document.getElementById('team-select').value;
         const pass = document.getElementById('password').value.trim();
         const err  = document.getElementById('error-msg');
 
         if (!team) { err.textContent = 'Please select your team.'; err.style.display = 'block'; return; }
-        if (PASSWORDS[team] && pass === PASSWORDS[team]) {
-            localStorage.setItem('busterLeagueTeam', team);
+
+        const auth = window.firebaseAuth;
+        if (!auth) { err.textContent = 'Auth not ready yet, please try again.'; err.style.display = 'block'; return; }
+
+        const email = team.toLowerCase() + '@busterleague.local';
+        try {
+            const cred = await window.firebaseSignInWithEmail(auth, email, pass);
+            const derivedTeam = cred.user.email.split('@')[0].toUpperCase();
+            // Cache team name for convenience (not used for security)
+            localStorage.setItem('busterLeagueTeam', derivedTeam);
             err.style.display = 'none';
-            if (team === 'ADMIN') {
+            if (derivedTeam === 'ADMIN') {
                 window.location.href = 'draft.html';
             } else {
                 window.location.href = 'myteam.html';
             }
-        } else {
+        } catch (e) {
             err.textContent = 'Incorrect password. Please try again.';
             err.style.display = 'block';
             document.getElementById('password').value = '';
             document.getElementById('password').focus();
         }
     }
+    // Make doLogin accessible from the onclick attribute on the button
+    window.doLogin = doLogin;
 </script>
 </body>
 </html>
