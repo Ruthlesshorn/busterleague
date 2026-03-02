@@ -618,7 +618,7 @@
             </div>
         </div>
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;flex-wrap:wrap;">
-            <select id="wl-avail-filter" onchange="renderWatchlist()" style="padding:5px 10px;border-radius:6px;border:1.5px solid #dee2e6;font-size:0.85em;font-family:inherit;cursor:pointer;">
+            <select id="wl-avail-filter" onchange="var pp=document.getElementById('wl-avail-filter-pitcher');if(pp)pp.value=this.value;renderWatchlist()" style="padding:5px 10px;border-radius:6px;border:1.5px solid #dee2e6;font-size:0.85em;font-family:inherit;cursor:pointer;">
                 <option value="all">All players</option>
                 <option value="available">Available only</option>
                 <option value="drafted">Drafted / Keeper only</option>
@@ -664,6 +664,13 @@
                 </div>
                 <div id="col-checkboxes-wl-pitcher" class="col-checkbox-grid"></div>
             </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;flex-wrap:wrap;">
+            <select id="wl-avail-filter-pitcher" onchange="document.getElementById('wl-avail-filter').value=this.value; renderWatchlist()" style="padding:5px 10px;border-radius:6px;border:1.5px solid #dee2e6;font-size:0.85em;font-family:inherit;cursor:pointer;">
+                <option value="all">All players</option>
+                <option value="available">Available only</option>
+                <option value="drafted">Drafted / Keeper only</option>
+            </select>
         </div>
         <div class="wl-pos-filter" id="wl-pos-filter-pitcher">
             <span class="wl-pos-filter-label">Filter:</span>
@@ -2013,9 +2020,11 @@
 
 
         function getFilteredPlayers() {
-            var search      = (document.getElementById('search').value || '').toLowerCase();
-            var availFilter = (document.getElementById('avail-filter') || {value:'available'}).value || 'available';
+            var hitterSearch  = (document.getElementById('search').value || '').toLowerCase();
+            var pitcherSearch = (document.getElementById('search-pitcher').value || '').toLowerCase();
+            var availFilter   = (document.getElementById('avail-filter') || {value:'available'}).value || 'available';
             return players.filter(function(p) {
+                var search = isPitcher(p) ? pitcherSearch : hitterSearch;
                 if (search && (p.First + ' ' + p.Last).toLowerCase().indexOf(search) === -1) return false;
                 if (availFilter === 'available' && getAvailability(p) !== 'available') return false;
                 if (availFilter === 'available' && isDNW(p)) return false;
