@@ -618,7 +618,7 @@
             </div>
         </div>
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;flex-wrap:wrap;">
-            <select id="wl-avail-filter" onchange="var pp=document.getElementById('wl-avail-filter-pitcher');if(pp)pp.value=this.value;renderWatchlist()" style="padding:5px 10px;border-radius:6px;border:1.5px solid #dee2e6;font-size:0.85em;font-family:inherit;cursor:pointer;">
+            <select id="wl-avail-filter" onchange="renderWatchlist()" style="padding:5px 10px;border-radius:6px;border:1.5px solid #dee2e6;font-size:0.85em;font-family:inherit;cursor:pointer;">
                 <option value="all">All players</option>
                 <option value="available">Available only</option>
                 <option value="drafted">Drafted / Keeper only</option>
@@ -666,7 +666,7 @@
             </div>
         </div>
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;flex-wrap:wrap;">
-            <select id="wl-avail-filter-pitcher" onchange="document.getElementById('wl-avail-filter').value=this.value; renderWatchlist()" style="padding:5px 10px;border-radius:6px;border:1.5px solid #dee2e6;font-size:0.85em;font-family:inherit;cursor:pointer;">
+            <select id="wl-avail-filter-pitcher" onchange="renderWatchlist()" style="padding:5px 10px;border-radius:6px;border:1.5px solid #dee2e6;font-size:0.85em;font-family:inherit;cursor:pointer;">
                 <option value="all">All players</option>
                 <option value="available">Available only</option>
                 <option value="drafted">Drafted / Keeper only</option>
@@ -1013,7 +1013,7 @@
             <input type="text" id="search-pitcher" placeholder="Search by name…"
                 oninput="renderPlayerSearch()">
             <select id="avail-filter-pitcher"
-                onchange="document.getElementById('avail-filter').value=this.value; renderPlayerSearch()">
+                onchange="renderPlayerSearch()">
                 <option value="available">Available only</option>
                 <option value="all">All players</option>
                 <option value="dnw">Do Not Want only</option>
@@ -1530,9 +1530,12 @@
             var wl = getWatchlist();
             var totalCount = wl.length;
             var watched = players.filter(function(p) { return wl.indexOf(watchKey(p)) !== -1; });
-            var availEl = document.getElementById('wl-avail-filter');
-            var availFilter = availEl ? availEl.value : 'all';
+            var hitterAvailEl  = document.getElementById('wl-avail-filter');
+            var pitcherAvailEl = document.getElementById('wl-avail-filter-pitcher');
+            var hitterAvail    = hitterAvailEl  ? hitterAvailEl.value  : 'all';
+            var pitcherAvail   = pitcherAvailEl ? pitcherAvailEl.value : 'all';
             function matchesAvail(p) {
+                var availFilter = isPitcher(p) ? pitcherAvail : hitterAvail;
                 if (availFilter === 'available') return getAvailability(p) === 'available' && !isDNW(p);
                 if (availFilter === 'drafted')   return getAvailability(p) !== 'available';
                 return true;
@@ -2020,11 +2023,13 @@
 
 
         function getFilteredPlayers() {
-            var hitterSearch  = (document.getElementById('search').value || '').toLowerCase();
-            var pitcherSearch = (document.getElementById('search-pitcher').value || '').toLowerCase();
-            var availFilter   = (document.getElementById('avail-filter') || {value:'available'}).value || 'available';
+            var hitterSearch   = (document.getElementById('search').value || '').toLowerCase();
+            var pitcherSearch  = (document.getElementById('search-pitcher').value || '').toLowerCase();
+            var hitterAvail    = (document.getElementById('avail-filter') || {value:'available'}).value || 'available';
+            var pitcherAvail   = (document.getElementById('avail-filter-pitcher') || {value:'available'}).value || 'available';
             return players.filter(function(p) {
-                var search = isPitcher(p) ? pitcherSearch : hitterSearch;
+                var search      = isPitcher(p) ? pitcherSearch : hitterSearch;
+                var availFilter = isPitcher(p) ? pitcherAvail  : hitterAvail;
                 if (search && (p.First + ' ' + p.Last).toLowerCase().indexOf(search) === -1) return false;
                 if (availFilter === 'available' && getAvailability(p) !== 'available') return false;
                 if (availFilter === 'available' && isDNW(p)) return false;
@@ -2985,8 +2990,6 @@
                 renderPlayerSearch();
             });
             document.getElementById('avail-filter').addEventListener('change', function() {
-                var pf = document.getElementById('avail-filter-pitcher');
-                if (pf) pf.value = this.value;
                 renderPlayerSearch();
             });
 
