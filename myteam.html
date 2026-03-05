@@ -44,6 +44,18 @@
         }
         .card h2 span { font-size: 1.1em; font-weight: 600; color: #6c757d; letter-spacing: 0; text-transform: none; }
 
+        /* Collapsible grid cards */
+        .card-collapse-btn {
+            background: none; border: none; cursor: pointer; color: #6c757d;
+            font-size: 1em; padding: 0 2px; flex-shrink: 0; transition: transform 0.2s;
+            line-height: 1; margin-right: 6px;
+        }
+        .card-collapse-btn:hover { color: #1e3c72; }
+        .card.card-collapsed .card-collapse-btn { transform: rotate(-90deg); }
+        .card.card-collapsed .card-body { display: none; }
+        .card.card-collapsed h2 { margin-bottom: 0; padding-bottom: 0; border-bottom: none; }
+        .card h2 .card-title-left { display: flex; align-items: center; gap: 0; }
+
         /* Roster table */
         .mini-table { width: 100%; border-collapse: collapse; font-size: 0.88em; }
         .mini-table thead { background: #1e3c72; color: white; }
@@ -286,7 +298,7 @@
         }
 
 
-        /* â”€â”€ Rankings â”€â”€ */
+        /* ── Rankings ── */
         #rankings-panel {
             background: #f8f9fa;
             border: 2px solid #1e3c72;
@@ -466,7 +478,7 @@
             font-style: italic;
         }
 
-        /* â”€â”€ Do Not Want â”€â”€ */
+        /* ── Do Not Want ── */
         .dnw-btn {
             padding: 4px 10px;
             border-radius: 20px;
@@ -560,18 +572,33 @@
 
     <!-- Top row: Position Requirements + Draft Picks side by side -->
     <div class="grid">
-        <div class="card">
-            <h2>Position Requirements</h2>
-            <div class="needs-grid" id="needs-grid"></div>
-            <h2 style="margin-top:20px;">Position Breakdown</h2>
-            <div class="pos-breakdown" id="pos-breakdown"></div>
+        <div class="card" id="card-position-requirements">
+            <h2>
+                <span class="card-title-left">
+                    <button class="card-collapse-btn" title="Collapse" onclick="toggleGridCard('card-position-requirements')">▾</button>
+                    Position Requirements
+                </span>
+            </h2>
+            <div class="card-body">
+                <div class="needs-grid" id="needs-grid"></div>
+                <h2 style="margin-top:20px;border-top:none;">Position Breakdown</h2>
+                <div class="pos-breakdown" id="pos-breakdown"></div>
+            </div>
         </div>
-        <div class="card">
-            <h2 style="margin-bottom:12px;">Draft Picks <span id="picks-label"></span></h2>
-            <table class="mini-table">
-                <thead><tr><th>Round</th><th>Pick #</th><th>Player</th><th>Pos</th></tr></thead>
-                <tbody id="my-picks-tbody"></tbody>
-            </table>
+        <div class="card" id="card-draft-picks">
+            <h2>
+                <span class="card-title-left">
+                    <button class="card-collapse-btn" title="Collapse" onclick="toggleGridCard('card-draft-picks')">▾</button>
+                    Draft Picks
+                </span>
+                <span id="picks-label"></span>
+            </h2>
+            <div class="card-body">
+                <table class="mini-table">
+                    <thead><tr><th>Round</th><th>Pick #</th><th>Player</th><th>Pos</th></tr></thead>
+                    <tbody id="my-picks-tbody"></tbody>
+                </table>
+            </div>
         </div>
     </div>
 
@@ -1263,11 +1290,30 @@
             document.getElementById('team-heading').textContent = '⚾ ' + team + ' Dashboard';
         }
 
+        // ── Grid card collapse (Position Requirements & Draft Picks) ──
+        function toggleGridCard(cardId) {
+            var card = document.getElementById(cardId);
+            if (!card) return;
+            card.classList.toggle('card-collapsed');
+            // Persist state
+            try {
+                var state = JSON.parse(localStorage.getItem('gridCardCollapsed_' + getMyTeam()) || '{}');
+                state[cardId] = card.classList.contains('card-collapsed');
+                localStorage.setItem('gridCardCollapsed_' + getMyTeam(), JSON.stringify(state));
+            } catch(e) {}
+        }
+
+        function loadGridCardStates() {
+            try {
+                var state = JSON.parse(localStorage.getItem('gridCardCollapsed_' + getMyTeam()) || '{}');
+                Object.keys(state).forEach(function(id) {
+                    var card = document.getElementById(id);
+                    if (card && state[id]) card.classList.add('card-collapsed');
+                });
+            } catch(e) {}
+        }
+
         // Render: Roster
-
-
-
-
         function getRosterRows() {
             var team = getMyTeam().toUpperCase();
             var keepers = players.filter(function(p) { return (p.Team || '').toUpperCase() === team; });
@@ -1284,9 +1330,10 @@
             var type    = theadId.indexOf('hitter') !== -1 ? 'hitter' : 'pitcher';
             var hidden  = type === 'hitter' ? hiddenRosterHitterCols : hiddenRosterPitcherCols;
             var visCols = getRosterOrderedCols(type, hidden);
-            // Prepend always-visible columns
-            var always = cols.filter(function(c) { return c.key === 'name' || c.key === 'P'; });
-            visCols = always.concat(visCols);
+            // Update rank column labels from current rNames
+            visCols.forEach(function(c) {
+                if (c.rankCol !== undefined) c.label = rNames[c.rankCol] || ('Rank ' + (c.rankCol + 1));
+            });
 
             thead.innerHTML = '<tr>' + visCols.map(function(c) {
                 return '<th>' + c.label + '</th>';
@@ -1299,15 +1346,22 @@
 
             tbody.innerHTML = rows.map(function(r) {
                 var p = r.player;
-                var pos = getPlayerPosition(p);
                 var cells = visCols.map(function(c) {
                     if (c.key === 'name') {
                         var badge = r.type === 'keeper'
                             ? ' <span class="k-badge">K</span>'
                             : ' <span class="d-badge">D</span>';
-                        return '<td style="font-weight:600">' + escapeHtml(p.First) + ' ' + escapeHtml(p.Last) + badge + '</td>';
+                        return '<td style="font-weight:600;white-space:nowrap">' + escapeHtml(p.First) + ' ' + escapeHtml(p.Last) + badge + '</td>';
                     }
-                    if (c.key === 'P') return '<td><span class="pos-badge">' + getPosDisplay(p) + '</span></td>';
+                    if (c.key === 'P')      return '<td><span class="pos-badge">' + getPosDisplay(p) + '</span></td>';
+                    if (c.key === 'watch')  return '<td>' + watchBtn(p) + '</td>';
+                    if (c.key === 'status') {
+                        var badge2 = r.type === 'keeper'
+                            ? '<span style="color:#0c5460;">Keeper</span>'
+                            : '<span style="color:#6c757d;">Drafted</span>';
+                        return '<td>' + badge2 + '</td>';
+                    }
+                    if (c.rankCol !== undefined) return rankBadge(getPlayerRank(p, c.rankCol), c.rankCol);
                     if (c.key === 'Age')    return '<td>' + (p.Age || '—') + '</td>';
                     if (c.key === 'T')      return '<td>' + (p.T || '—') + '</td>';
                     if (c.key === 'B')      return '<td>' + (p.B || '—') + '</td>';
@@ -1318,11 +1372,6 @@
                         var rv = p[c.key];
                         if (!rv) return '<td style="color:#ccc">—</td>';
                         return '<td style="background:' + gradeBg(rv) + ';color:' + gradeColor(rv) + ';font-weight:600;white-space:nowrap;font-size:0.82em">' + fmtGrade(rv) + '</td>';
-                    }
-                    if (c.frating) {
-                        var rv = p[c.key];
-                        if (!rv) return '<td style="color:#ccc">—</td>';
-                        return '<td style="background:' + gradeBg(rv) + ';color:' + gradeColor(rv) + ';font-weight:600;white-space:nowrap;font-size:0.85em">' + fmtGrade(rv) + '</td>';
                     }
                     var val = fmt(p[c.key], c.dec);
                     return '<td style="color:' + (val === '—' ? '#ccc' : '#333') + '">' + val + '</td>';
@@ -1913,8 +1962,9 @@
 
 
 
-        // Roster column sets — exclude action/status columns that don't apply to rostered players
-        var _rosterExclude = ['watch', 'dnw', 'status'];
+        // Roster column sets — exclude only the action columns that truly don't apply to rostered players
+        // (watch button and DNW button are action-only; name/P/status/ranks ARE useful on roster view)
+        var _rosterExclude = ['dnw'];
         var HITTER_COLS  = ALL_HITTER_COLS.filter(function(c)  { return _rosterExclude.indexOf(c.key) === -1; });
         var PITCHER_COLS = ALL_PITCHER_COLS.filter(function(c) { return _rosterExclude.indexOf(c.key) === -1; });
 
@@ -2080,7 +2130,7 @@
 
 
 
-        // â”€â”€ Roster column picker â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        // ── Roster column picker ──────────────────────────────────────
         var hiddenRosterHitterCols  = new Set();
         var hiddenRosterPitcherCols = new Set();
         var rosterColOrderHitter  = null;
@@ -2157,20 +2207,19 @@
         function getRosterOrderedCols(type, hiddenSet) {
             var allCols = type === 'hitter' ? HITTER_COLS : PITCHER_COLS;
             var order   = type === 'hitter' ? rosterColOrderHitter : rosterColOrderPitcher;
-            var always = ['name', 'P'];
-            var orderable = allCols.filter(function(c) { return always.indexOf(c.key) === -1; });
 
             if (!order) {
-                return orderable.filter(function(c) { return !hiddenSet.has(c.key); });
+                return allCols.filter(function(c) { return !hiddenSet.has(c.key); });
             }
 
             var ordered = [];
             order.forEach(function(key) {
-                var col = orderable.find(function(c) { return c.key === key; });
+                var col = allCols.find(function(c) { return c.key === key; });
                 if (col && !hiddenSet.has(key)) ordered.push(col);
             });
 
-            orderable.forEach(function(c) {
+            // append any cols not yet in order (e.g. newly added cols)
+            allCols.forEach(function(c) {
                 if (order.indexOf(c.key) === -1 && !hiddenSet.has(c.key)) ordered.push(c);
             });
 
@@ -2204,12 +2253,10 @@
             if (rosterDragSrcKey === targetKey || rosterDragSrcType !== targetType) return;
 
             var allCols = targetType === 'hitter' ? HITTER_COLS : PITCHER_COLS;
-            var always = ['name', 'P'];
-            var orderable = allCols.filter(function(c) { return always.indexOf(c.key) === -1; });
             var order = targetType === 'hitter' ? rosterColOrderHitter : rosterColOrderPitcher;
 
             if (!order) {
-                order = orderable.map(function(c) { return c.key; });
+                order = allCols.map(function(c) { return c.key; });
             }
 
             var srcIdx = order.indexOf(rosterDragSrcKey);
@@ -2240,21 +2287,19 @@
         function buildRosterColCheckboxes(type) {
             var cols   = type === 'hitter' ? HITTER_COLS : PITCHER_COLS;
             var hidden = type === 'hitter' ? hiddenRosterHitterCols : hiddenRosterPitcherCols;
-            var always = ['name', 'P'];
             var inReorderMode = rosterReorderMode[type];
 
             if (inReorderMode) {
                 var order = type === 'hitter' ? rosterColOrderHitter : rosterColOrderPitcher;
-                var orderable = cols.filter(function(c) { return always.indexOf(c.key) === -1; });
 
                 if (!order) {
-                    order = orderable.map(function(c) { return c.key; });
+                    order = cols.map(function(c) { return c.key; });
                     if (type === 'hitter') rosterColOrderHitter = order;
                     else rosterColOrderPitcher = order;
                 }
 
                 var chips = order.map(function(key) {
-                    var col = orderable.find(function(c) { return c.key === key; });
+                    var col = cols.find(function(c) { return c.key === key; });
                     if (!col) return '';
                     var isHidden = hidden.has(key);
                     var eyeIcon = isHidden ? '👁️' : '👁';
@@ -2270,7 +2315,6 @@
                 document.getElementById('col-checkboxes-roster-' + type).innerHTML = chips;
             } else {
                 document.getElementById('col-checkboxes-roster-' + type).innerHTML = cols
-                    .filter(function(c) { return always.indexOf(c.key) === -1; })
                     .map(function(c) {
                         var checked = !hidden.has(c.key);
                         return '<label class="' + (checked ? 'checked' : '') + '">' + '<input type="checkbox" ' + (checked ? 'checked' : '') + ' data-key="' + c.key + '" data-type="' + type + '" onchange="toggleRosterCol(this)">' + c.label + '</label>';
@@ -2295,8 +2339,8 @@
         function selectNoneRosterCols(type) {
             var cols   = type === 'hitter' ? HITTER_COLS : PITCHER_COLS;
             var hidden = type === 'hitter' ? hiddenRosterHitterCols : hiddenRosterPitcherCols;
-            var always = ['name', 'P'];
-            cols.forEach(function(c) { if (always.indexOf(c.key) === -1) hidden.add(c.key); });
+            var protectMin = ['name', 'P']; // keep at least player identity visible
+            cols.forEach(function(c) { if (protectMin.indexOf(c.key) === -1) hidden.add(c.key); });
             buildRosterColCheckboxes(type); renderRosterTable();
         }
 
@@ -2313,12 +2357,9 @@
         }
 
 
-
-
-
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // ══════════════════════════════════════════════════════════════
         // RANKINGS  (3 lists, per-team localStorage)
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // ══════════════════════════════════════════════════════════════
         var rLists = [
             {data:{},order:'asc'}, {data:{},order:'asc'}, {data:{},order:'asc'},  // Hitter ranks 0-2
             {data:{},order:'asc'}, {data:{},order:'asc'}, {data:{},order:'asc'}   // Pitcher ranks 3-5
@@ -2377,10 +2418,6 @@
                 if (pane) pane.style.display = j === idx ? 'block' : 'none';
             }
         }
-
-
-
-
 
 
         function buildColMap(listIdx, cols) {
@@ -2526,7 +2563,7 @@
 
         function handleRankingsFile(file, listIdx) {
             if (!file) return;
-            setRStatus(listIdx, 'Reading file\u2026', 'info');
+            setRStatus(listIdx, 'Reading file…', 'info');
             var reader = new FileReader();
             reader.onload = function(e) {
                 try {
@@ -2538,7 +2575,7 @@
                     buildColMap(listIdx, Object.keys(rows[0]));
                     document.getElementById('rlist-dz-'  + listIdx).style.display = 'none';
                     document.getElementById('rlist-map-' + listIdx).style.display = 'block';
-                    setRStatus(listIdx, 'File read \u2014 map columns then click Import.', 'info');
+                    setRStatus(listIdx, 'File read — map columns then click Import.', 'info');
                 } catch(err) { setRStatus(listIdx, 'Error: ' + err.message, 'error'); }
             };
             if (file.name.toLowerCase().endsWith('.csv')) reader.readAsText(file);
@@ -2602,7 +2639,7 @@
         }
 
 
-        // â”€â”€ Watchlist column picker â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        // ── Watchlist column picker ──────────────────────────────────────
         function wlColPrefsKey(type) { return 'wlColPrefs_' + type + '_' + (getMyTeam() || 'x'); }
         function wlColOrderKey(type)  { return 'wlColOrder_' + type + '_' + (getMyTeam() || 'x'); }
 
@@ -2927,7 +2964,7 @@
             return searchActivePosFiltersPitcher.has(pos);
         }
 
-        // â”€â”€ Do Not Want â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        // ── Do Not Want ──────────────────────────────────────────────────────────
         function getDNWList() {
             try { return JSON.parse(localStorage.getItem('dnw_' + getMyTeam()) || '[]'); }
             catch(e) { return []; }
@@ -2984,6 +3021,7 @@
             loadRosterColPrefs();
             loadRankings();
             loadWLColPrefs();
+            loadGridCardStates();
             renderAll();
 
             document.getElementById('search').addEventListener('input', function() {
