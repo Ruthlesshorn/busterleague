@@ -50,8 +50,8 @@ function toggleSearchReorder(type) {
     searchReorderMode[type] = !searchReorderMode[type];
     var btn = document.getElementById('search-reorder-btn-' + type);
     if (btn) {
-        btn.style.background = searchReorderMode[type] ? '#1e3c72' : '#e8eef8';
-        btn.style.color      = searchReorderMode[type] ? 'white'   : '#1e3c72';
+        btn.style.background = searchReorderMode[type] ? 'var(--team-secondary)' : 'var(--team-secondary-subtle)';
+        btn.style.color      = searchReorderMode[type] ? 'white'   : 'var(--team-secondary)';
         btn.textContent      = searchReorderMode[type] ? '\u2713 Done' : '\u2195 Reorder';
     }
     buildSearchColCheckboxes(type);
@@ -233,9 +233,9 @@ function toggleRosterReorder(type) {
         btn.style.color       = 'white';
     } else {
         btn.textContent = '⇅ Reorder';
-        btn.style.background  = '#e8eef8';
-        btn.style.borderColor = '#1e3c72';
-        btn.style.color       = '#1e3c72';
+        btn.style.background  = 'var(--team-secondary-subtle)';
+        btn.style.borderColor = 'var(--team-secondary)';
+        btn.style.color       = 'var(--team-secondary)';
     }
     buildRosterColCheckboxes(type);
 }
@@ -416,8 +416,8 @@ function toggleWLReorder(type) {
     wlReorderMode[type] = !wlReorderMode[type];
     var btn = document.getElementById('wl-reorder-btn-' + type);
     if (btn) {
-        btn.style.background = wlReorderMode[type] ? '#1e3c72' : '#e8eef8';
-        btn.style.color      = wlReorderMode[type] ? 'white'   : '#1e3c72';
+        btn.style.background = wlReorderMode[type] ? 'var(--team-secondary)' : 'var(--team-secondary-subtle)';
+        btn.style.color      = wlReorderMode[type] ? 'white'   : 'var(--team-secondary)';
         btn.textContent      = wlReorderMode[type] ? '\u2713 Done' : '\u2195 Reorder';
     }
     buildWLColCheckboxes(type);
