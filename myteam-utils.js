@@ -137,7 +137,7 @@ async function submitChangePassword() {
     function showMsg(text, isError) {
         msg.textContent = text;
         msg.style.background = isError ? '#fff5f5' : '#f0fff4';
-        msg.style.color      = isError ? '#c41e3a' : '#276749';
+        msg.style.color      = isError ? 'var(--team-primary)' : '#276749';
         msg.style.border     = isError ? '1px solid #f8d7da' : '1px solid #c6f6d5';
         msg.style.display    = 'block';
     }

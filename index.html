@@ -5,16 +5,23 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Buster League Draft 2026 - Dashboard</title>
     <style>
+        :root {
+            --team-primary: #C41E3A;
+            --team-primary-light: #d94e59;
+            --team-secondary: #0C2340;
+            --team-secondary-light: #173457;
+            --team-secondary-subtle: #e5e7f0;
+        }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            background: linear-gradient(135deg, var(--team-secondary) 0%, var(--team-secondary-light) 100%);
             color: #333;
             min-height: 100vh;
         }
         .container { max-width: 1600px; margin: 0 auto; padding: 20px; }
         .header {
-            background: linear-gradient(135deg, #c41e3a 0%, #d94e59 100%);
+            background: linear-gradient(135deg, var(--team-primary) 0%, var(--team-primary-light) 100%);
             color: white;
             padding: 30px;
             border-radius: 12px;
@@ -28,7 +35,7 @@
         .nav-button {
             padding: 12px 24px;
             background: white;
-            color: #c41e3a;
+            color: var(--team-primary);
             border: none;
             border-radius: 8px;
             font-weight: 700;
@@ -58,7 +65,7 @@
             flex-wrap: wrap;
             gap: 15px;
         }
-        .current-pick { font-size: 1.5em; font-weight: 700; color: #c41e3a; }
+        .current-pick { font-size: 1.5em; font-weight: 700; color: var(--team-primary); }
         .pick-info { font-size: 1.1em; color: #6c757d; }
         .draft-history {
             background: white;
@@ -67,7 +74,7 @@
             margin-bottom: 20px;
             box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
         }
-        .draft-history h2 { margin-bottom: 15px; color: #1e3c72; }
+        .draft-history h2 { margin-bottom: 15px; color: var(--team-secondary); }
         .controls {
             display: flex;
             gap: 15px;
@@ -90,10 +97,10 @@
             cursor: pointer;
             transition: all 0.3s;
         }
-        select:hover { border-color: #c41e3a; }
+        select:hover { border-color: var(--team-primary); }
         select:focus {
             outline: none;
-            border-color: #c41e3a;
+            border-color: var(--team-primary);
             box-shadow: 0 0 0 3px rgba(196, 30, 58, 0.1);
         }
         .draft-picks-grid {
@@ -105,10 +112,10 @@
             padding: 10px;
             background: #f8f9fa;
             border-radius: 6px;
-            border-left: 4px solid #c41e3a;
+            border-left: 4px solid var(--team-primary);
             font-size: 0.9em;
         }
-        .pick-number { font-weight: 700; color: #c41e3a; }
+        .pick-number { font-weight: 700; color: var(--team-primary); }
         .undo-button {
             padding: 10px 20px;
             background: #dc3545;
@@ -137,10 +144,10 @@
         }
 
         .team-item.current-turn {
-            background: #c41e3a;
+            background: var(--team-primary);
             color: white;
             font-weight: 700;
-            border-color: #c41e3a;
+            border-color: var(--team-primary);
             
             font-size: 1.1em;
         }
@@ -167,7 +174,7 @@
         .dropdown-item {
             padding: 9px 14px;
             text-decoration: none;
-            color: #1e3c72;
+            color: var(--team-secondary);
             font-weight: 700;
             font-size: 0.9em;
             border-radius: 6px;
@@ -175,7 +182,7 @@
             text-align: center;
             display: block;
         }
-        .dropdown-item:hover { background: #c41e3a; color: white; }
+        .dropdown-item:hover { background: var(--team-primary); color: white; }
 
 
         .avail-card {
@@ -185,11 +192,11 @@
             border: 1px solid #e9ecef;
             transition: border-color 0.2s;
         }
-        .avail-card:hover { border-color: #c41e3a; }
+        .avail-card:hover { border-color: var(--team-primary); }
         .avail-pos {
             font-weight: 800;
             font-size: 0.85em;
-            color: #1e3c72;
+            color: var(--team-secondary);
             letter-spacing: 1px;
             text-transform: uppercase;
             margin-bottom: 6px;
@@ -213,6 +220,7 @@
             transition: width 0.4s ease;
         }
     </style>
+    <script>(function(){try{var c=JSON.parse(localStorage.getItem('busterLeagueColors'));if(c){var s=document.documentElement.style;s.setProperty('--team-primary',c.p);s.setProperty('--team-primary-light',c.pl);s.setProperty('--team-secondary',c.s);s.setProperty('--team-secondary-light',c.sl);s.setProperty('--team-secondary-subtle',c.ss);}}catch(e){}})();</script>
     <!-- Firebase Configuration -->
     <script type="importmap">
     {
@@ -240,6 +248,7 @@
             </div>
             <div style="display: flex; gap: 10px; align-items: center;">
                 <a href="draft.html" class="nav-button" id="draft-board-btn" style="display:none;">Draft Board →</a>
+                <a href="myteam.html" class="nav-button" id="myteam-btn" style="display:none;">My Team →</a>
                 <button class="nav-button secondary" id="signout-btn" style="display:none;" onclick="doSignOut()">Sign Out</button>
                 <a href="login.html" class="nav-button secondary" id="login-btn">Team Login</a>
                 </div>
@@ -261,7 +270,7 @@
 
             <!-- Left: Draft Order -->
             <div style="background: white; border-radius: 12px; padding: 16px; box-shadow: 0 4px 16px rgba(0,0,0,0.2); position: sticky; top: 20px;">
-                <h2 style="margin-bottom: 12px; color: #1e3c72; font-size: 1em; font-weight: 700; border-bottom: 2px solid #c41e3a; padding-bottom: 8px; text-transform: uppercase; letter-spacing: 1px;">Draft Order</h2>
+                <h2 style="margin-bottom: 12px; color: var(--team-secondary); font-size: 1em; font-weight: 700; border-bottom: 2px solid var(--team-primary); padding-bottom: 8px; text-transform: uppercase; letter-spacing: 1px;">Draft Order</h2>
                 <div id="draft-order-list"></div>
             </div>
 
@@ -313,6 +322,40 @@
         let players = [];
         let draftedPlayers = [];
         let currentPickIndex = 0;
+
+        const TEAM_COLORS = {
+            PHI: { p:'#E81828', pl:'#f04050', s:'#002D72', sl:'#003fa0', ss:'#e6e8f2' },
+            SEA: { p:'#005C5C', pl:'#007a7a', s:'#0C2C56', sl:'#173f78', ss:'#e5eaef' },
+            BAL: { p:'#DF4601', pl:'#f05a1a', s:'#1a1a1a', sl:'#2d2d2d', ss:'#e8e8e8' },
+            CWS: { p:'#3d3a31', pl:'#504d42', s:'#27251F', sl:'#3a3730', ss:'#eaeae8' },
+            PIT: { p:'#b88010', pl:'#c89020', s:'#27251F', sl:'#3a3730', ss:'#eaeae8' },
+            NYM: { p:'#FF5910', pl:'#ff7a40', s:'#002D72', sl:'#003fa0', ss:'#e6e8f2' },
+            KC:  { p:'#8a6030', pl:'#9a7040', s:'#004687', sl:'#005aaa', ss:'#e5eaf5' },
+            BOS: { p:'#BD3039', pl:'#d44552', s:'#0D2B56', sl:'#183d78', ss:'#e5e8ef' },
+            STL: { p:'#C41E3A', pl:'#d94e59', s:'#0C2340', sl:'#173457', ss:'#e5e7f0' },
+            CIN: { p:'#C6011F', pl:'#d62535', s:'#1a1a1a', sl:'#2d2d2d', ss:'#e8e8e8' },
+            OAK: { p:'#a07a00', pl:'#b08a10', s:'#003831', sl:'#004d43', ss:'#e0efed' },
+            LA:  { p:'#005A9C', pl:'#1a70b8', s:'#1c1c1c', sl:'#2d2d2d', ss:'#e8e8e8' },
+            CHC: { p:'#CC3433', pl:'#de4d4c', s:'#0E3386', sl:'#1945a8', ss:'#e6e9f5' },
+            DET: { p:'#FA4616', pl:'#fb6438', s:'#0C2340', sl:'#173457', ss:'#e5e7f0' },
+            CLE: { p:'#E31937', pl:'#f03550', s:'#00385D', sl:'#004d7e', ss:'#e0e8ef' },
+            HOU: { p:'#EB6E1F', pl:'#f48840', s:'#002D62', sl:'#003e87', ss:'#e5e8f2' },
+            SF:  { p:'#FD5A1E', pl:'#fd7545', s:'#27251F', sl:'#3a3730', ss:'#eaeae8' },
+            TEX: { p:'#C0111F', pl:'#d42535', s:'#003278', sl:'#003e96', ss:'#e5e8f4' },
+            ATL: { p:'#CE1141', pl:'#e02558', s:'#13274F', sl:'#1e3a72', ss:'#e6e9f0' },
+            NYY: { p:'#003087', pl:'#1a4aad', s:'#1a1a2e', sl:'#252540', ss:'#eaeaee' },
+        };
+
+        function applyTeamColors(team) {
+            const c = TEAM_COLORS[team] || TEAM_COLORS['STL'];
+            const root = document.documentElement;
+            root.style.setProperty('--team-primary', c.p);
+            root.style.setProperty('--team-primary-light', c.pl);
+            root.style.setProperty('--team-secondary', c.s);
+            root.style.setProperty('--team-secondary-light', c.sl);
+            root.style.setProperty('--team-secondary-subtle', c.ss);
+            try { localStorage.setItem('busterLeagueColors', JSON.stringify(c)); } catch(e) {}
+        }
 
         function escapeHtml(s) {
             return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;')
@@ -417,14 +460,14 @@
                 
                 html += `
                     <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; border: 2px solid #dee2e6;">
-                        <h3 style="color: #1e3c72; margin-bottom: 10px; border-bottom: 2px solid #c41e3a; padding-bottom: 8px;">
+                        <h3 style="color: var(--team-secondary); margin-bottom: 10px; border-bottom: 2px solid var(--team-primary); padding-bottom: 8px;">
                             ${team} (${totalPlayers} players)
                         </h3>
                 `;
                 
                 // Position requirements display
                 html += '<div style="background: white; padding: 10px; border-radius: 6px; margin-bottom: 15px; border: 1px solid #dee2e6;">';
-                html += '<strong style="color: #1e3c72; font-size: 0.9em; display: block; margin-bottom: 8px;">POSITION NEEDS:</strong>';
+                html += '<strong style="color: var(--team-secondary); font-size: 0.9em; display: block; margin-bottom: 8px;">POSITION NEEDS:</strong>';
                 html += '<div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; font-size: 0.85em;">';
                 
                 // Group positions for display
@@ -460,7 +503,7 @@
                 
                 // Position summary box
                 html += '<div style="background: white; padding: 10px; border-radius: 6px; margin-bottom: 15px; border: 1px solid #dee2e6;">';
-                html += '<strong style="color: #1e3c72; font-size: 0.9em; display: block; margin-bottom: 8px;">POSITION BREAKDOWN:</strong>';
+                html += '<strong style="color: var(--team-secondary); font-size: 0.9em; display: block; margin-bottom: 8px;">POSITION BREAKDOWN:</strong>';
                 html += '<div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; font-size: 0.85em;">';
                 
                 // Count all positions (keys are uppercase)
@@ -470,7 +513,7 @@
                     const count = roster.positionCounts[pos] || 0;
                     html += `<div style="padding: 3px 0;">
                         <span style="font-weight: 600;">${pos}:</span> 
-                        <span style="color: #1e3c72; font-weight: 700;">${count}</span>
+                        <span style="color: var(--team-secondary); font-weight: 700;">${count}</span>
                     </div>`;
                 });
                 
@@ -495,7 +538,7 @@
                         
                         html += `<div style="padding: 5px 0; font-size: 0.9em; border-bottom: 1px solid #e9ecef;">
                             ${escapeHtml(item.player.First)} ${escapeHtml(item.player.Last)}
-                            <span style="color: #c41e3a; font-weight: 600;">${escapeHtml(posDisplay)}</span>
+                            <span style="color: var(--team-primary); font-weight: 600;">${escapeHtml(posDisplay)}</span>
                             ${typeLabel}
                         </div>`;
                     });
@@ -557,6 +600,7 @@
             if (window.firebaseAuth && window.firebaseSignOut) {
                 window.firebaseSignOut(window.firebaseAuth).finally(function() {
                     localStorage.removeItem('busterLeagueTeam');
+                    localStorage.removeItem('busterLeagueColors');
                     window.location.href = 'login.html';
                 });
             } else {
@@ -589,7 +633,7 @@
 
             const posOrder = ['SP','RP','C','1B','2B','3B','SS','LF','CF','RF','DH'];
             const colors = {
-                SP: '#2a5298', RP: '#1e3c72', C: '#c41e3a',
+                SP: 'var(--team-secondary-light)', RP: 'var(--team-secondary)', C: 'var(--team-primary)',
                 '1B': '#28a745', '2B': '#20c997', '3B': '#17a2b8', SS: '#6f42c1',
                 LF: '#fd7e14', CF: '#e83e8c', RF: '#dc3545', DH: '#6c757d'
             };
@@ -613,7 +657,7 @@
 
             const posOrder = ['SP','RP','C','1B','2B','3B','SS','LF','CF','RF','DH'];
             const colors = {
-                SP: '#2a5298', RP: '#1e3c72', C: '#c41e3a',
+                SP: 'var(--team-secondary-light)', RP: 'var(--team-secondary)', C: 'var(--team-primary)',
                 '1B': '#28a745', '2B': '#20c997', '3B': '#17a2b8', SS: '#6f42c1',
                 LF: '#fd7e14', CF: '#e83e8c', RF: '#dc3545', DH: '#6c757d'
             };
@@ -666,12 +710,19 @@
             const user = await new Promise(resolve =>
                 window.firebaseOnAuthStateChanged(window.firebaseAuth, resolve));
             const draftBtn   = document.getElementById('draft-board-btn');
+            const myTeamBtn  = document.getElementById('myteam-btn');
             const signoutBtn = document.getElementById('signout-btn');
             const loginBtn   = document.getElementById('login-btn');
             if (user) {
+                const team = user.email.split('@')[0].toUpperCase();
+                applyTeamColors(team);
                 if (signoutBtn) signoutBtn.style.display = '';
                 if (loginBtn)   loginBtn.style.display  = 'none';
-                if (draftBtn && user.email === 'admin@busterleague.local') draftBtn.style.display = '';
+                if (user.email === 'admin@busterleague.local') {
+                    if (draftBtn) draftBtn.style.display = '';
+                } else {
+                    if (myTeamBtn) myTeamBtn.style.display = '';
+                }
             }
 
             loadDraftState();
