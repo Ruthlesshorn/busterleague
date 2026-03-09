@@ -12,6 +12,7 @@
         }
 
         body {
+            visibility: hidden;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
             color: #333;
@@ -412,6 +413,7 @@
     </script>
     <script type="module" src="firebase-init.js"></script>
     <script src="draft-utils.js"></script>
+    <script src="team-colors.js"></script>
 </head>
 <body>
     <div class="container">
@@ -1176,8 +1178,10 @@
                             <a href="login.html" style="display:inline-block;background:#c41e3a;color:white;padding:12px 28px;border-radius:8px;font-weight:700;text-decoration:none;font-size:1em;">Go to Login →</a>
                         </div>
                     </div>`;
+                document.body.style.visibility = 'visible';
                 return;
             }
+            document.body.style.visibility = 'visible';
             players = await fetch('players.json').then(r => r.json());
             loadDraftState();
             // Populate team roster dropdown

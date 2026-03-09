@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Buster League — Player Data Converter</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body {
+      font-family: system-ui, sans-serif;
+      max-width: 640px;
+      margin: 60px auto;
+      padding: 0 24px;
+      color: #1a1a1a;
+    }
+    h1 { font-size: 1.4rem; margin-bottom: 4px; }
+    p.subtitle { color: #555; margin-top: 0; margin-bottom: 32px; }
+    .field { margin-bottom: 20px; }
+    label { display: block; font-weight: 600; margin-bottom: 6px; }
+    input[type="file"] { display: none; }
+    .file-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border: 2px dashed #ccc;
+      border-radius: 6px;
+      background: #fafafa;
+    }
+    .file-row.ready { border-color: #4caf50; background: #f0faf0; }
+    .override-btn {
+      padding: 4px 12px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      background: #fff;
+      color: #555;
+      border: 1.5px solid #ccc;
+      border-radius: 4px;
+      cursor: pointer;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .override-btn:hover { border-color: #888; color: #1a1a1a; }
+    .file-name { font-size: 0.85rem; color: #555; }
+    button {
+      display: inline-block;
+      padding: 10px 24px;
+      border: none;
+      border-radius: 6px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      background: #1a1a1a;
+      color: #fff;
+    }
+    button:disabled { background: #ddd; color: #aaa; cursor: default; }
+    #convert-btn:not(:disabled) { background: #2e7d32; }
+    #download-btn { background: #1565c0; margin-top: 16px; }
+    #result {
+      margin-top: 28px;
+      padding: 16px 20px;
+      border-radius: 8px;
+      background: #f5f5f5;
+      border: 1px solid #e0e0e0;
+    }
+    #result h2 { margin-top: 0; font-size: 1rem; }
+    #result ul { margin: 8px 0 0; padding-left: 20px; }
+    #result li { margin-bottom: 4px; }
+    .error { color: #c62828; }
+    .ok { color: #2e7d32; }
+    .warn { color: #e65100; }
+    #diff-section { margin-top: 28px; }
+    #diff-section h2 { font-size: 1rem; margin-bottom: 12px; }
+    .diff-group { margin-bottom: 20px; }
+    .diff-group h3 { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; color: #555; margin: 0 0 8px; }
+    .diff-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+    .diff-table th { text-align: left; padding: 4px 8px; background: #e8e8e8; font-weight: 600; }
+    .diff-table td { padding: 4px 8px; border-bottom: 1px solid #eee; }
+    .diff-table tr:last-child td { border-bottom: none; }
+    .val-old { color: #c62828; }
+    .val-new { color: #2e7d32; }
+    .file-status { font-weight: 400; font-size: 0.85em; margin-left: 6px; }
+    .file-status.ok   { color: #2e7d32; }
+    .file-status.warn { color: #e65100; }
+  </style>
+</head>
+<body>
+
+<h1>Player Data Converter</h1>
+<p class="subtitle">Loads committed files automatically. Upload to override any file.</p>
+
+<div class="field">
+  <label>Pitching Stats for Draft.xlsx <span id="pitching-status" class="file-status"></span></label>
+  <div class="file-row" id="pitching-row">
+    <button type="button" class="override-btn" onclick="document.getElementById('pitching-file').click()">Override</button>
+    <span class="file-name" id="pitching-name"></span>
+    <input type="file" id="pitching-file" accept=".xlsx">
+  </div>
+</div>
+
+<div class="field">
+  <label>Position Player Stats for Draft.xlsx <span id="position-status" class="file-status"></span></label>
+  <div class="file-row" id="position-row">
+    <button type="button" class="override-btn" onclick="document.getElementById('position-file').click()">Override</button>
+    <span class="file-name" id="position-name"></span>
+    <input type="file" id="position-file" accept=".xlsx">
+  </div>
+</div>
+
+<div class="field">
+  <label>Current players.json <span id="json-status" class="file-status"></span></label>
+  <div class="file-row" id="json-row">
+    <button type="button" class="override-btn" onclick="document.getElementById('existing-json').click()">Override</button>
+    <span class="file-name" id="json-name"></span>
+    <input type="file" id="existing-json" accept=".json">
+  </div>
+</div>
+
+<button id="convert-btn" disabled>Convert</button>
+
+<div id="result" hidden>
+  <h2>Result</h2>
+  <ul id="summary-list"></ul>
+  <button id="download-btn" hidden>Download players.json</button>
+</div>
+
+<div id="diff-section" hidden>
+  <h2>Diff vs existing players.json</h2>
+  <div id="diff-content"></div>
+</div>
+
+<script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+<script>
+  const POS_COLS = ['c', '1b', '2b', '3b', 'ss', 'lf', 'cf', 'rf'];
+
+  const pitchingInput  = document.getElementById('pitching-file');
+  const positionInput  = document.getElementById('position-file');
+  const existingInput  = document.getElementById('existing-json');
+  const convertBtn     = document.getElementById('convert-btn');
+  const resultBox      = document.getElementById('result');
+  const summaryList    = document.getElementById('summary-list');
+  const downloadBtn    = document.getElementById('download-btn');
+  const diffSection    = document.getElementById('diff-section');
+  const diffContent    = document.getElementById('diff-content');
+
+  // Repo file buffers (auto-fetched)
+  let repoPitchingBuf = null;
+  let repoPositionBuf = null;
+  let repoExistingJson = null;
+
+  function setStatus(id, text, cls) {
+    const el = document.getElementById(id);
+    el.textContent = text;
+    el.className = 'file-status ' + cls;
+  }
+
+  function updateConvertBtn() {
+    const hasPitching = pitchingInput.files.length || repoPitchingBuf;
+    const hasPosition = positionInput.files.length || repoPositionBuf;
+    convertBtn.disabled = !(hasPitching && hasPosition);
+  }
+
+  async function fetchRepoBuf(path, statusId) {
+    try {
+      const res = await fetch(path);
+      if (!res.ok) throw new Error(res.status);
+      const buf = await res.arrayBuffer();
+      setStatus(statusId, '✓ loaded from repo', 'ok');
+      return buf;
+    } catch {
+      setStatus(statusId, '✗ not found', 'warn');
+      return null;
+    }
+  }
+
+  // Auto-load committed files on startup
+  window.addEventListener('DOMContentLoaded', async () => {
+    const [pb, posb, jsonText] = await Promise.all([
+      fetchRepoBuf('../Pitching Stats for Draft.xlsx',       'pitching-status'),
+      fetchRepoBuf('../Position Player Stats for Draft.xlsx', 'position-status'),
+      fetch('../players.json').then(r => r.ok ? r.json() : null).catch(() => null),
+    ]);
+    repoPitchingBuf  = pb;
+    repoPositionBuf  = posb;
+    repoExistingJson = jsonText;
+    if (pb)       document.getElementById('pitching-row').classList.add('ready');
+    if (posb)     document.getElementById('position-row').classList.add('ready');
+    if (jsonText) { document.getElementById('json-row').classList.add('ready'); setStatus('json-status', '✓ loaded from repo', 'ok'); }
+    else            setStatus('json-status', '✗ not found', 'warn');
+    updateConvertBtn();
+  });
+
+  pitchingInput.addEventListener('change', () => {
+    const f = pitchingInput.files[0];
+    document.getElementById('pitching-row').classList.toggle('ready', !!f);
+    document.getElementById('pitching-name').textContent = f ? f.name : '';
+    if (f) setStatus('pitching-status', '✓ overridden', 'ok');
+    updateConvertBtn();
+  });
+  positionInput.addEventListener('change', () => {
+    const f = positionInput.files[0];
+    document.getElementById('position-row').classList.toggle('ready', !!f);
+    document.getElementById('position-name').textContent = f ? f.name : '';
+    if (f) setStatus('position-status', '✓ overridden', 'ok');
+    updateConvertBtn();
+  });
+  existingInput.addEventListener('change', () => {
+    const f = existingInput.files[0];
+    document.getElementById('json-row').classList.toggle('ready', !!f);
+    document.getElementById('json-name').textContent = f ? f.name : '';
+    if (f) setStatus('json-status', '✓ overridden', 'ok');
+  });
+
+  function readWorkbook(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = e => {
+        try {
+          const wb = XLSX.read(e.target.result, { type: 'array' });
+          resolve(wb);
+        } catch (err) { reject(err); }
+      };
+      reader.onerror = reject;
+      reader.readAsArrayBuffer(file);
+    });
+  }
+
+  function sheetToRows(workbook) {
+    const ws = workbook.Sheets[workbook.SheetNames[0]];
+    return XLSX.utils.sheet_to_json(ws, { defval: null });
+  }
+
+  function cleanStr(v) {
+    return typeof v === 'string' ? v.trim() : v;
+  }
+
+  function buildRow(raw) {
+    const row = {};
+    for (const [k, v] of Object.entries(raw)) {
+      const cleaned = cleanStr(v);
+      if (cleaned != null) row[k.trim()] = cleaned; // omit null/undefined fields
+    }
+    return row;
+  }
+
+  function parsePitchers(workbook) {
+    const rows = sheetToRows(workbook);
+    const players = [];
+    for (const raw of rows) {
+      const row = buildRow(raw);
+      if (!row.First || row.First === 'First') continue;
+      const p = (row.P || '').toUpperCase();
+      row.eligible_positions = p === 'SP' ? ['sp'] : p === 'RP' ? ['rp'] : [];
+      players.push(row);
+    }
+    return players;
+  }
+
+  function parsePositionPlayers(workbook) {
+    const rows = sheetToRows(workbook);
+    const players = [];
+    for (const raw of rows) {
+      const row = buildRow(raw);
+      if (!row.First || row.First === 'First') continue;
+
+      // Alias Run/Stl as SDur/RDur to match existing schema
+      if (row.Run != null) row.SDur = row.Run;
+      if (row.Stl != null) row.RDur = row.Stl;
+
+      // eligible_positions from non-null position columns; fall back to P field (e.g. "dh")
+      const posCols = POS_COLS.filter(pos => row[pos] != null);
+      row.eligible_positions = posCols.length > 0 ? posCols : (row.P ? [row.P.toLowerCase()] : []);
+
+      players.push(row);
+    }
+    return players;
+  }
+
+  function playerKey(p) { return `${p.First}|${p.Last}`; }
+
+  // Round nv to the same number of decimal places as ov, then compare
+  function numericMatch(ov, nv) {
+    const s = ov.toString();
+    const dot = s.indexOf('.');
+    const decimals = dot === -1 ? 0 : s.length - dot - 1;
+    return parseFloat(nv.toFixed(decimals)) === ov;
+  }
+
+  function diffPlayers(oldPlayers, newPlayers) {
+    const oldMap = new Map(oldPlayers.filter(p => p.First !== 'First').map(p => [playerKey(p), p]));
+    const newMap = new Map(newPlayers.map(p => [playerKey(p), p]));
+
+    const added   = [...newMap.keys()].filter(k => !oldMap.has(k)).map(k => newMap.get(k));
+    const removed = [...oldMap.keys()].filter(k => !newMap.has(k)).map(k => oldMap.get(k));
+
+    const changed = [];
+    for (const [key, np] of newMap) {
+      const op = oldMap.get(key);
+      if (!op) continue;
+      const fieldChanges = [];
+      const allFields = new Set([...Object.keys(op), ...Object.keys(np)]);
+      for (const field of allFields) {
+        if (field === 'eligible_positions') continue;
+        // Treat absent fields and null as equivalent
+        const ov = op[field] ?? null, nv = np[field] ?? null;
+        if (ov === nv) continue;
+        if (typeof ov === 'number' && typeof nv === 'number' && numericMatch(ov, nv)) continue;
+        fieldChanges.push({ field, ov, nv });
+      }
+      if (fieldChanges.length) changed.push({ name: `${np.First} ${np.Last}`, changes: fieldChanges });
+    }
+
+    return { added, removed, changed };
+  }
+
+  function renderDiff({ added, removed, changed }) {
+    diffSection.hidden = false;
+    let html = '';
+
+    if (added.length === 0 && removed.length === 0 && changed.length === 0) {
+      html = '<p class="ok">No meaningful differences found.</p>';
+      diffContent.innerHTML = html;
+      return;
+    }
+
+    if (added.length) {
+      html += `<div class="diff-group"><h3>Added (${added.length})</h3><ul>`;
+      for (const p of added) html += `<li class="ok">${p.First} ${p.Last} (${p.Team}, ${p.P})</li>`;
+      html += '</ul></div>';
+    }
+
+    if (removed.length) {
+      html += `<div class="diff-group"><h3>Removed (${removed.length})</h3><ul>`;
+      for (const p of removed) html += `<li class="error">${p.First} ${p.Last} (${p.Team}, ${p.P})</li>`;
+      html += '</ul></div>';
+    }
+
+    if (changed.length) {
+      html += `<div class="diff-group"><h3>Changed (${changed.length} players)</h3>`;
+      html += `<table class="diff-table"><thead><tr><th>Player</th><th>Field</th><th>Old</th><th>New</th></tr></thead><tbody>`;
+      for (const { name, changes } of changed) {
+        for (const { field, ov, nv } of changes) {
+          html += `<tr>
+            <td>${name}</td>
+            <td>${field}</td>
+            <td class="val-old">${ov ?? '—'}</td>
+            <td class="val-new">${nv ?? '—'}</td>
+          </tr>`;
+        }
+      }
+      html += '</tbody></table></div>';
+    }
+
+    diffContent.innerHTML = html;
+  }
+
+  function readJson(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = e => { try { resolve(JSON.parse(e.target.result)); } catch(err) { reject(err); } };
+      reader.onerror = reject;
+      reader.readAsText(file);
+    });
+  }
+
+  let jsonBlob = null;
+
+  convertBtn.addEventListener('click', async () => {
+    convertBtn.disabled = true;
+    convertBtn.textContent = 'Converting...';
+    summaryList.innerHTML = '';
+    resultBox.hidden = false;
+    diffSection.hidden = true;
+    diffContent.innerHTML = '';
+    downloadBtn.hidden = true;
+    jsonBlob = null;
+
+    const issues = [];
+
+    try {
+      const pitchSource = pitchingInput.files.length ? readWorkbook(pitchingInput.files[0]) : Promise.resolve(XLSX.read(repoPitchingBuf, { type: 'array' }));
+      const posSource   = positionInput.files.length ? readWorkbook(positionInput.files[0]) : Promise.resolve(XLSX.read(repoPositionBuf, { type: 'array' }));
+      const [pitchWb, posWb] = await Promise.all([pitchSource, posSource]);
+
+      const pitchers   = parsePitchers(pitchWb);
+      const posPlayers = parsePositionPlayers(posWb);
+
+      // Basic sanity checks
+      if (pitchers.length === 0)   issues.push({ text: 'No pitchers parsed — check the pitching file.', err: true });
+      if (posPlayers.length === 0) issues.push({ text: 'No position players parsed — check the position file.', err: true });
+
+      // Warn on any player missing eligible_positions
+      const noPos = [...pitchers, ...posPlayers].filter(p => p.eligible_positions.length === 0);
+      if (noPos.length) {
+        issues.push({ text: `${noPos.length} player(s) have no eligible positions: ${noPos.slice(0, 3).map(p => `${p.First} ${p.Last}`).join(', ')}${noPos.length > 3 ? '…' : ''}`, err: true });
+      }
+
+      const combined = [...pitchers, ...posPlayers];
+      const json = JSON.stringify(combined);
+      jsonBlob = new Blob([json], { type: 'application/json' });
+
+      issues.unshift(
+        { text: `${pitchers.length} pitchers parsed`, err: false },
+        { text: `${posPlayers.length} position players parsed`, err: false },
+        { text: `${combined.length} total players`, err: false },
+      );
+
+      if (!issues.some(i => i.err)) {
+        downloadBtn.hidden = false;
+      }
+
+      // Diff against uploaded override, then repo version
+      if (existingInput.files.length) {
+        const existing = await readJson(existingInput.files[0]);
+        renderDiff(diffPlayers(existing, combined));
+      } else if (repoExistingJson) {
+        renderDiff(diffPlayers(repoExistingJson, combined));
+      }
+
+    } catch (err) {
+      issues.push({ text: `Error: ${err.message}`, err: true });
+    }
+
+    summaryList.innerHTML = issues.map(i =>
+      `<li class="${i.err ? 'error' : 'ok'}">${i.text}</li>`
+    ).join('');
+
+    convertBtn.textContent = 'Convert';
+    convertBtn.disabled = false;
+  });
+
+  downloadBtn.addEventListener('click', () => {
+    if (!jsonBlob) return;
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(jsonBlob);
+    a.download = 'players.json';
+    a.click();
+    URL.revokeObjectURL(a.href);
+  });
+</script>
+</body>
+</html>

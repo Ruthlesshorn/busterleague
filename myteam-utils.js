@@ -1,16 +1,5 @@
 // myteam-utils.js — Pure utility functions for myteam.html
 
-function applyTeamColors(team) {
-    var c = TEAM_COLORS[team] || TEAM_COLORS['STL'];
-    var root = document.documentElement;
-    root.style.setProperty('--team-primary', c.p);
-    root.style.setProperty('--team-primary-light', c.pl);
-    root.style.setProperty('--team-secondary', c.s);
-    root.style.setProperty('--team-secondary-light', c.sl);
-    root.style.setProperty('--team-secondary-subtle', c.ss);
-}
-
-
 function escapeHtml(s) {
     return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;')
         .replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
@@ -137,7 +126,7 @@ async function submitChangePassword() {
     function showMsg(text, isError) {
         msg.textContent = text;
         msg.style.background = isError ? '#fff5f5' : '#f0fff4';
-        msg.style.color      = isError ? '#c41e3a' : '#276749';
+        msg.style.color      = isError ? 'var(--team-primary)' : '#276749';
         msg.style.border     = isError ? '1px solid #f8d7da' : '1px solid #c6f6d5';
         msg.style.display    = 'block';
     }
