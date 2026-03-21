@@ -5,26 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>⚾ Buster League – Draft Helper</title>
 
-    <!-- Firebase -->
-    <script type="module">
-    const firebaseConfig = {
-        apiKey: "AIzaSyBpsal5vJ1b4nEjAfyQH1baKFRcuPV4QxI",
-        authDomain: "buster-league-draft.firebaseapp.com",
-        databaseURL: "https://buster-league-draft-default-rtdb.firebaseio.com",
-        projectId: "buster-league-draft",
-        storageBucket: "buster-league-draft.firebasestorage.app",
-        messagingSenderId: "410413976342",
-        appId: "1:410413976342:web:2ed683daa1c808a2aa9e37"
-    };
-    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
-    import { getDatabase, ref, onValue } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js';
-    const app = initializeApp(firebaseConfig);
-    const db  = getDatabase(app);
-    window.firebaseDB      = db;
-    window.firebaseRef     = ref;
-    window.firebaseOnValue = onValue;
-    window.firebaseReady   = true;
-    </script>
+    <!-- Firebase (same setup as rest of site) -->
+    <script type="module" src="firebase-init.js"></script>
 
     <style>
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -1043,15 +1025,14 @@ function onDraftUpdate(raw) {
     renderMain();
 }
 
-function waitForFirebase(cb, tries = 0) {
-    if (window.firebaseReady && window.firebaseDB) { cb(); return; }
-    if (tries > 30) { document.getElementById('clock-banner').textContent = 'Firebase unavailable — showing all players'; return; }
-    setTimeout(() => waitForFirebase(cb, tries + 1), 200);
-}
-
 window.addEventListener('DOMContentLoaded', async function() {
     populateTeamSelect();
     renderWeightsPanel();
+
+    // Auth guard — same pattern as myteam.html
+    const user = await new Promise(resolve =>
+        window.firebaseOnAuthStateChanged(window.firebaseAuth, resolve));
+    if (!user) { window.location.href = 'login.html'; return; }
 
     // Load players
     try {
@@ -1063,14 +1044,18 @@ window.addEventListener('DOMContentLoaded', async function() {
     }
 
     renderMain();
+    document.getElementById('clock-banner').textContent = 'Connecting to draft…';
 
-    // Attach Firebase listener
-    waitForFirebase(function() {
+    // Attach Firebase listener (auth is confirmed above, so rules will pass)
+    if (window.firebaseInitialized) {
         window.firebaseOnValue(
             window.firebaseRef(window.firebaseDB, 'draftedPlayers'),
-            function(snapshot) { onDraftUpdate(snapshot.val()); }
+            function(snapshot) { onDraftUpdate(snapshot.val()); },
+            function(err) {
+                document.getElementById('clock-banner').textContent = 'Firebase error: ' + err.message;
+            }
         );
-    });
+    }
 });
 </script>
 </body>
