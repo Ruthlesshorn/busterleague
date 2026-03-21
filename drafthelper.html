@@ -1,0 +1,1077 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>⚾ Buster League – Draft Helper</title>
+
+    <!-- Firebase -->
+    <script type="module">
+    const firebaseConfig = {
+        apiKey: "AIzaSyBpsal5vJ1b4nEjAfyQH1baKFRcuPV4QxI",
+        authDomain: "buster-league-draft.firebaseapp.com",
+        databaseURL: "https://buster-league-draft-default-rtdb.firebaseio.com",
+        projectId: "buster-league-draft",
+        storageBucket: "buster-league-draft.firebasestorage.app",
+        messagingSenderId: "410413976342",
+        appId: "1:410413976342:web:2ed683daa1c808a2aa9e37"
+    };
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+    import { getDatabase, ref, onValue } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js';
+    const app = initializeApp(firebaseConfig);
+    const db  = getDatabase(app);
+    window.firebaseDB      = db;
+    window.firebaseRef     = ref;
+    window.firebaseOnValue = onValue;
+    window.firebaseReady   = true;
+    </script>
+
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0f1117;
+            color: #e0e4ef;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ── HEADER ── */
+        .header {
+            background: #1a1d27;
+            border-bottom: 2px solid #2a2d3e;
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+        .header h1 { font-size: 1.25rem; font-weight: 700; color: #fff; }
+        .header-sep { color: #3a3d50; font-size: 1.2rem; }
+
+        .team-select-wrap { display: flex; align-items: center; gap: 8px; }
+        .team-select-wrap label { font-size: 0.82rem; color: #8892a4; }
+        .team-select-wrap select {
+            background: #252838; border: 1px solid #3a3d50; color: #e0e4ef;
+            padding: 4px 10px; border-radius: 6px; font-size: 0.9rem;
+            cursor: pointer;
+        }
+
+        .clock-banner {
+            flex: 1;
+            background: #1e2030;
+            border: 1px solid #3a3d50;
+            border-radius: 8px;
+            padding: 6px 14px;
+            font-size: 0.88rem;
+            color: #8892a4;
+            text-align: center;
+        }
+        .clock-banner .team-name {
+            font-weight: 700;
+            font-size: 1rem;
+            color: #4fc3f7;
+        }
+        .clock-banner.my-turn { border-color: #f59e0b; background: #241f10; }
+        .clock-banner.my-turn .team-name { color: #f59e0b; }
+
+        /* ── BODY LAYOUT ── */
+        .body-wrap {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+            height: calc(100vh - 58px);
+        }
+
+        /* ── LEFT PANEL (weights) ── */
+        .weights-panel {
+            width: 290px;
+            min-width: 290px;
+            background: #13151f;
+            border-right: 2px solid #2a2d3e;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .weights-tabs {
+            display: flex;
+            border-bottom: 2px solid #2a2d3e;
+        }
+        .weights-tab {
+            flex: 1;
+            padding: 10px;
+            text-align: center;
+            font-size: 0.82rem;
+            font-weight: 600;
+            cursor: pointer;
+            color: #5a6070;
+            background: transparent;
+            border: none;
+            border-bottom: 3px solid transparent;
+            transition: all 0.15s;
+            letter-spacing: 0.03em;
+        }
+        .weights-tab.active { color: #4fc3f7; border-bottom-color: #4fc3f7; }
+
+        .weights-scroll { overflow-y: auto; flex: 1; padding: 14px 14px 20px; }
+
+        .weight-group-title {
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: #4a5060;
+            margin: 14px 0 6px;
+        }
+        .weight-group-title:first-child { margin-top: 0; }
+
+        .weight-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+        .weight-label {
+            width: 58px;
+            font-size: 0.78rem;
+            color: #a0a8bc;
+            font-weight: 500;
+        }
+        .weight-label small {
+            display: block;
+            font-size: 0.65rem;
+            color: #4a5060;
+        }
+        .weight-slider {
+            flex: 1;
+            -webkit-appearance: none;
+            appearance: none;
+            height: 4px;
+            background: #252838;
+            border-radius: 2px;
+            outline: none;
+            cursor: pointer;
+        }
+        .weight-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 14px; height: 14px;
+            border-radius: 50%;
+            background: #4fc3f7;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+        .weight-slider:hover::-webkit-slider-thumb { background: #81d4fa; }
+        .weight-val {
+            width: 18px;
+            text-align: right;
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: #e0e4ef;
+        }
+        .weight-val.zero { color: #3a3d50; }
+
+        .reset-btn {
+            width: 100%;
+            margin-top: 16px;
+            padding: 7px;
+            background: #1e2030;
+            border: 1px solid #3a3d50;
+            border-radius: 6px;
+            color: #8892a4;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .reset-btn:hover { background: #252838; color: #e0e4ef; }
+
+        /* ── RIGHT PANEL ── */
+        .main-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .main-tabs {
+            display: flex;
+            border-bottom: 2px solid #2a2d3e;
+            background: #13151f;
+            padding: 0 4px;
+        }
+        .main-tab {
+            padding: 11px 18px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            color: #5a6070;
+            background: transparent;
+            border: none;
+            border-bottom: 3px solid transparent;
+            transition: all 0.15s;
+            white-space: nowrap;
+        }
+        .main-tab.active { color: #4fc3f7; border-bottom-color: #4fc3f7; }
+
+        .main-content { flex: 1; overflow-y: auto; padding: 16px; }
+
+        /* ── PLAYER CARDS ── */
+        .player-list { display: flex; flex-direction: column; gap: 6px; }
+
+        .player-card {
+            background: #1a1d27;
+            border: 1px solid #2a2d3e;
+            border-radius: 8px;
+            padding: 10px 14px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: border-color 0.15s;
+        }
+        .player-card:hover { border-color: #3a4060; }
+
+        .pick-rank {
+            width: 28px;
+            text-align: right;
+            font-size: 0.78rem;
+            font-weight: 700;
+            color: #4a5070;
+        }
+        .pick-rank.top3 { color: #f59e0b; }
+
+        .pos-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 32px;
+            padding: 2px 5px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+        }
+        .pos-SP  { background: #1e3a5f; color: #60b4f0; }
+        .pos-RP  { background: #1e2f4a; color: #90caf9; }
+        .pos-C   { background: #2d1e3e; color: #ce93d8; }
+        .pos-1B  { background: #1e2d1e; color: #81c784; }
+        .pos-2B  { background: #1e2d1e; color: #a5d6a7; }
+        .pos-3B  { background: #1e2d1e; color: #c8e6c9; }
+        .pos-SS  { background: #1e2d1e; color: #e8f5e9; }
+        .pos-OF  { background: #2d2a1e; color: #ffcc80; }
+        .pos-DH  { background: #2a1e1e; color: #ef9a9a; }
+
+        .player-info { flex: 1; min-width: 0; }
+        .player-name {
+            font-weight: 600;
+            font-size: 0.92rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .player-team { font-size: 0.75rem; color: #6a7080; margin-top: 1px; }
+
+        .score-bar-wrap { width: 110px; }
+        .score-label {
+            font-size: 0.7rem;
+            color: #6a7080;
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 3px;
+        }
+        .score-val { font-weight: 700; color: #e0e4ef; }
+        .score-bar {
+            height: 5px;
+            background: #252838;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+        .score-bar-fill {
+            height: 100%;
+            border-radius: 3px;
+            background: linear-gradient(90deg, #1565c0, #4fc3f7);
+            transition: width 0.3s ease;
+        }
+
+        .key-stats {
+            display: flex;
+            gap: 10px;
+            font-size: 0.75rem;
+            color: #8892a4;
+        }
+        .key-stat span { font-weight: 600; color: #c0c8d8; }
+
+        /* ── POSITION NEEDS ── */
+        .needs-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            gap: 12px;
+        }
+        .need-card {
+            background: #1a1d27;
+            border: 1px solid #2a2d3e;
+            border-radius: 10px;
+            padding: 14px;
+        }
+        .need-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        .need-pos-badge {
+            font-size: 0.8rem;
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: 5px;
+        }
+        .need-counts { font-size: 0.82rem; color: #8892a4; }
+        .need-counts strong { color: #e0e4ef; }
+        .need-urgency {
+            margin-left: auto;
+            font-size: 0.7rem;
+            font-weight: 700;
+            padding: 2px 7px;
+            border-radius: 4px;
+        }
+        .urgency-high { background: #3a1a1a; color: #f87171; }
+        .urgency-med  { background: #2a2010; color: #fbbf24; }
+        .urgency-low  { background: #1a2a1a; color: #6ee7b7; }
+        .urgency-full { background: #1a1a2a; color: #6a7080; }
+
+        .need-players { list-style: none; }
+        .need-player {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 4px 0;
+            border-top: 1px solid #1e2130;
+            font-size: 0.8rem;
+        }
+        .need-player-name { color: #c0c8d8; }
+        .need-player-score { color: #4fc3f7; font-weight: 700; font-size: 0.75rem; }
+
+        /* ── MY ROSTER ── */
+        .roster-section { margin-bottom: 20px; }
+        .roster-section h3 {
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: #4a5060;
+            margin-bottom: 8px;
+        }
+        .roster-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.82rem;
+        }
+        .roster-table th {
+            text-align: left;
+            padding: 5px 10px;
+            color: #5a6070;
+            font-weight: 600;
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            border-bottom: 1px solid #2a2d3e;
+        }
+        .roster-table td {
+            padding: 6px 10px;
+            border-bottom: 1px solid #1e2130;
+            color: #c0c8d8;
+        }
+        .roster-table tr:last-child td { border-bottom: none; }
+        .roster-table td:first-child { font-weight: 600; color: #e0e4ef; }
+
+        .empty-msg {
+            padding: 40px;
+            text-align: center;
+            color: #3a4050;
+            font-size: 0.9rem;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #2a2d3e; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #3a3d50; }
+    </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+    <h1>⚾ Draft Helper</h1>
+    <span class="header-sep">|</span>
+    <div class="team-select-wrap">
+        <label>My Team</label>
+        <select id="my-team-select">
+            <option value="">— pick —</option>
+        </select>
+    </div>
+    <span class="header-sep">|</span>
+    <div class="clock-banner" id="clock-banner">Loading draft state…</div>
+</div>
+
+<!-- BODY -->
+<div class="body-wrap">
+
+    <!-- LEFT: WEIGHTS -->
+    <div class="weights-panel">
+        <div class="weights-tabs">
+            <button class="weights-tab active" onclick="switchWeightsTab('hitter')">🏏 Hitters</button>
+            <button class="weights-tab" onclick="switchWeightsTab('pitcher')">⚾ Pitchers</button>
+        </div>
+        <div class="weights-scroll" id="weights-scroll">
+            <!-- populated by JS -->
+        </div>
+    </div>
+
+    <!-- RIGHT: MAIN -->
+    <div class="main-panel">
+        <div class="main-tabs">
+            <button class="main-tab active" onclick="switchMainTab('top')">🏆 Top Available</button>
+            <button class="main-tab" onclick="switchMainTab('needs')">📊 Position Needs</button>
+            <button class="main-tab" onclick="switchMainTab('roster')">📋 My Roster</button>
+        </div>
+        <div class="main-content" id="main-content">
+            <div class="empty-msg">Loading players…</div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+// CONFIG
+// ═══════════════════════════════════════════════════════════════
+const TEAMS = ['PHI','SEA','BAL','CWS','PIT','NYM','KC','BOS','STL','CIN',
+               'OAK','LA','CHC','DET','CLE','HOU','SF','TEX','ATL','NYY'];
+const NUM_ROUNDS   = 25;
+const TOTAL_PICKS  = TEAMS.length * NUM_ROUNDS;
+
+// Slot targets per team (sum ≈ 25)
+const SLOT_TARGETS = { C:2, '1b':1, '2b':1, '3b':1, ss:1, lf:1, cf:1, rf:1, dh:1, SP:8, RP:7 };
+
+// Stats where lower = better
+const LOWER_BETTER = new Set(['ERA','FIP','xFIP','CERA','WHIP','BB/9','H/9','HR/9']);
+
+// Hitter stat groups
+const HITTER_WEIGHT_GROUPS = [
+    { label: 'Power & Run Production', stats: [
+        { key: 'HR',      label: 'HR' },
+        { key: 'RBI',     label: 'RBI' },
+        { key: 'R',       label: 'Runs' },
+        { key: 'SB',      label: 'SB' },
+    ]},
+    { label: 'On-Base & Average', stats: [
+        { key: 'AVG',     label: 'AVG' },
+        { key: 'OBP',     label: 'OBP' },
+        { key: 'SPC',     label: 'SLG' },
+        { key: 'OPS',     label: 'OPS' },
+        { key: 'wRC+',    label: 'wRC+' },
+    ]},
+    { label: 'Value', stats: [
+        { key: 'WAR-FG',  label: 'WAR' },
+        { key: 'PA',      label: 'PA' },
+    ]},
+];
+
+// Pitcher stat groups
+const PITCHER_WEIGHT_GROUPS = [
+    { label: 'Ratios (lower = better)', stats: [
+        { key: 'ERA',     label: 'ERA',  note: '↓' },
+        { key: 'WHIP',    label: 'WHIP', note: '↓' },
+        { key: 'FIP',     label: 'FIP',  note: '↓' },
+        { key: 'BB/9',    label: 'BB/9', note: '↓' },
+    ]},
+    { label: 'Volume & Strikeouts', stats: [
+        { key: 'K',       label: 'Ks' },
+        { key: 'K/9',     label: 'K/9' },
+        { key: 'IP',      label: 'IP' },
+        { key: 'W',       label: 'Wins' },
+        { key: 'S',       label: 'Saves' },
+    ]},
+    { label: 'Value', stats: [
+        { key: 'WAR-FG',  label: 'WAR' },
+    ]},
+];
+
+// Default weights (0–10)
+const DEFAULT_HITTER_W  = { HR:7, RBI:6, R:5, SB:4, AVG:6, OBP:7, SPC:5, OPS:6, 'wRC+':6, 'WAR-FG':7, PA:2 };
+const DEFAULT_PITCHER_W = { ERA:7, WHIP:7, FIP:5, 'BB/9':4, K:6, 'K/9':6, IP:4, W:5, S:4, 'WAR-FG':7 };
+
+// Key stats to show on player cards
+const HITTER_KEY_STATS  = [
+    { key:'HR', label:'HR' }, { key:'RBI', label:'RBI' },
+    { key:'AVG', label:'AVG', dec:3 }, { key:'OPS', label:'OPS', dec:3 },
+    { key:'SB', label:'SB' }
+];
+const PITCHER_KEY_STATS = [
+    { key:'ERA', label:'ERA', dec:2 }, { key:'WHIP', label:'WHIP', dec:3 },
+    { key:'K', label:'K' }, { key:'W', label:'W' }, { key:'S', label:'SV' }
+];
+
+// ═══════════════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════════════
+let players        = [];
+let draftedPlayers = [];
+let currentPickIndex = 0;
+let myTeam         = localStorage.getItem('dh_myTeam') || '';
+let weightsHitter  = loadWeights('hitter');
+let weightsPitcher = loadWeights('pitcher');
+let weightsTab     = 'hitter';
+let mainTab        = 'top';
+
+// ═══════════════════════════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════════════════════════
+function isPitcher(p) {
+    const pos = (p.P || '').toUpperCase();
+    return pos === 'SP' || pos === 'RP';
+}
+function getPos(p) { return (p.P || 'UTIL'); }
+function getPosKey(p) { return getPos(p).toLowerCase(); }
+
+function posMatchesSlot(p, slot) {
+    return getPosKey(p) === slot.toLowerCase();
+}
+
+function posBadgeClass(pos) {
+    const p = pos.toUpperCase();
+    if (p === 'SP') return 'pos-SP';
+    if (p === 'RP') return 'pos-RP';
+    if (p === 'C')  return 'pos-C';
+    if (['1B','2B','3B','SS'].includes(p)) return 'pos-1B';
+    if (['LF','CF','RF'].includes(p)) return 'pos-OF';
+    if (p === 'DH') return 'pos-DH';
+    return 'pos-1B';
+}
+
+function fmtStat(val, dec) {
+    if (val === null || val === undefined || val === '') return '—';
+    const n = parseFloat(val);
+    if (isNaN(n)) return val;
+    return dec !== undefined ? n.toFixed(dec) : n;
+}
+
+function escHtml(s) {
+    return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function unsanitize(obj) {
+    if (obj === null || obj === undefined) return obj;
+    if (typeof obj !== 'object') return obj;
+    if (Array.isArray(obj)) return obj.map(unsanitize);
+    const map = { H_9:'H/9', K_9:'K/9', BB_9:'BB/9', HR_9:'HR/9' };
+    const out = {};
+    for (const k in obj) {
+        if (obj.hasOwnProperty(k)) out[map[k] || k] = unsanitize(obj[k]);
+    }
+    return out;
+}
+
+function loadWeights(type) {
+    const key  = 'dh_weights_' + type;
+    const def  = type === 'hitter' ? DEFAULT_HITTER_W : DEFAULT_PITCHER_W;
+    try {
+        const saved = JSON.parse(localStorage.getItem(key));
+        return saved ? Object.assign({}, def, saved) : Object.assign({}, def);
+    } catch(e) { return Object.assign({}, def); }
+}
+
+function saveWeights() {
+    localStorage.setItem('dh_weights_hitter',  JSON.stringify(weightsHitter));
+    localStorage.setItem('dh_weights_pitcher', JSON.stringify(weightsPitcher));
+}
+
+// Snake draft
+function getTeamAtPick(idx) {
+    const round = Math.floor(idx / TEAMS.length) + 1;
+    const pos   = idx % TEAMS.length;
+    return round % 2 === 1 ? TEAMS[pos] : TEAMS[TEAMS.length - 1 - pos];
+}
+
+function getPicksUntilMyTurn() {
+    if (!myTeam) return null;
+    for (let i = currentPickIndex; i < TOTAL_PICKS; i++) {
+        if (getTeamAtPick(i) === myTeam) return i - currentPickIndex;
+    }
+    return null;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SCORING
+// ═══════════════════════════════════════════════════════════════
+function scorePlayers(pool, weights) {
+    // Build per-stat min/max from pool
+    const stats = Object.keys(weights);
+    const ranges = {};
+    stats.forEach(stat => {
+        const vals = pool.map(p => parseFloat(p[stat])).filter(v => !isNaN(v));
+        if (!vals.length) { ranges[stat] = null; return; }
+        const mn = Math.min(...vals), mx = Math.max(...vals);
+        ranges[stat] = { min: mn, max: mx, range: mx - mn };
+    });
+
+    return pool.map(p => {
+        let totalW = 0, score = 0;
+        stats.forEach(stat => {
+            const w = weights[stat] || 0;
+            if (!w || !ranges[stat] || ranges[stat].range === 0) return;
+            const v = parseFloat(p[stat]);
+            if (isNaN(v)) return;
+            let norm = (v - ranges[stat].min) / ranges[stat].range;
+            if (LOWER_BETTER.has(stat)) norm = 1 - norm;
+            score  += w * norm;
+            totalW += w;
+        });
+        return { player: p, score: totalW ? score / totalW : 0 };
+    }).sort((a, b) => b.score - a.score);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// DERIVED DATA
+// ═══════════════════════════════════════════════════════════════
+function getDraftedKeys() {
+    return new Set(draftedPlayers.map(d => (d.player.First + d.player.Last + d.player.Age)));
+}
+
+function getAvailable() {
+    const drafted = getDraftedKeys();
+    return players.filter(p => !drafted.has(p.First + p.Last + p.Age));
+}
+
+function getMyRoster() {
+    if (!myTeam) return [];
+    return draftedPlayers
+        .filter(d => d.team === myTeam)
+        .map(d => d.player);
+}
+
+function getTeamRoster(team) {
+    return draftedPlayers.filter(d => d.team === team).map(d => d.player);
+}
+
+function getRosterCounts(roster) {
+    const counts = {};
+    roster.forEach(p => {
+        const k = getPosKey(p);
+        counts[k] = (counts[k] || 0) + 1;
+    });
+    return counts;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// POSITION NEEDS
+// ═══════════════════════════════════════════════════════════════
+function computePositionNeeds() {
+    const available = getAvailable();
+    const myRoster  = getMyRoster();
+    const have      = getRosterCounts(myRoster);
+    const availH    = available.filter(p => !isPitcher(p));
+    const availP    = available.filter(p =>  isPitcher(p));
+
+    const scoredH = scorePlayers(availH, weightsHitter);
+    const scoredP = scorePlayers(availP, weightsPitcher);
+
+    const needs = [];
+    Object.keys(SLOT_TARGETS).forEach(slot => {
+        const target    = SLOT_TARGETS[slot];
+        const count     = have[slot.toLowerCase()] || 0;
+        const slotsLeft = Math.max(0, target - count);
+
+        const isPitch = slot === 'SP' || slot === 'RP';
+        const scored  = (isPitch ? scoredP : scoredH)
+            .filter(r => getPosKey(r.player) === slot.toLowerCase());
+
+        const topAvg = scored.slice(0, Math.max(1, slotsLeft))
+            .reduce((s, r) => s + r.score, 0) / Math.max(1, Math.min(slotsLeft, scored.length) || 1);
+
+        needs.push({ slot, target, count, slotsLeft, scored, topAvg });
+    });
+
+    // Sort: most urgent first (needs slots AND has quality players remaining)
+    return needs.sort((a, b) => {
+        if (a.slotsLeft === 0 && b.slotsLeft > 0) return 1;
+        if (b.slotsLeft === 0 && a.slotsLeft > 0) return -1;
+        return (b.slotsLeft * b.topAvg) - (a.slotsLeft * a.topAvg);
+    });
+}
+
+// ═══════════════════════════════════════════════════════════════
+// RENDER: CLOCK BANNER
+// ═══════════════════════════════════════════════════════════════
+function renderClock() {
+    const banner = document.getElementById('clock-banner');
+    if (!banner) return;
+    if (currentPickIndex >= TOTAL_PICKS) {
+        banner.textContent = '🏁 Draft complete';
+        banner.className = 'clock-banner';
+        return;
+    }
+    const onClock = getTeamAtPick(currentPickIndex);
+    const round   = Math.floor(currentPickIndex / TEAMS.length) + 1;
+    const pickNum = currentPickIndex + 1;
+    const isMe    = myTeam && onClock === myTeam;
+    const until   = getPicksUntilMyTurn();
+
+    let html = `Pick <strong>${pickNum}</strong> · Round ${round} · `;
+    html += `<span class="team-name">${isMe ? '🟡 YOU' : onClock}</span> is on the clock`;
+    if (!isMe && until !== null && until > 0) {
+        html += ` &nbsp;·&nbsp; <span style="color:#6a7080;font-size:0.8rem;">${until} pick${until!==1?'s':''} until your turn</span>`;
+    }
+    banner.innerHTML = html;
+    banner.className = 'clock-banner' + (isMe ? ' my-turn' : '');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// RENDER: TOP AVAILABLE
+// ═══════════════════════════════════════════════════════════════
+function renderTopAvailable() {
+    const avail  = getAvailable();
+    const availH = avail.filter(p => !isPitcher(p));
+    const availP = avail.filter(p =>  isPitcher(p));
+
+    const scoredH = scorePlayers(availH, weightsHitter).slice(0, 50);
+    const scoredP = scorePlayers(availP, weightsPitcher).slice(0, 50);
+
+    // Interleave top hitters and pitchers by score, show top 40 overall
+    const combined = [...scoredH, ...scoredP]
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 60);
+
+    const keyStats = r => isPitcher(r.player) ? PITCHER_KEY_STATS : HITTER_KEY_STATS;
+
+    let html = '<div class="player-list">';
+    combined.forEach((r, i) => {
+        const p   = r.player;
+        const pos = getPos(p).toUpperCase();
+        const pct = Math.round(r.score * 100);
+        const ks  = keyStats(r).map(s =>
+            `${s.label} <span>${fmtStat(p[s.key], s.dec)}</span>`
+        ).join(' &nbsp; ');
+
+        html += `
+        <div class="player-card">
+            <div class="pick-rank ${i < 3 ? 'top3' : ''}">${i + 1}</div>
+            <span class="pos-badge ${posBadgeClass(pos)}">${pos}</span>
+            <div class="player-info">
+                <div class="player-name">${escHtml(p.First)} ${escHtml(p.Last)}</div>
+                <div class="player-team">${escHtml(p.Team || 'FA')} · Age ${p.Age||'—'}</div>
+            </div>
+            <div class="key-stats">${ks}</div>
+            <div class="score-bar-wrap">
+                <div class="score-label">
+                    <span>Score</span>
+                    <span class="score-val">${pct}</span>
+                </div>
+                <div class="score-bar">
+                    <div class="score-bar-fill" style="width:${pct}%"></div>
+                </div>
+            </div>
+        </div>`;
+    });
+    if (!combined.length) html += '<div class="empty-msg">No available players</div>';
+    html += '</div>';
+
+    // Also show top 10 hitters and pitchers separately
+    html += `<h3 style="margin:20px 0 10px;font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#4a5060;">Top Available Hitters</h3>`;
+    html += '<div class="player-list">';
+    scoredH.slice(0, 10).forEach((r, i) => {
+        const p = r.player; const pos = getPos(p).toUpperCase();
+        const pct = Math.round(r.score * 100);
+        const ks = HITTER_KEY_STATS.map(s => `${s.label} <span>${fmtStat(p[s.key], s.dec)}</span>`).join(' &nbsp; ');
+        html += `<div class="player-card"><div class="pick-rank ${i<3?'top3':''}">${i+1}</div><span class="pos-badge ${posBadgeClass(pos)}">${pos}</span><div class="player-info"><div class="player-name">${escHtml(p.First)} ${escHtml(p.Last)}</div><div class="player-team">${escHtml(p.Team||'FA')} · Age ${p.Age||'—'}</div></div><div class="key-stats">${ks}</div><div class="score-bar-wrap"><div class="score-label"><span>Score</span><span class="score-val">${pct}</span></div><div class="score-bar"><div class="score-bar-fill" style="width:${pct}%"></div></div></div></div>`;
+    });
+    html += '</div>';
+
+    html += `<h3 style="margin:20px 0 10px;font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#4a5060;">Top Available Pitchers</h3>`;
+    html += '<div class="player-list">';
+    scoredP.slice(0, 10).forEach((r, i) => {
+        const p = r.player; const pos = getPos(p).toUpperCase();
+        const pct = Math.round(r.score * 100);
+        const ks = PITCHER_KEY_STATS.map(s => `${s.label} <span>${fmtStat(p[s.key], s.dec)}</span>`).join(' &nbsp; ');
+        html += `<div class="player-card"><div class="pick-rank ${i<3?'top3':''}">${i+1}</div><span class="pos-badge ${posBadgeClass(pos)}">${pos}</span><div class="player-info"><div class="player-name">${escHtml(p.First)} ${escHtml(p.Last)}</div><div class="player-team">${escHtml(p.Team||'FA')} · Age ${p.Age||'—'}</div></div><div class="key-stats">${ks}</div><div class="score-bar-wrap"><div class="score-label"><span>Score</span><span class="score-val">${pct}</span></div><div class="score-bar"><div class="score-bar-fill" style="width:${pct}%"></div></div></div></div>`;
+    });
+    html += '</div>';
+
+    document.getElementById('main-content').innerHTML = html;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// RENDER: POSITION NEEDS
+// ═══════════════════════════════════════════════════════════════
+function renderPositionNeeds() {
+    if (!myTeam) {
+        document.getElementById('main-content').innerHTML =
+            '<div class="empty-msg">Select your team above to see position needs.</div>';
+        return;
+    }
+
+    const needs = computePositionNeeds();
+    const picksUntil = getPicksUntilMyTurn();
+
+    let html = '';
+    if (picksUntil !== null) {
+        const msg = picksUntil === 0
+            ? `<strong style="color:#f59e0b">YOU are on the clock!</strong>`
+            : `<span style="color:#8892a4">Your next pick is in <strong style="color:#e0e4ef">${picksUntil}</strong> pick${picksUntil!==1?'s':''}</span>`;
+        html += `<div style="background:#1a1d27;border:1px solid #2a2d3e;border-radius:8px;padding:10px 16px;margin-bottom:14px;font-size:0.85rem;">${msg}</div>`;
+    }
+
+    html += '<div class="needs-grid">';
+    needs.forEach(n => {
+        const urgency = n.slotsLeft === 0 ? 'full'
+            : n.slotsLeft >= 3            ? 'high'
+            : n.slotsLeft >= 1            ? 'med'
+            :                               'low';
+        const urgencyLabel = n.slotsLeft === 0 ? 'Full' : `Need ${n.slotsLeft}`;
+        const urgencyClass = urgency === 'full' ? 'urgency-full'
+            : urgency === 'high' ? 'urgency-high'
+            : urgency === 'med'  ? 'urgency-med'
+            :                      'urgency-low';
+        const posUpper = n.slot.toUpperCase();
+        const topPlayers = n.scored.slice(0, 5);
+
+        html += `
+        <div class="need-card">
+            <div class="need-header">
+                <span class="pos-badge need-pos-badge ${posBadgeClass(posUpper)}">${posUpper}</span>
+                <div class="need-counts">Have <strong>${n.count}</strong> / ${n.target}</div>
+                <span class="need-urgency ${urgencyClass}">${urgencyLabel}</span>
+            </div>
+            <ul class="need-players">`;
+
+        if (!topPlayers.length) {
+            html += `<li class="need-player"><span style="color:#3a4050">No available players</span></li>`;
+        } else {
+            topPlayers.forEach(r => {
+                html += `<li class="need-player">
+                    <span class="need-player-name">${escHtml(r.player.First)} ${escHtml(r.player.Last)}</span>
+                    <span class="need-player-score">${Math.round(r.score * 100)}</span>
+                </li>`;
+            });
+        }
+
+        html += `</ul></div>`;
+    });
+    html += '</div>';
+
+    document.getElementById('main-content').innerHTML = html;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// RENDER: MY ROSTER
+// ═══════════════════════════════════════════════════════════════
+function renderMyRoster() {
+    if (!myTeam) {
+        document.getElementById('main-content').innerHTML =
+            '<div class="empty-msg">Select your team above.</div>';
+        return;
+    }
+
+    const roster  = getMyRoster();
+    const hitters  = roster.filter(p => !isPitcher(p));
+    const pitchers = roster.filter(p =>  isPitcher(p));
+
+    function tableFor(players, keyStas) {
+        if (!players.length) return '<p style="color:#3a4050;font-size:0.82rem;padding:8px 0">None yet</p>';
+        const heads = ['Player','Pos','Team',...keyStas.map(s=>s.label)];
+        let t = `<table class="roster-table"><thead><tr>${heads.map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>`;
+        players.forEach(p => {
+            const pos = getPos(p).toUpperCase();
+            t += `<tr><td>${escHtml(p.First)} ${escHtml(p.Last)}</td>
+                <td><span class="pos-badge ${posBadgeClass(pos)}">${pos}</span></td>
+                <td style="color:#6a7080">${escHtml(p.Team||'FA')}</td>
+                ${keyStas.map(s=>`<td>${fmtStat(p[s.key],s.dec)}</td>`).join('')}
+            </tr>`;
+        });
+        t += '</tbody></table>';
+        return t;
+    }
+
+    const counts  = getRosterCounts(roster);
+    const summary = Object.keys(SLOT_TARGETS).map(slot => {
+        const have = counts[slot.toLowerCase()] || 0;
+        const tgt  = SLOT_TARGETS[slot];
+        const pct  = Math.min(100, Math.round(have / tgt * 100));
+        const col  = have >= tgt ? '#6ee7b7' : have > 0 ? '#fbbf24' : '#4a5070';
+        return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">
+            <span style="width:32px;font-size:0.75rem;font-weight:700;color:${col}">${slot.toUpperCase()}</span>
+            <div style="flex:1;height:5px;background:#252838;border-radius:3px">
+                <div style="width:${pct}%;height:100%;background:${col};border-radius:3px;transition:width .3s"></div>
+            </div>
+            <span style="font-size:0.75rem;color:${col};width:28px;text-align:right">${have}/${tgt}</span>
+        </div>`;
+    }).join('');
+
+    const picks = draftedPlayers.filter(d => d.team === myTeam).length;
+    let html = `
+    <div style="display:grid;grid-template-columns:200px 1fr;gap:16px;margin-bottom:20px">
+        <div style="background:#1a1d27;border:1px solid #2a2d3e;border-radius:10px;padding:14px">
+            <div style="font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#4a5060;margin-bottom:10px">Slot Fill</div>
+            ${summary}
+        </div>
+        <div style="background:#1a1d27;border:1px solid #2a2d3e;border-radius:10px;padding:14px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:4px">
+            <div style="font-size:2.5rem;font-weight:700;color:#e0e4ef">${picks}</div>
+            <div style="font-size:0.8rem;color:#6a7080">picks made · <strong style="color:#c0c8d8">${TOTAL_PICKS - currentPickIndex}</strong> remaining in draft</div>
+        </div>
+    </div>
+    <div class="roster-section">
+        <h3>Hitters (${hitters.length})</h3>
+        ${tableFor(hitters, HITTER_KEY_STATS)}
+    </div>
+    <div class="roster-section">
+        <h3>Pitchers (${pitchers.length})</h3>
+        ${tableFor(pitchers, PITCHER_KEY_STATS)}
+    </div>`;
+
+    document.getElementById('main-content').innerHTML = html;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// RENDER: WEIGHTS PANEL
+// ═══════════════════════════════════════════════════════════════
+function renderWeightsPanel() {
+    const groups  = weightsTab === 'hitter' ? HITTER_WEIGHT_GROUPS : PITCHER_WEIGHT_GROUPS;
+    const weights = weightsTab === 'hitter' ? weightsHitter : weightsPitcher;
+
+    let html = '';
+    groups.forEach(g => {
+        html += `<div class="weight-group-title">${g.label}</div>`;
+        g.stats.forEach(s => {
+            const val = weights[s.key] !== undefined ? weights[s.key] : 5;
+            html += `
+            <div class="weight-row">
+                <div class="weight-label">
+                    ${s.label}
+                    ${s.note ? `<small>${s.note}</small>` : ''}
+                </div>
+                <input type="range" class="weight-slider" min="0" max="10" value="${val}"
+                    data-stat="${s.key}" data-type="${weightsTab}"
+                    oninput="onWeightChange(this)">
+                <div class="weight-val ${val === 0 ? 'zero' : ''}" id="wval-${weightsTab}-${s.key.replace(/\//g,'-')}">${val}</div>
+            </div>`;
+        });
+    });
+
+    const def = weightsTab === 'hitter' ? DEFAULT_HITTER_W : DEFAULT_PITCHER_W;
+    const changed = Object.keys(def).some(k => weights[k] !== def[k]);
+    html += `<button class="reset-btn" onclick="resetWeights('${weightsTab}')" ${changed ? '' : 'style="opacity:.4;pointer-events:none"'}>↺ Reset to defaults</button>`;
+
+    document.getElementById('weights-scroll').innerHTML = html;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// TABS & EVENTS
+// ═══════════════════════════════════════════════════════════════
+function switchWeightsTab(tab) {
+    weightsTab = tab;
+    document.querySelectorAll('.weights-tab').forEach((b,i) => {
+        b.classList.toggle('active', (i === 0 && tab === 'hitter') || (i === 1 && tab === 'pitcher'));
+    });
+    renderWeightsPanel();
+}
+
+function switchMainTab(tab) {
+    mainTab = tab;
+    document.querySelectorAll('.main-tab').forEach(b => {
+        b.classList.toggle('active', b.textContent.toLowerCase().includes(
+            tab === 'top' ? 'top' : tab === 'needs' ? 'position' : 'roster'
+        ));
+    });
+    renderMain();
+}
+
+function renderMain() {
+    if (mainTab === 'top')    renderTopAvailable();
+    else if (mainTab === 'needs')  renderPositionNeeds();
+    else renderMyRoster();
+}
+
+function onWeightChange(input) {
+    const stat = input.dataset.stat;
+    const type = input.dataset.type;
+    const val  = parseInt(input.value);
+    if (type === 'hitter') weightsHitter[stat] = val;
+    else                   weightsPitcher[stat] = val;
+    saveWeights();
+
+    const id = `wval-${type}-${stat.replace(/\//g,'-')}`;
+    const el = document.getElementById(id);
+    if (el) { el.textContent = val; el.className = 'weight-val' + (val === 0 ? ' zero' : ''); }
+
+    renderMain();
+}
+
+function resetWeights(type) {
+    if (type === 'hitter')  weightsHitter  = Object.assign({}, DEFAULT_HITTER_W);
+    else                    weightsPitcher = Object.assign({}, DEFAULT_PITCHER_W);
+    saveWeights();
+    renderWeightsPanel();
+    renderMain();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════════
+function populateTeamSelect() {
+    const sel = document.getElementById('my-team-select');
+    TEAMS.forEach(t => {
+        const opt = document.createElement('option');
+        opt.value = t; opt.textContent = t;
+        if (t === myTeam) opt.selected = true;
+        sel.appendChild(opt);
+    });
+    sel.addEventListener('change', function() {
+        myTeam = this.value;
+        localStorage.setItem('dh_myTeam', myTeam);
+        renderClock();
+        renderMain();
+    });
+}
+
+function onDraftUpdate(raw) {
+    const data = unsanitize(raw || []);
+    const arr  = Array.isArray(data) ? data : Object.values(data);
+    draftedPlayers   = arr;
+    currentPickIndex = arr.length;
+    renderClock();
+    renderMain();
+}
+
+function waitForFirebase(cb, tries = 0) {
+    if (window.firebaseReady && window.firebaseDB) { cb(); return; }
+    if (tries > 30) { document.getElementById('clock-banner').textContent = 'Firebase unavailable — showing all players'; return; }
+    setTimeout(() => waitForFirebase(cb, tries + 1), 200);
+}
+
+window.addEventListener('DOMContentLoaded', async function() {
+    populateTeamSelect();
+    renderWeightsPanel();
+
+    // Load players
+    try {
+        players = await fetch('players.json').then(r => r.json());
+    } catch(e) {
+        document.getElementById('main-content').innerHTML =
+            '<div class="empty-msg">Could not load players.json</div>';
+        return;
+    }
+
+    renderMain();
+
+    // Attach Firebase listener
+    waitForFirebase(function() {
+        window.firebaseOnValue(
+            window.firebaseRef(window.firebaseDB, 'draftedPlayers'),
+            function(snapshot) { onDraftUpdate(snapshot.val()); }
+        );
+    });
+});
+</script>
+</body>
+</html>
