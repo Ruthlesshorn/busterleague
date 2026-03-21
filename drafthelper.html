@@ -450,53 +450,160 @@ const TOTAL_PICKS  = TEAMS.length * NUM_ROUNDS;
 // Slot targets per team (sum ≈ 25)
 const SLOT_TARGETS = { C:2, '1b':1, '2b':1, '3b':1, ss:1, lf:1, cf:1, rf:1, dh:1, SP:8, RP:7 };
 
-// Stats where lower = better
-const LOWER_BETTER = new Set(['ERA','FIP','xFIP','CERA','WHIP','BB/9','H/9','HR/9']);
+// Stats where lower = better (shared across types)
+const LOWER_BETTER = new Set(['ERA','FIP','xFIP','CERA','WHIP','BB/9','H/9','HR/9','L']);
+// Hitter-specific lower-better (strikeouts bad for hitters)
+const HITTER_LOWER_BETTER = new Set(['K']);
+// Pitcher-specific: opponent split stats — lower opponent OBP/OPS etc. = better
+const PITCHER_LOWER_BETTER = new Set(['L-AVG','L-OBP','L-SPC','L-OPS','R-AVG','R-OBP','R-SPC','R-OPS','BABIP']);
 
-// Hitter stat groups
+// Fielding rating keys (stored as grade strings: Ex/Vg/Av/Fr/Pr)
+const FRATING_KEYS  = new Set(['c','1b','2b','3b','ss','lf','cf','rf','OF-Arm','C-Arm','Run','Stl']);
+const GRADE_ORDER   = {'Ex':5,'Vg':4,'Av':3,'Fr':2,'Pr':1};
+
+function isLowerBetter(stat, type) {
+    if (LOWER_BETTER.has(stat)) return true;
+    if (type === 'hitter'  && HITTER_LOWER_BETTER.has(stat))  return true;
+    if (type === 'pitcher' && PITCHER_LOWER_BETTER.has(stat)) return true;
+    return false;
+}
+
+function getStatVal(p, stat) {
+    if (FRATING_KEYS.has(stat)) {
+        const g = GRADE_ORDER[String(p[stat]||'').split('/')[0]];
+        return g !== undefined ? g : NaN;
+    }
+    return parseFloat(p[stat]);
+}
+
+// Hitter stat groups — all stats available on the site
 const HITTER_WEIGHT_GROUPS = [
     { label: 'Power & Run Production', stats: [
         { key: 'HR',      label: 'HR' },
         { key: 'RBI',     label: 'RBI' },
         { key: 'R',       label: 'Runs' },
         { key: 'SB',      label: 'SB' },
+        { key: 'TB',      label: 'TB' },
+        { key: 'EBH',     label: 'XBH' },
+        { key: 'RC',      label: 'RC' },
+        { key: 'RC27',    label: 'RC/27' },
     ]},
-    { label: 'On-Base & Average', stats: [
+    { label: 'On-Base & Hitting', stats: [
         { key: 'AVG',     label: 'AVG' },
         { key: 'OBP',     label: 'OBP' },
         { key: 'SPC',     label: 'SLG' },
         { key: 'OPS',     label: 'OPS' },
+        { key: 'OPS+',    label: 'OPS+' },
         { key: 'wRC+',    label: 'wRC+' },
+        { key: 'wOBA',    label: 'wOBA' },
+        { key: 'ISO',     label: 'ISO' },
+        { key: 'BABIP',   label: 'BABIP' },
+    ]},
+    { label: 'Plate Discipline', stats: [
+        { key: 'BB',      label: 'BB' },
+        { key: 'K',       label: 'K', note: '↓' },
+        { key: 'PA',      label: 'PA' },
+        { key: 'AB',      label: 'AB' },
+    ]},
+    { label: 'vs Left Pitchers', stats: [
+        { key: 'L-AVG',   label: 'L AVG' },
+        { key: 'L-OBP',   label: 'L OBP' },
+        { key: 'L-SPC',   label: 'L SLG' },
+        { key: 'L-OPS',   label: 'L OPS' },
+        { key: 'L-PA',    label: 'L PA' },
+    ]},
+    { label: 'vs Right Pitchers', stats: [
+        { key: 'R-AVG',   label: 'R AVG' },
+        { key: 'R-OBP',   label: 'R OBP' },
+        { key: 'R-SPC',   label: 'R SLG' },
+        { key: 'R-OPS',   label: 'R OPS' },
+        { key: 'R-PA',    label: 'R PA' },
+    ]},
+    { label: 'Fielding', stats: [
+        { key: 'c',       label: 'C Fld',  frating: true },
+        { key: '1b',      label: '1B Fld', frating: true },
+        { key: '2b',      label: '2B Fld', frating: true },
+        { key: '3b',      label: '3B Fld', frating: true },
+        { key: 'ss',      label: 'SS Fld', frating: true },
+        { key: 'lf',      label: 'LF Fld', frating: true },
+        { key: 'cf',      label: 'CF Fld', frating: true },
+        { key: 'rf',      label: 'RF Fld', frating: true },
+        { key: 'OF-Arm',  label: 'OF Arm', frating: true },
+        { key: 'C-Arm',   label: 'C Arm',  frating: true },
+        { key: 'Run',     label: 'Running', frating: true },
+        { key: 'Stl',     label: 'Stealing', frating: true },
     ]},
     { label: 'Value', stats: [
-        { key: 'WAR-FG',  label: 'WAR' },
-        { key: 'PA',      label: 'PA' },
+        { key: 'WAR-FG',  label: 'WAR(FG)' },
+        { key: 'WAR-BR',  label: 'WAR(BR)' },
     ]},
 ];
 
-// Pitcher stat groups
+// Pitcher stat groups — all stats available on the site
 const PITCHER_WEIGHT_GROUPS = [
-    { label: 'Ratios (lower = better)', stats: [
-        { key: 'ERA',     label: 'ERA',  note: '↓' },
-        { key: 'WHIP',    label: 'WHIP', note: '↓' },
-        { key: 'FIP',     label: 'FIP',  note: '↓' },
-        { key: 'BB/9',    label: 'BB/9', note: '↓' },
+    { label: 'ERA & Run Prevention (↓ better)', stats: [
+        { key: 'ERA',     label: 'ERA',   note: '↓' },
+        { key: 'FIP',     label: 'FIP',   note: '↓' },
+        { key: 'xFIP',    label: 'xFIP',  note: '↓' },
+        { key: 'CERA',    label: 'CERA',  note: '↓' },
+        { key: 'WHIP',    label: 'WHIP',  note: '↓' },
+        { key: 'BB/9',    label: 'BB/9',  note: '↓' },
+        { key: 'H/9',     label: 'H/9',   note: '↓' },
+        { key: 'HR/9',    label: 'HR/9',  note: '↓' },
     ]},
-    { label: 'Volume & Strikeouts', stats: [
+    { label: 'Strikeouts & Efficiency', stats: [
         { key: 'K',       label: 'Ks' },
         { key: 'K/9',     label: 'K/9' },
-        { key: 'IP',      label: 'IP' },
+        { key: 'K/BB',    label: 'K/BB' },
+        { key: 'ERA+',    label: 'ERA+' },
+        { key: 'BABIP',   label: 'BABIP', note: '↓' },
+    ]},
+    { label: 'Volume & Outcomes', stats: [
         { key: 'W',       label: 'Wins' },
+        { key: 'L',       label: 'Losses', note: '↓' },
         { key: 'S',       label: 'Saves' },
+        { key: 'IP',      label: 'IP' },
+        { key: 'G',       label: 'Games' },
+        { key: 'GS',      label: 'Starts' },
+    ]},
+    { label: 'vs Left Batters (↓ better)', stats: [
+        { key: 'L-AVG',   label: 'L AVG', note: '↓' },
+        { key: 'L-OBP',   label: 'L OBP', note: '↓' },
+        { key: 'L-SPC',   label: 'L SLG', note: '↓' },
+        { key: 'L-OPS',   label: 'L OPS', note: '↓' },
+        { key: 'L-PA',    label: 'L PA' },
+    ]},
+    { label: 'vs Right Batters (↓ better)', stats: [
+        { key: 'R-AVG',   label: 'R AVG', note: '↓' },
+        { key: 'R-OBP',   label: 'R OBP', note: '↓' },
+        { key: 'R-SPC',   label: 'R SLG', note: '↓' },
+        { key: 'R-OPS',   label: 'R OPS', note: '↓' },
+        { key: 'R-PA',    label: 'R PA' },
     ]},
     { label: 'Value', stats: [
-        { key: 'WAR-FG',  label: 'WAR' },
+        { key: 'WAR-FG',  label: 'WAR(FG)' },
+        { key: 'WAR-BR',  label: 'WAR(BR)' },
     ]},
 ];
 
-// Default weights (0–10)
-const DEFAULT_HITTER_W  = { HR:7, RBI:6, R:5, SB:4, AVG:6, OBP:7, SPC:5, OPS:6, 'wRC+':6, 'WAR-FG':7, PA:2 };
-const DEFAULT_PITCHER_W = { ERA:7, WHIP:7, FIP:5, 'BB/9':4, K:6, 'K/9':6, IP:4, W:5, S:4, 'WAR-FG':7 };
+// Default weights — non-zero for commonly used stats, 0 for everything else (user opts in)
+const DEFAULT_HITTER_W = {
+    HR:7, RBI:6, R:5, SB:4, TB:0, EBH:0, RC:0, RC27:0,
+    AVG:6, OBP:7, SPC:5, OPS:6, 'OPS+':0, 'wRC+':6, wOBA:0, ISO:0, BABIP:0,
+    BB:0, K:0, PA:2, AB:0,
+    'L-AVG':0,'L-OBP':0,'L-SPC':0,'L-OPS':0,'L-PA':0,
+    'R-AVG':0,'R-OBP':0,'R-SPC':0,'R-OPS':0,'R-PA':0,
+    c:0,'1b':0,'2b':0,'3b':0,ss:0,lf:0,cf:0,rf:0,'OF-Arm':0,'C-Arm':0,Run:0,Stl:0,
+    'WAR-FG':7, 'WAR-BR':0,
+};
+const DEFAULT_PITCHER_W = {
+    ERA:7, FIP:5, xFIP:0, CERA:0, WHIP:7, 'BB/9':4, 'H/9':0, 'HR/9':0,
+    K:6, 'K/9':6, 'K/BB':0, 'ERA+':0, BABIP:0,
+    W:5, L:0, S:4, IP:4, G:0, GS:0,
+    'L-AVG':0,'L-OBP':0,'L-SPC':0,'L-OPS':0,'L-PA':0,
+    'R-AVG':0,'R-OBP':0,'R-SPC':0,'R-OPS':0,'R-PA':0,
+    'WAR-FG':7, 'WAR-BR':0,
+};
 
 // Key stats to show on player cards
 const HITTER_KEY_STATS  = [
@@ -601,12 +708,12 @@ function getPicksUntilMyTurn() {
 // ═══════════════════════════════════════════════════════════════
 // SCORING
 // ═══════════════════════════════════════════════════════════════
-function scorePlayers(pool, weights) {
-    // Build per-stat min/max from pool
+function scorePlayers(pool, weights, type) {
     const stats = Object.keys(weights);
+    // Build per-stat min/max using getStatVal (handles frating grade strings)
     const ranges = {};
     stats.forEach(stat => {
-        const vals = pool.map(p => parseFloat(p[stat])).filter(v => !isNaN(v));
+        const vals = pool.map(p => getStatVal(p, stat)).filter(v => !isNaN(v));
         if (!vals.length) { ranges[stat] = null; return; }
         const mn = Math.min(...vals), mx = Math.max(...vals);
         ranges[stat] = { min: mn, max: mx, range: mx - mn };
@@ -617,10 +724,10 @@ function scorePlayers(pool, weights) {
         stats.forEach(stat => {
             const w = weights[stat] || 0;
             if (!w || !ranges[stat] || ranges[stat].range === 0) return;
-            const v = parseFloat(p[stat]);
+            const v = getStatVal(p, stat);
             if (isNaN(v)) return;
             let norm = (v - ranges[stat].min) / ranges[stat].range;
-            if (LOWER_BETTER.has(stat)) norm = 1 - norm;
+            if (isLowerBetter(stat, type)) norm = 1 - norm;
             score  += w * norm;
             totalW += w;
         });
@@ -679,8 +786,8 @@ function computePositionNeeds() {
     const availH    = available.filter(p => !isPitcher(p));
     const availP    = available.filter(p =>  isPitcher(p));
 
-    const scoredH = scorePlayers(availH, weightsHitter);
-    const scoredP = scorePlayers(availP, weightsPitcher);
+    const scoredH = scorePlayers(availH, weightsHitter, 'hitter');
+    const scoredP = scorePlayers(availP, weightsPitcher, 'pitcher');
 
     const needs = [];
     Object.keys(SLOT_TARGETS).forEach(slot => {
@@ -740,8 +847,8 @@ function renderTopAvailable() {
     const availH = avail.filter(p => !isPitcher(p));
     const availP = avail.filter(p =>  isPitcher(p));
 
-    const scoredH = scorePlayers(availH, weightsHitter).slice(0, 50);
-    const scoredP = scorePlayers(availP, weightsPitcher).slice(0, 50);
+    const scoredH = scorePlayers(availH, weightsHitter, 'hitter').slice(0, 50);
+    const scoredP = scorePlayers(availP, weightsPitcher, 'pitcher').slice(0, 50);
 
     // Interleave top hitters and pitchers by score, show top 40 overall
     const combined = [...scoredH, ...scoredP]
