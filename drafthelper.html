@@ -1039,9 +1039,34 @@ function onDraftUpdate(raw) {
     renderMain();
 }
 
+// Poll until firebase-init.js has finished setting up all window.firebase* globals
+function waitForFirebaseInit() {
+    return new Promise((resolve, reject) => {
+        let tries = 0;
+        const check = () => {
+            if (window.firebaseInitialized && typeof window.firebaseOnAuthStateChanged === 'function') {
+                resolve();
+            } else if (tries++ > 100) {
+                reject(new Error('Firebase failed to initialise after 10 seconds'));
+            } else {
+                setTimeout(check, 100);
+            }
+        };
+        check();
+    });
+}
+
 window.addEventListener('DOMContentLoaded', async function() {
     populateTeamSelect();
     renderWeightsPanel();
+
+    // Wait for firebase-init.js module to finish (it's async/deferred)
+    try {
+        await waitForFirebaseInit();
+    } catch(e) {
+        document.getElementById('clock-banner').textContent = 'Firebase failed to load — check your connection';
+        return;
+    }
 
     // Auth guard — same pattern as myteam.html
     const user = await new Promise(resolve =>
