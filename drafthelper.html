@@ -247,6 +247,15 @@
             font-weight: 700;
             letter-spacing: 0.04em;
         }
+        /* Wrapper for multi-position badges */
+        .pos-badges {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+            width: 42px;
+            flex-shrink: 0;
+        }
+
         .pos-SP  { background: #1e3a5f; color: #60b4f0; }
         .pos-RP  { background: #1e2f4a; color: #90caf9; }
         .pos-C   { background: #2d1e3e; color: #ce93d8; }
@@ -522,7 +531,7 @@ const TOTAL_PICKS  = TEAMS.length * NUM_ROUNDS;
 const SLOT_TARGETS = { C:2, '1b':1, '2b':1, '3b':1, ss:1, lf:1, cf:1, rf:1, dh:1, SP:8, RP:7 };
 
 // Stats where lower = better (shared across types)
-const LOWER_BETTER = new Set(['ERA','FIP','xFIP','CERA','WHIP','BB/9','H/9','HR/9','L']);
+const LOWER_BETTER = new Set(['ERA','FIP','xFIP','CERA','WHIP','BB/9','H/9','HR/9','L','Age']);
 // Hitter-specific lower-better (strikeouts bad for hitters)
 const HITTER_LOWER_BETTER = new Set(['K']);
 // Pitcher-specific: opponent split stats — lower opponent OBP/OPS etc. = better
@@ -608,6 +617,9 @@ const HITTER_WEIGHT_GROUPS = [
         { key: 'WAR-FG',  label: 'WAR(FG)' },
         { key: 'WAR-BR',  label: 'WAR(BR)' },
     ]},
+    { label: 'General', stats: [
+        { key: 'Age',     label: 'Age', note: '↓ younger' },
+    ]},
 ];
 
 // Pitcher stat groups — all stats available on the site
@@ -655,6 +667,9 @@ const PITCHER_WEIGHT_GROUPS = [
         { key: 'WAR-FG',  label: 'WAR(FG)' },
         { key: 'WAR-BR',  label: 'WAR(BR)' },
     ]},
+    { label: 'General', stats: [
+        { key: 'Age',     label: 'Age', note: '↓ younger' },
+    ]},
 ];
 
 // Default weights — non-zero for commonly used stats, 0 for everything else (user opts in)
@@ -666,6 +681,7 @@ const DEFAULT_HITTER_W = {
     'R-AVG':0,'R-OBP':0,'R-SPC':0,'R-OPS':0,'R-PA':0,
     c:0,'1b':0,'2b':0,'3b':0,ss:0,lf:0,cf:0,rf:0,'OF-Arm':0,'C-Arm':0,Run:0,Stl:0,
     'WAR-FG':7, 'WAR-BR':0,
+    Age:0,
 };
 const DEFAULT_PITCHER_W = {
     ERA:7, FIP:5, xFIP:0, CERA:0, WHIP:7, 'BB/9':4, 'H/9':0, 'HR/9':0,
@@ -674,6 +690,7 @@ const DEFAULT_PITCHER_W = {
     'L-AVG':0,'L-OBP':0,'L-SPC':0,'L-OPS':0,'L-PA':0,
     'R-AVG':0,'R-OBP':0,'R-SPC':0,'R-OPS':0,'R-PA':0,
     'WAR-FG':7, 'WAR-BR':0,
+    Age:0,
 };
 
 // Key stats to show on player cards
@@ -704,11 +721,16 @@ let scarcityWeight = parseFloat(localStorage.getItem('dh_scarcityWeight') || '0'
 // ═══════════════════════════════════════════════════════════════
 // HELPERS
 // ═══════════════════════════════════════════════════════════════
-function isPitcher(p) {
-    const pos = (p.P || '').toUpperCase();
-    return pos === 'SP' || pos === 'RP';
+// Parse all eligible positions from p.P (may be slash-separated: "1B/3B", "LF/CF/RF", etc.)
+function getPositions(p) {
+    return (p.P || 'UTIL').split('/').map(s => s.trim().toUpperCase()).filter(Boolean);
 }
-function getPos(p) { return (p.P || 'UTIL'); }
+
+function isPitcher(p) {
+    return getPositions(p).some(pos => pos === 'SP' || pos === 'RP');
+}
+// Primary position = first listed
+function getPos(p) { return getPositions(p)[0] || 'UTIL'; }
 function getPosKey(p) { return getPos(p).toLowerCase(); }
 
 function posMatchesSlot(p, slot) {
@@ -788,9 +810,9 @@ function setPosFilter(pos) {
 
 function matchesPosFilter(p) {
     if (posFilter === 'all') return true;
-    const pos = getPos(p).toUpperCase();
-    if (posFilter === 'OF') return ['LF','CF','RF'].includes(pos);
-    return pos === posFilter;
+    const positions = getPositions(p);
+    if (posFilter === 'OF') return positions.some(pos => ['LF','CF','RF'].includes(pos));
+    return positions.includes(posFilter);
 }
 
 function onScarcityChange(input) {
@@ -805,9 +827,11 @@ function onScarcityChange(input) {
 // Scarcity = 1 - (available players at pos / total draft slots at pos across all teams)
 function computeScarcityMap(available) {
     const counts = {};
+    // Count each player toward every position they're eligible at
     available.forEach(p => {
-        const pos = getPos(p).toUpperCase();
-        counts[pos] = (counts[pos] || 0) + 1;
+        getPositions(p).forEach(pos => {
+            counts[pos] = (counts[pos] || 0) + 1;
+        });
     });
     const n = TEAMS.length;
     // OF combined: treat LF/CF/RF as one pool vs total OF slots
@@ -929,7 +953,7 @@ function computePositionNeeds() {
 
         const isPitch = slot === 'SP' || slot === 'RP';
         const scored  = (isPitch ? scoredP : scoredH)
-            .filter(r => getPosKey(r.player) === slot.toLowerCase());
+            .filter(r => getPositions(r.player).map(pos => pos.toLowerCase()).includes(slot.toLowerCase()));
 
         const topAvg = scored.slice(0, Math.max(1, slotsLeft))
             .reduce((s, r) => s + r.score, 0) / Math.max(1, Math.min(slotsLeft, scored.length) || 1);
@@ -975,10 +999,16 @@ function renderClock() {
 // RENDER: TOP AVAILABLE
 // ═══════════════════════════════════════════════════════════════
 
+// All position badges for a player (handles multi-position like "1B/3B")
+function posBadgesHtml(p) {
+    return getPositions(p).map(pos =>
+        `<span class="pos-badge ${posBadgeClass(pos)}">${pos}</span>`
+    ).join('');
+}
+
 // Build a single player card (shared by all list renders)
 function makePlayerCard(r, i) {
     const p   = r.player;
-    const pos = getPos(p).toUpperCase();
     const pct = Math.round(r.score * 100);
     const ks  = isPitcher(p) ? PITCHER_KEY_STATS : HITTER_KEY_STATS;
     const statsHtml = ks.map(s =>
@@ -987,7 +1017,7 @@ function makePlayerCard(r, i) {
     return `
     <div class="player-card">
         <div class="pick-rank ${i < 3 ? 'top3' : ''}">${i + 1}</div>
-        <span class="pos-badge ${posBadgeClass(pos)}">${pos}</span>
+        <div class="pos-badges">${posBadgesHtml(p)}</div>
         <div class="player-info">
             <div class="player-name">${escHtml(p.First)} ${escHtml(p.Last)}</div>
             <div class="player-team">${escHtml(p.T || p.MLB || 'FA')} · Age ${p.Age||'—'}</div>
