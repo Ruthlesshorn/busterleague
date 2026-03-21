@@ -289,13 +289,72 @@
             transition: width 0.3s ease;
         }
 
-        .key-stats {
+        /* ── POSITION FILTER CHIPS ── */
+        .pos-filter-row {
             display: flex;
-            gap: 10px;
-            font-size: 0.75rem;
-            color: #8892a4;
+            flex-wrap: wrap;
+            gap: 5px;
+            padding: 0 0 12px;
         }
-        .key-stat span { font-weight: 600; color: #c0c8d8; }
+        .pos-chip {
+            padding: 4px 11px;
+            border-radius: 20px;
+            border: 1px solid #2a2d3e;
+            background: #13151f;
+            color: #5a6070;
+            font-size: 0.74rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s;
+            white-space: nowrap;
+        }
+        .pos-chip:hover { border-color: #4a5070; color: #a0a8bc; }
+        .pos-chip.active { border-color: #4fc3f7; background: #132030; color: #4fc3f7; }
+
+        /* ── KEY STATS GRID (player cards) ── */
+        .key-stats-grid {
+            display: flex;
+            gap: 4px;
+            flex-shrink: 0;
+        }
+        .key-stat-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-width: 36px;
+            background: #0f1117;
+            border-radius: 5px;
+            padding: 4px 6px;
+            gap: 1px;
+        }
+        .key-stat-lbl {
+            font-size: 0.6rem;
+            color: #4a5060;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            white-space: nowrap;
+        }
+        .key-stat-val {
+            font-size: 0.82rem;
+            font-weight: 700;
+            color: #c8d0e0;
+            white-space: nowrap;
+        }
+
+        /* ── SCARCITY SLIDER (weights panel) ── */
+        .scarcity-section {
+            padding: 10px 14px 8px;
+            border-bottom: 2px solid #2a2d3e;
+            background: #0f1117;
+        }
+        .scarcity-title {
+            font-size: 0.65rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: #4a5060;
+            margin-bottom: 6px;
+        }
 
         /* ── POSITION NEEDS ── */
         .needs-grid {
@@ -415,6 +474,18 @@
 
     <!-- LEFT: WEIGHTS -->
     <div class="weights-panel">
+        <div class="scarcity-section">
+            <div class="scarcity-title">📍 Position Scarcity Weight</div>
+            <div class="weight-row">
+                <div class="weight-label" style="width:auto;flex:1;font-size:0.75rem;">
+                    Scarcity
+                    <small>boost scarce positions</small>
+                </div>
+                <input type="range" class="weight-slider" min="0" max="10" value="0"
+                    id="scarcity-slider" oninput="onScarcityChange(this)">
+                <div class="weight-val zero" id="scarcity-val">0</div>
+            </div>
+        </div>
         <div class="weights-tabs">
             <button class="weights-tab active" onclick="switchWeightsTab('hitter')">🏏 Hitters</button>
             <button class="weights-tab" onclick="switchWeightsTab('pitcher')">⚾ Pitchers</button>
@@ -627,6 +698,8 @@ let weightsHitter  = loadWeights('hitter');
 let weightsPitcher = loadWeights('pitcher');
 let weightsTab     = 'hitter';
 let mainTab        = 'top';
+let posFilter      = 'all';
+let scarcityWeight = parseFloat(localStorage.getItem('dh_scarcityWeight') || '0');
 
 // ═══════════════════════════════════════════════════════════════
 // HELPERS
@@ -706,9 +779,58 @@ function getPicksUntilMyTurn() {
 }
 
 // ═══════════════════════════════════════════════════════════════
+// POSITION FILTER & SCARCITY
+// ═══════════════════════════════════════════════════════════════
+function setPosFilter(pos) {
+    posFilter = pos;
+    if (mainTab === 'top') renderTopAvailable();
+}
+
+function matchesPosFilter(p) {
+    if (posFilter === 'all') return true;
+    const pos = getPos(p).toUpperCase();
+    if (posFilter === 'OF') return ['LF','CF','RF'].includes(pos);
+    return pos === posFilter;
+}
+
+function onScarcityChange(input) {
+    scarcityWeight = parseInt(input.value);
+    localStorage.setItem('dh_scarcityWeight', scarcityWeight);
+    const el = document.getElementById('scarcity-val');
+    if (el) { el.textContent = scarcityWeight; el.className = 'weight-val' + (scarcityWeight === 0 ? ' zero' : ''); }
+    renderMain();
+}
+
+// Returns a map of POSITION → scarcity score [0,1] (higher = more scarce)
+// Scarcity = 1 - (available players at pos / total draft slots at pos across all teams)
+function computeScarcityMap(available) {
+    const counts = {};
+    available.forEach(p => {
+        const pos = getPos(p).toUpperCase();
+        counts[pos] = (counts[pos] || 0) + 1;
+    });
+    const n = TEAMS.length;
+    // OF combined: treat LF/CF/RF as one pool vs total OF slots
+    const ofAvail = (counts['LF'] || 0) + (counts['CF'] || 0) + (counts['RF'] || 0);
+    const ofSlots = ((SLOT_TARGETS['lf'] || 0) + (SLOT_TARGETS['cf'] || 0) + (SLOT_TARGETS['rf'] || 0)) * n;
+    const map = {};
+    // Infield + DH + pitchers individually
+    [['C','C'],['1B','1b'],['2B','2b'],['3B','3b'],['SS','ss'],['DH','dh'],['SP','SP'],['RP','RP']].forEach(([upper, key]) => {
+        const avail  = counts[upper] || 0;
+        const slots  = (SLOT_TARGETS[key] || 1) * n;
+        map[upper] = Math.max(0, Math.min(1, 1 - avail / slots));
+    });
+    // OF positions share the same scarcity pool
+    const ofSc = Math.max(0, Math.min(1, 1 - ofAvail / Math.max(1, ofSlots)));
+    map['LF'] = ofSc; map['CF'] = ofSc; map['RF'] = ofSc; map['OF'] = ofSc;
+    return map;
+}
+
+// ═══════════════════════════════════════════════════════════════
 // SCORING
 // ═══════════════════════════════════════════════════════════════
-function scorePlayers(pool, weights, type) {
+// scarcityMap: optional map of pos→[0,1], sw: scarcity blend weight [0,1]
+function scorePlayers(pool, weights, type, scarcityMap, sw) {
     const stats = Object.keys(weights);
     // Build per-stat min/max using getStatVal (handles frating grade strings)
     const ranges = {};
@@ -720,7 +842,7 @@ function scorePlayers(pool, weights, type) {
     });
 
     return pool.map(p => {
-        let totalW = 0, score = 0;
+        let totalW = 0, statScore = 0;
         stats.forEach(stat => {
             const w = weights[stat] || 0;
             if (!w || !ranges[stat] || ranges[stat].range === 0) return;
@@ -728,10 +850,18 @@ function scorePlayers(pool, weights, type) {
             if (isNaN(v)) return;
             let norm = (v - ranges[stat].min) / ranges[stat].range;
             if (isLowerBetter(stat, type)) norm = 1 - norm;
-            score  += w * norm;
-            totalW += w;
+            statScore += w * norm;
+            totalW    += w;
         });
-        return { player: p, score: totalW ? score / totalW : 0 };
+        const base = totalW ? statScore / totalW : 0;
+        // Blend in scarcity if requested
+        let score = base;
+        if (sw && sw > 0 && scarcityMap) {
+            const pos = getPos(p).toUpperCase();
+            const scarc = scarcityMap[pos] !== undefined ? scarcityMap[pos] : 0;
+            score = (1 - sw) * base + sw * scarc;
+        }
+        return { player: p, score };
     }).sort((a, b) => b.score - a.score);
 }
 
@@ -786,8 +916,10 @@ function computePositionNeeds() {
     const availH    = available.filter(p => !isPitcher(p));
     const availP    = available.filter(p =>  isPitcher(p));
 
-    const scoredH = scorePlayers(availH, weightsHitter, 'hitter');
-    const scoredP = scorePlayers(availP, weightsPitcher, 'pitcher');
+    const sw = scarcityWeight / 10;
+    const scarcityMap = sw > 0 ? computeScarcityMap(available) : null;
+    const scoredH = scorePlayers(availH, weightsHitter, 'hitter', scarcityMap, sw);
+    const scoredP = scorePlayers(availP, weightsPitcher, 'pitcher', scarcityMap, sw);
 
     const needs = [];
     Object.keys(SLOT_TARGETS).forEach(slot => {
@@ -842,73 +974,92 @@ function renderClock() {
 // ═══════════════════════════════════════════════════════════════
 // RENDER: TOP AVAILABLE
 // ═══════════════════════════════════════════════════════════════
+
+// Build a single player card (shared by all list renders)
+function makePlayerCard(r, i) {
+    const p   = r.player;
+    const pos = getPos(p).toUpperCase();
+    const pct = Math.round(r.score * 100);
+    const ks  = isPitcher(p) ? PITCHER_KEY_STATS : HITTER_KEY_STATS;
+    const statsHtml = ks.map(s =>
+        `<div class="key-stat-item"><div class="key-stat-lbl">${s.label}</div><div class="key-stat-val">${fmtStat(p[s.key], s.dec)}</div></div>`
+    ).join('');
+    return `
+    <div class="player-card">
+        <div class="pick-rank ${i < 3 ? 'top3' : ''}">${i + 1}</div>
+        <span class="pos-badge ${posBadgeClass(pos)}">${pos}</span>
+        <div class="player-info">
+            <div class="player-name">${escHtml(p.First)} ${escHtml(p.Last)}</div>
+            <div class="player-team">${escHtml(p.T || p.MLB || 'FA')} · Age ${p.Age||'—'}</div>
+        </div>
+        <div class="key-stats-grid">${statsHtml}</div>
+        <div class="score-bar-wrap">
+            <div class="score-label"><span>Score</span><span class="score-val">${pct}</span></div>
+            <div class="score-bar"><div class="score-bar-fill" style="width:${pct}%"></div></div>
+        </div>
+    </div>`;
+}
+
+function makeSectionHeader(label) {
+    return `<h3 style="margin:20px 0 10px;font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#4a5060;">${label}</h3>`;
+}
+
 function renderTopAvailable() {
     const avail  = getAvailable();
     const availH = avail.filter(p => !isPitcher(p));
     const availP = avail.filter(p =>  isPitcher(p));
 
-    const scoredH = scorePlayers(availH, weightsHitter, 'hitter').slice(0, 50);
-    const scoredP = scorePlayers(availP, weightsPitcher, 'pitcher').slice(0, 50);
+    // Scarcity blend
+    const sw = scarcityWeight / 10;
+    const scarcityMap = sw > 0 ? computeScarcityMap(avail) : null;
 
-    // Interleave top hitters and pitchers by score, show top 40 overall
-    const combined = [...scoredH, ...scoredP]
-        .sort((a, b) => b.score - a.score)
-        .slice(0, 60);
+    const scoredH = scorePlayers(availH, weightsHitter,  'hitter',  scarcityMap, sw);
+    const scoredP = scorePlayers(availP, weightsPitcher, 'pitcher', scarcityMap, sw);
 
-    const keyStats = r => isPitcher(r.player) ? PITCHER_KEY_STATS : HITTER_KEY_STATS;
+    // Combined sorted list (used when posFilter === 'all')
+    const scoredAll = [...scoredH, ...scoredP].sort((a, b) => b.score - a.score);
 
-    let html = '<div class="player-list">';
-    combined.forEach((r, i) => {
-        const p   = r.player;
-        const pos = getPos(p).toUpperCase();
-        const pct = Math.round(r.score * 100);
-        const ks  = keyStats(r).map(s =>
-            `${s.label} <span>${fmtStat(p[s.key], s.dec)}</span>`
-        ).join(' &nbsp; ');
+    // Position filter chips
+    const POS_CHIPS = ['all','C','1B','2B','3B','SS','OF','DH','SP','RP'];
+    let html = '<div class="pos-filter-row">' +
+        POS_CHIPS.map(pos =>
+            `<button class="pos-chip ${posFilter === pos ? 'active' : ''}" onclick="setPosFilter('${pos}')">${pos === 'all' ? 'All' : pos}</button>`
+        ).join('') +
+        '</div>';
 
-        html += `
-        <div class="player-card">
-            <div class="pick-rank ${i < 3 ? 'top3' : ''}">${i + 1}</div>
-            <span class="pos-badge ${posBadgeClass(pos)}">${pos}</span>
-            <div class="player-info">
-                <div class="player-name">${escHtml(p.First)} ${escHtml(p.Last)}</div>
-                <div class="player-team">${escHtml(p.Team || 'FA')} · Age ${p.Age||'—'}</div>
-            </div>
-            <div class="key-stats">${ks}</div>
-            <div class="score-bar-wrap">
-                <div class="score-label">
-                    <span>Score</span>
-                    <span class="score-val">${pct}</span>
-                </div>
-                <div class="score-bar">
-                    <div class="score-bar-fill" style="width:${pct}%"></div>
-                </div>
-            </div>
-        </div>`;
-    });
-    if (!combined.length) html += '<div class="empty-msg">No available players</div>';
-    html += '</div>';
+    const isPitcherPos = posFilter === 'SP' || posFilter === 'RP';
+    const isHitterPos  = !isPitcherPos && posFilter !== 'all';
 
-    // Also show top 10 hitters and pitchers separately
-    html += `<h3 style="margin:20px 0 10px;font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#4a5060;">Top Available Hitters</h3>`;
-    html += '<div class="player-list">';
-    scoredH.slice(0, 10).forEach((r, i) => {
-        const p = r.player; const pos = getPos(p).toUpperCase();
-        const pct = Math.round(r.score * 100);
-        const ks = HITTER_KEY_STATS.map(s => `${s.label} <span>${fmtStat(p[s.key], s.dec)}</span>`).join(' &nbsp; ');
-        html += `<div class="player-card"><div class="pick-rank ${i<3?'top3':''}">${i+1}</div><span class="pos-badge ${posBadgeClass(pos)}">${pos}</span><div class="player-info"><div class="player-name">${escHtml(p.First)} ${escHtml(p.Last)}</div><div class="player-team">${escHtml(p.Team||'FA')} · Age ${p.Age||'—'}</div></div><div class="key-stats">${ks}</div><div class="score-bar-wrap"><div class="score-label"><span>Score</span><span class="score-val">${pct}</span></div><div class="score-bar"><div class="score-bar-fill" style="width:${pct}%"></div></div></div></div>`;
-    });
-    html += '</div>';
+    if (posFilter === 'all') {
+        // All: combined top list + separate hitter/pitcher sub-lists
+        const topCombined = scoredAll.slice(0, 60);
+        html += '<div class="player-list">';
+        topCombined.forEach((r, i) => html += makePlayerCard(r, i));
+        if (!topCombined.length) html += '<div class="empty-msg">No available players</div>';
+        html += '</div>';
 
-    html += `<h3 style="margin:20px 0 10px;font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#4a5060;">Top Available Pitchers</h3>`;
-    html += '<div class="player-list">';
-    scoredP.slice(0, 10).forEach((r, i) => {
-        const p = r.player; const pos = getPos(p).toUpperCase();
-        const pct = Math.round(r.score * 100);
-        const ks = PITCHER_KEY_STATS.map(s => `${s.label} <span>${fmtStat(p[s.key], s.dec)}</span>`).join(' &nbsp; ');
-        html += `<div class="player-card"><div class="pick-rank ${i<3?'top3':''}">${i+1}</div><span class="pos-badge ${posBadgeClass(pos)}">${pos}</span><div class="player-info"><div class="player-name">${escHtml(p.First)} ${escHtml(p.Last)}</div><div class="player-team">${escHtml(p.Team||'FA')} · Age ${p.Age||'—'}</div></div><div class="key-stats">${ks}</div><div class="score-bar-wrap"><div class="score-label"><span>Score</span><span class="score-val">${pct}</span></div><div class="score-bar"><div class="score-bar-fill" style="width:${pct}%"></div></div></div></div>`;
-    });
-    html += '</div>';
+        html += makeSectionHeader('Top Available Hitters');
+        html += '<div class="player-list">';
+        scoredH.slice(0, 10).forEach((r, i) => html += makePlayerCard(r, i));
+        if (!scoredH.length) html += '<div class="empty-msg">No hitters available</div>';
+        html += '</div>';
+
+        html += makeSectionHeader('Top Available Pitchers');
+        html += '<div class="player-list">';
+        scoredP.slice(0, 10).forEach((r, i) => html += makePlayerCard(r, i));
+        if (!scoredP.length) html += '<div class="empty-msg">No pitchers available</div>';
+        html += '</div>';
+
+    } else {
+        // Filtered: one list of the selected position
+        const source   = isPitcherPos ? scoredP : scoredH;
+        const filtered = source.filter(r => matchesPosFilter(r.player)).slice(0, 30);
+        html += makeSectionHeader(`Top Available — ${posFilter}`);
+        html += '<div class="player-list">';
+        filtered.forEach((r, i) => html += makePlayerCard(r, i));
+        if (!filtered.length) html += '<div class="empty-msg">No available players at this position</div>';
+        html += '</div>';
+    }
 
     document.getElementById('main-content').innerHTML = html;
 }
@@ -1175,6 +1326,11 @@ function waitForFirebaseInit() {
 window.addEventListener('DOMContentLoaded', async function() {
     populateTeamSelect();
     renderWeightsPanel();
+    // Sync scarcity slider to saved value
+    const scarcSlider = document.getElementById('scarcity-slider');
+    const scarcVal    = document.getElementById('scarcity-val');
+    if (scarcSlider) scarcSlider.value = scarcityWeight;
+    if (scarcVal)    { scarcVal.textContent = scarcityWeight; scarcVal.className = 'weight-val' + (scarcityWeight === 0 ? ' zero' : ''); }
 
     // Wait for firebase-init.js module to finish (it's async/deferred)
     try {
