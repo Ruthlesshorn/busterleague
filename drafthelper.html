@@ -637,18 +637,27 @@ function getDraftedKeys() {
 
 function getAvailable() {
     const drafted = getDraftedKeys();
-    return players.filter(p => !drafted.has(p.First + p.Last + p.Age));
+    // Exclude drafted players AND keepers (players with a fantasy Team already assigned)
+    return players.filter(p =>
+        !drafted.has(p.First + p.Last + p.Age) && !p.Team
+    );
 }
 
 function getMyRoster() {
     if (!myTeam) return [];
-    return draftedPlayers
+    // Keepers: players with p.Team matching my team code
+    const keepers = players.filter(p => p.Team === myTeam);
+    // In-draft picks
+    const drafted = draftedPlayers
         .filter(d => d.team === myTeam)
         .map(d => d.player);
+    return [...keepers, ...drafted];
 }
 
 function getTeamRoster(team) {
-    return draftedPlayers.filter(d => d.team === team).map(d => d.player);
+    const keepers = players.filter(p => p.Team === team);
+    const drafted = draftedPlayers.filter(d => d.team === team).map(d => d.player);
+    return [...keepers, ...drafted];
 }
 
 function getRosterCounts(roster) {
