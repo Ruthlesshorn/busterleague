@@ -1,0 +1,1055 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Buster League — Season Results</title>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
+
+        /* ── Header ── */
+        .header {
+            background: linear-gradient(135deg, #c41e3a 0%, #d94e59 100%);
+            color: white;
+            padding: 24px 30px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        .header-left h1 {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 2em;
+            letter-spacing: 2px;
+        }
+        .header-left p { opacity: 0.85; font-size: 0.9em; margin-top: 2px; }
+        .header-right { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+        .btn {
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-family: 'DM Sans', sans-serif;
+            font-weight: 700;
+            font-size: 0.9em;
+            cursor: pointer;
+            border: none;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.2s;
+        }
+        .btn-ghost { background: rgba(255,255,255,0.2); color: white; }
+        .btn-ghost:hover { background: rgba(255,255,255,0.3); transform: translateY(-1px); }
+
+        /* ── Week selector ── */
+        .week-bar {
+            background: white;
+            border-radius: 12px;
+            padding: 16px 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            flex-wrap: wrap;
+        }
+        .week-bar label {
+            font-weight: 800;
+            font-size: 0.8em;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: #1e3c72;
+        }
+        .week-select {
+            padding: 9px 14px;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.95em;
+            font-weight: 600;
+            color: #1e3c72;
+            cursor: pointer;
+            transition: border-color 0.2s;
+            background: white;
+        }
+        .week-select:focus { outline: none; border-color: #c41e3a; }
+        .week-select:hover { border-color: #c41e3a; }
+        .week-status {
+            font-size: 0.82em;
+            color: #6c757d;
+            margin-left: auto;
+        }
+        .loading-indicator {
+            display: none;
+            font-size: 0.85em;
+            color: #c41e3a;
+            font-weight: 700;
+            align-items: center;
+            gap: 6px;
+        }
+        .loading-indicator.show { display: flex; }
+        .spinner {
+            width: 14px; height: 14px;
+            border: 2px solid #f0f0f0;
+            border-top-color: #c41e3a;
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ── Nav tabs ── */
+        .nav-tabs {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+        .nav-tab {
+            padding: 9px 18px;
+            border-radius: 8px;
+            border: 2px solid rgba(255,255,255,0.25);
+            background: rgba(255,255,255,0.12);
+            color: white;
+            font-family: 'DM Sans', sans-serif;
+            font-weight: 700;
+            font-size: 0.85em;
+            cursor: pointer;
+            transition: all 0.15s;
+            white-space: nowrap;
+        }
+        .nav-tab:hover { background: rgba(255,255,255,0.22); border-color: rgba(255,255,255,0.5); }
+        .nav-tab.active {
+            background: white;
+            color: #1e3c72;
+            border-color: white;
+        }
+
+        /* ── Team sub-nav ── */
+        .team-nav {
+            background: white;
+            border-radius: 12px;
+            padding: 14px 18px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+            display: none;
+            flex-wrap: wrap;
+            gap: 6px;
+            align-items: center;
+        }
+        .team-nav.show { display: flex; }
+        .team-nav-label {
+            font-size: 0.75em;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: #6c757d;
+            margin-right: 4px;
+        }
+        .team-chip {
+            padding: 5px 12px;
+            border-radius: 20px;
+            border: 2px solid #dee2e6;
+            background: white;
+            font-size: 0.8em;
+            font-weight: 700;
+            cursor: pointer;
+            color: #495057;
+            transition: all 0.12s;
+        }
+        .team-chip:hover { border-color: #1e3c72; color: #1e3c72; }
+        .team-chip.active { background: #1e3c72; color: white; border-color: #1e3c72; }
+
+        /* ── Cards ── */
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 22px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+            margin-bottom: 20px;
+        }
+        .card-title {
+            font-size: 0.82em;
+            font-weight: 800;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: #1e3c72;
+            margin-bottom: 16px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #c41e3a;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .card-title span {
+            font-size: 1.1em;
+            font-weight: 500;
+            color: #6c757d;
+            letter-spacing: 0;
+            text-transform: none;
+        }
+
+        /* ── DMB table styling ── */
+        .dmb-wrap { overflow-x: auto; border-radius: 8px; border: 1px solid #dee2e6; }
+        .dmb-table { width: 100%; border-collapse: collapse; font-size: 0.87em; }
+        .dmb-table thead { background: #1e3c72; color: white; position: sticky; top: 0; z-index: 5; }
+        .dmb-table th {
+            padding: 10px 12px;
+            text-align: left;
+            font-weight: 600;
+            white-space: nowrap;
+            font-size: 0.85em;
+            letter-spacing: 0.5px;
+        }
+        .dmb-table td {
+            padding: 9px 12px;
+            border-bottom: 1px solid #f0f0f0;
+            white-space: nowrap;
+        }
+        .dmb-table tbody tr:hover { background: #f8f9fa; }
+        .dmb-table tbody tr:nth-child(even) { background: #fafafa; }
+        .dmb-table tbody tr:nth-child(even):hover { background: #f0f0f0; }
+
+        /* Section headers in org tables */
+        .dmb-section-header td {
+            background: #e8eef8;
+            color: #1e3c72;
+            font-weight: 800;
+            font-size: 0.85em;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            padding: 8px 12px;
+        }
+        .dmb-section-subheader td {
+            background: #f0f4fb;
+            color: #495057;
+            font-weight: 700;
+            font-size: 0.82em;
+            padding: 6px 12px;
+        }
+
+        /* W/L badges */
+        .badge-w { color: #155724; background: #d1e7dd; padding: 2px 8px; border-radius: 4px; font-weight: 700; font-size: 0.82em; }
+        .badge-l { color: #842029; background: #f8d7da; padding: 2px 8px; border-radius: 4px; font-weight: 700; font-size: 0.82em; }
+        .badge-t { color: #664d03; background: #fff3cd; padding: 2px 8px; border-radius: 4px; font-weight: 700; font-size: 0.82em; }
+        .home-badge { color: #0c5460; background: #d1ecf1; padding: 1px 6px; border-radius: 3px; font-size: 0.75em; font-weight: 700; }
+        .away-badge { color: #6c757d; background: #e9ecef; padding: 1px 6px; border-radius: 3px; font-size: 0.75em; font-weight: 700; }
+
+        /* Standings color coding */
+        .pct-high { color: #155724; font-weight: 700; }
+        .pct-mid  { color: #664d03; font-weight: 600; }
+        .pct-low  { color: #842029; font-weight: 600; }
+
+        /* Leaders layout */
+        .leaders-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 16px;
+        }
+        .leader-block {
+            background: #f8f9fa;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid #e9ecef;
+        }
+        .leader-block-title {
+            background: #1e3c72;
+            color: white;
+            padding: 8px 14px;
+            font-size: 0.78em;
+            font-weight: 800;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .leader-row {
+            display: flex;
+            align-items: center;
+            padding: 7px 14px;
+            border-bottom: 1px solid #f0f0f0;
+            gap: 10px;
+        }
+        .leader-row:last-child { border-bottom: none; }
+        .leader-rank {
+            font-size: 0.72em;
+            font-weight: 800;
+            color: #adb5bd;
+            width: 18px;
+            flex-shrink: 0;
+        }
+        .leader-rank.gold   { color: #c9a227; }
+        .leader-rank.silver { color: #9e9e9e; }
+        .leader-rank.bronze { color: #b87333; }
+        .leader-name { font-weight: 700; flex: 1; font-size: 0.88em; }
+        .leader-team {
+            font-size: 0.75em;
+            color: #6c757d;
+            background: #e9ecef;
+            padding: 2px 7px;
+            border-radius: 4px;
+            font-weight: 700;
+        }
+        .leader-val {
+            font-weight: 800;
+            color: #c41e3a;
+            font-size: 0.9em;
+            min-width: 50px;
+            text-align: right;
+        }
+
+        /* Roster page */
+        .roster-sections { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        @media (max-width: 768px) { .roster-sections { grid-template-columns: 1fr; } }
+
+        /* Game log link style */
+        .game-link {
+            color: #1e3c72;
+            font-weight: 700;
+            text-decoration: none;
+            border-bottom: 1px dashed #adb5bd;
+        }
+        .game-link:hover { color: #c41e3a; border-bottom-color: #c41e3a; }
+
+        /* Error / empty states */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #6c757d;
+        }
+        .empty-state .icon { font-size: 3em; margin-bottom: 12px; }
+        .empty-state h3 { font-size: 1.1em; margin-bottom: 6px; color: #495057; }
+        .error-state {
+            background: #fff5f5;
+            border: 1px solid #f8d7da;
+            border-radius: 8px;
+            padding: 20px;
+            color: #842029;
+            font-weight: 600;
+            margin: 20px 0;
+        }
+
+        /* Collapsible sections */
+        .section-toggle {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #6c757d;
+            font-size: 1em;
+            padding: 0 4px;
+            transition: transform 0.2s;
+            flex-shrink: 0;
+        }
+        .section-toggle.collapsed { transform: rotate(-90deg); }
+        .section-toggle:hover { color: #1e3c72; }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header { flex-direction: column; gap: 12px; }
+            .nav-tab { font-size: 0.78em; padding: 7px 12px; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+
+    <!-- Header -->
+    <div class="header">
+        <div class="header-left">
+            <h1>⚾ Buster League Results</h1>
+            <p id="header-sub">Diamond Mine Baseball — Season Reports</p>
+        </div>
+        <div class="header-right">
+            <a href="index.html" class="btn btn-ghost">← Dashboard</a>
+        </div>
+    </div>
+
+    <!-- Week selector -->
+    <div class="week-bar">
+        <label>Season Week</label>
+        <select class="week-select" id="week-select" onchange="loadWeek(this.value)">
+            <option value="">— Select a week —</option>
+        </select>
+        <div class="loading-indicator" id="loading">
+            <div class="spinner"></div> Loading…
+        </div>
+        <span class="week-status" id="week-status"></span>
+    </div>
+
+    <!-- Section nav tabs -->
+    <div class="nav-tabs" id="nav-tabs" style="display:none;">
+        <button class="nav-tab active" onclick="showSection('standings')">📊 Standings</button>
+        <button class="nav-tab" onclick="showSection('results')">🎯 Game Results</button>
+        <button class="nav-tab" onclick="showSection('bat-leaders')">🏏 Batting Leaders</button>
+        <button class="nav-tab" onclick="showSection('pch-leaders')">⚾ Pitching Leaders</button>
+        <button class="nav-tab" onclick="showSection('fld-leaders')">🧤 Fielding Leaders</button>
+        <button class="nav-tab" onclick="showSection('team-bat')">📋 Team Batting</button>
+        <button class="nav-tab" onclick="showSection('team-pch')">📋 Team Pitching</button>
+        <button class="nav-tab" onclick="showSection('team-fld')">📋 Team Fielding</button>
+        <button class="nav-tab" onclick="showSection('injuries')">🤕 Injuries</button>
+        <button class="nav-tab" onclick="showSection('transactions')">🔄 Transactions</button>
+        <button class="nav-tab" onclick="showSection('teams')">🏟 Teams</button>
+    </div>
+
+    <!-- Team sub-nav (shown when Teams tab is active) -->
+    <div class="team-nav" id="team-nav"></div>
+
+    <!-- Content area -->
+    <div id="content-area">
+        <div class="empty-state">
+            <div class="icon">⚾</div>
+            <h3>Select a week to view results</h3>
+            <p>Choose a week from the dropdown above to load standings, game results, and stats.</p>
+        </div>
+    </div>
+
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+// CONFIGURATION — add new weeks here each week.
+// Folder names match exactly what you create in your repo.
+// The dropdown label IS the folder name, so name them however
+// you like: 'week-1', 'week-2', etc.
+// Add new weeks to the END of this array.
+// ═══════════════════════════════════════════════════════════════
+const WEEKS = [
+    'week-1',   // add new weeks below this line, e.g. 'week-2'
+];
+
+// Folder inside your repo where the week subfolders live.
+// Each week: dmb/week-1/index.htm, dmb/week-2/index.htm, etc.
+const DMB_BASE = 'dmb';
+
+// ═══════════════════════════════════════════════════════════════
+// State
+// ═══════════════════════════════════════════════════════════════
+let currentWeek   = null;
+let currentSection = 'standings';
+let weekCache     = {};   // { folderPath: { filename: htmlText } }
+let teamList      = [];   // populated from lgindex files
+
+// ═══════════════════════════════════════════════════════════════
+// Init
+// ═══════════════════════════════════════════════════════════════
+(function init() {
+    const sel = document.getElementById('week-select');
+    WEEKS.forEach((folder, i) => {
+        const weekNum = i + 1;
+        const opt = document.createElement('option');
+        opt.value = folder;
+        opt.textContent = weekLabel(folder);
+        sel.appendChild(opt);
+    });
+
+    // Default to most recent (last in array = newest week = highest number)
+    const latest = WEEKS[WEEKS.length - 1];
+    if (latest) {
+        sel.value = latest;
+        loadWeek(latest);
+    }
+})();
+
+function weekLabel(folder) {
+    // Converts 'week-1' → 'Week 1', 'week-12' → 'Week 12', etc.
+    // Falls back to the raw folder name if it doesn't match the pattern.
+    return folder.replace(/^week-(\d+)$/i, (_, n) => `Week ${n}`);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// File fetching
+// ═══════════════════════════════════════════════════════════════
+async function fetchFile(folder, filename) {
+    const cacheKey = `${folder}/${filename}`;
+    if (weekCache[cacheKey]) return weekCache[cacheKey];
+
+    const url = `${DMB_BASE}/${folder}/${filename}`;
+    try {
+        const res = await fetch(url);
+        if (!res.ok) return null;
+        const text = await res.text();
+        weekCache[cacheKey] = text;
+        return text;
+    } catch(e) {
+        return null;
+    }
+}
+
+function parseHTML(text) {
+    const parser = new DOMParser();
+    return parser.parseFromString(text, 'text/html');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// Week loader
+// ═══════════════════════════════════════════════════════════════
+async function loadWeek(folder) {
+    if (!folder) return;
+    currentWeek = folder;
+
+    setLoading(true);
+    document.getElementById('week-status').textContent = '';
+
+    // Load the index to discover team links
+    const indexText = await fetchFile(folder, 'index.htm');
+    if (!indexText) {
+        setLoading(false);
+        showError(`Could not load week data from dmb/${folder}/. Make sure the files are uploaded to that folder.`);
+        return;
+    }
+
+    // Parse teams from league index files
+    await buildTeamList(folder);
+
+    // Update header
+    document.getElementById('header-sub').textContent =
+        `Diamond Mine Baseball — ${weekLabel(folder)} • ${formatDate(folder)}`;
+    document.getElementById('week-status').textContent =
+        `${weekLabel(folder)} loaded`;
+
+    // Show nav
+    document.getElementById('nav-tabs').style.display = 'flex';
+
+    setLoading(false);
+
+    // Show current section (default standings)
+    showSection(currentSection);
+}
+
+async function buildTeamList(folder) {
+    teamList = [];
+    for (const lgFile of ['lgindex1.htm', 'lgindex2.htm']) {
+        const text = await fetchFile(folder, lgFile);
+        if (!text) continue;
+        const doc = parseHTML(text);
+        const links = doc.querySelectorAll('a[href*="tmindex"]');
+        links.forEach(a => {
+            const href = a.getAttribute('href');
+            const name = a.textContent.trim();
+            if (href && name) teamList.push({ href, name });
+        });
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// Section navigation
+// ═══════════════════════════════════════════════════════════════
+function showSection(section) {
+    currentSection = section;
+
+    // Update tab styles
+    document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+    event && event.target && event.target.classList && event.target.classList.add('active');
+    // Find the right tab by matching its onclick
+    document.querySelectorAll('.nav-tab').forEach(t => {
+        if (t.getAttribute('onclick') && t.getAttribute('onclick').includes(`'${section}'`)) {
+            t.classList.add('active');
+        }
+    });
+
+    // Show/hide team nav
+    const teamNav = document.getElementById('team-nav');
+    if (section === 'teams') {
+        buildTeamNav();
+        teamNav.classList.add('show');
+    } else {
+        teamNav.classList.remove('show');
+    }
+
+    if (!currentWeek) return;
+
+    const fileMap = {
+        'standings':    'orgstand.htm',
+        'results':      'orggr.htm',
+        'bat-leaders':  'orgbatldrs.htm',
+        'pch-leaders':  'orgpchldrs.htm',
+        'fld-leaders':  'orgfldldrs.htm',
+        'team-bat':     'orgtmbattot.htm',
+        'team-pch':     'orgtmpchtot.htm',
+        'team-fld':     'orgtmfldtot.htm',
+        'injuries':     'orgcurrinj.htm',
+        'transactions': 'orgtxnlog.htm',
+    };
+
+    if (section === 'teams') {
+        // Show team list overview
+        renderTeamList();
+        return;
+    }
+
+    const file = fileMap[section];
+    if (!file) return;
+
+    setLoading(true);
+    fetchFile(currentWeek, file).then(text => {
+        setLoading(false);
+        if (!text) { showError(`Could not load ${file}`); return; }
+        renderSection(section, text);
+    });
+}
+
+// ═══════════════════════════════════════════════════════════════
+// Team navigation
+// ═══════════════════════════════════════════════════════════════
+function buildTeamNav() {
+    const nav = document.getElementById('team-nav');
+    nav.innerHTML = '<span class="team-nav-label">Team:</span>';
+    teamList.forEach((t, i) => {
+        const btn = document.createElement('button');
+        btn.className = 'team-chip' + (i === 0 ? ' active' : '');
+        btn.textContent = t.name;
+        btn.onclick = () => loadTeamPage(t.href, btn);
+        nav.appendChild(btn);
+    });
+    // Load first team by default
+    if (teamList.length) loadTeamPage(teamList[0].href, nav.querySelectorAll('.team-chip')[0]);
+}
+
+async function loadTeamPage(tmIndexFile, chipEl) {
+    // Update chip styling
+    document.querySelectorAll('.team-chip').forEach(c => c.classList.remove('active'));
+    if (chipEl) chipEl.classList.add('active');
+
+    setLoading(true);
+    const text = await fetchFile(currentWeek, tmIndexFile);
+    setLoading(false);
+    if (!text) { showError('Could not load team page.'); return; }
+
+    const doc = parseHTML(text);
+    // Get team name and links
+    const h2 = doc.querySelector('h2');
+    const teamName = h2 ? h2.textContent.trim() : 'Team';
+    const links = doc.querySelectorAll('a[href]');
+    const pages = [];
+    links.forEach(a => {
+        const href = a.getAttribute('href');
+        const label = a.textContent.trim();
+        if (href && href.startsWith('tm') && !href.startsWith('tmindex') && label) {
+            pages.push({ href, label });
+        }
+    });
+
+    renderTeamHub(teamName, pages, tmIndexFile);
+}
+
+async function renderTeamHub(teamName, pages, tmIndexFile) {
+    let html = `
+        <div class="card">
+            <div class="card-title">${escHtml(teamName)}</div>
+            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;margin-bottom:20px;">
+                ${pages.map(p => `
+                    <button onclick="loadTeamSubPage('${escHtml(p.href)}', '${escHtml(teamName)}')"
+                        style="padding:12px 16px;background:#f8f9fa;border:2px solid #dee2e6;border-radius:8px;
+                               font-family:inherit;font-weight:700;font-size:0.88em;cursor:pointer;
+                               text-align:left;color:#1e3c72;transition:all 0.15s;"
+                        onmouseover="this.style.borderColor='#c41e3a';this.style.background='#fff5f7'"
+                        onmouseout="this.style.borderColor='#dee2e6';this.style.background='#f8f9fa'">
+                        ${escHtml(p.label)}
+                    </button>`).join('')}
+            </div>
+        </div>
+        <div id="team-sub-content"></div>
+    `;
+    document.getElementById('content-area').innerHTML = html;
+
+    // Auto-load roster as first view
+    if (pages.length) loadTeamSubPage(pages[0].href, teamName);
+}
+
+async function loadTeamSubPage(filename, teamName) {
+    setLoading(true);
+    const text = await fetchFile(currentWeek, filename);
+    setLoading(false);
+    if (!text) { document.getElementById('team-sub-content').innerHTML = '<div class="error-state">Could not load file.</div>'; return; }
+    renderTeamSubPage(filename, teamName, text);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// Section renderers
+// ═══════════════════════════════════════════════════════════════
+function renderSection(section, text) {
+    const doc = parseHTML(text);
+    switch(section) {
+        case 'standings':    renderStandings(doc);    break;
+        case 'results':      renderGameResults(doc);  break;
+        case 'bat-leaders':  renderLeaders(doc, 'Batting Leaders'); break;
+        case 'pch-leaders':  renderLeaders(doc, 'Pitching Leaders'); break;
+        case 'fld-leaders':  renderLeaders(doc, 'Fielding Leaders'); break;
+        case 'team-bat':     renderGenericTable(doc, 'Team Batting Totals'); break;
+        case 'team-pch':     renderGenericTable(doc, 'Team Pitching Totals'); break;
+        case 'team-fld':     renderGenericTable(doc, 'Team Fielding Totals'); break;
+        case 'injuries':     renderGenericTable(doc, 'Current Injuries'); break;
+        case 'transactions': renderGenericTable(doc, 'Transaction Log'); break;
+        default:             renderGenericTable(doc, section); break;
+    }
+}
+
+// ── Standings ──
+function renderStandings(doc) {
+    const tables = doc.querySelectorAll('table');
+    let html = `<div class="card"><div class="card-title">Standings <span>${weekLabel(currentWeek)} — ${formatDate(currentWeek)}</span></div>`;
+
+    tables.forEach(table => {
+        const titleRow = table.querySelector('tr.dmrptsecttitle');
+        const sectionName = titleRow ? titleRow.textContent.trim() : '';
+        if (!sectionName) return;
+
+        html += `<h3 style="font-size:0.85em;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;
+                            color:#1e3c72;margin:20px 0 10px;padding-bottom:6px;border-bottom:1px solid #e9ecef;">
+                    ${escHtml(sectionName)}
+                 </h3>`;
+        html += `<div class="dmb-wrap"><table class="dmb-table">`;
+
+        const rows = table.querySelectorAll('tr');
+        rows.forEach((row, ri) => {
+            if (row.classList.contains('dmrptsecttitle')) return;
+
+            const cells = row.querySelectorAll('td');
+            if (!cells.length) return;
+
+            // Header row
+            if (row.classList.contains('dmrptsecthdr')) {
+                html += '<thead><tr>';
+                cells.forEach(td => {
+                    html += `<th>${escHtml(td.textContent.trim())}</th>`;
+                });
+                html += '</tr></thead><tbody>';
+                return;
+            }
+
+            // Data rows
+            const isBlank = Array.from(cells).every(td => !td.textContent.trim() || td.textContent.trim() === '\u00a0');
+            if (isBlank) return;
+
+            const firstText = cells[0] ? cells[0].textContent.trim() : '';
+            const isLeagueHeader = firstText === 'American' || firstText === 'National';
+            const isDivHeader = ['East','West','North','South','Central'].includes(firstText);
+
+            if (isLeagueHeader || isDivHeader) {
+                html += `<tr class="dmb-section-subheader"><td colspan="${cells.length}" style="padding:6px 12px;background:#f0f4fb;font-weight:800;color:#1e3c72;font-size:0.82em;letter-spacing:1px;text-transform:uppercase;">${escHtml(firstText)}</td></tr>`;
+                return;
+            }
+
+            html += '<tr>';
+            cells.forEach((td, ci) => {
+                let val = td.textContent.trim().replace(/\u00a0/g, '');
+                if (!val) { html += '<td></td>'; return; }
+
+                // Color-code win pct
+                if (ci === 4 && val.startsWith('.')) {
+                    const pct = parseFloat(val);
+                    const cls = pct >= 0.550 ? 'pct-high' : pct <= 0.450 ? 'pct-low' : 'pct-mid';
+                    html += `<td><span class="${cls}">${escHtml(val)}</span></td>`;
+                    return;
+                }
+                // Recent record (10 chars of w/l)
+                if (ci === 9 && /^[wlWL]+$/.test(val)) {
+                    const colored = val.split('').map(c =>
+                        c.toLowerCase() === 'w'
+                            ? `<span style="color:#155724;font-weight:700;">W</span>`
+                            : `<span style="color:#842029;">L</span>`
+                    ).join('');
+                    html += `<td style="font-family:monospace;font-size:0.85em;letter-spacing:1px;">${colored}</td>`;
+                    return;
+                }
+                html += `<td>${escHtml(val)}</td>`;
+            });
+            html += '</tr>';
+        });
+
+        html += '</tbody></table></div>';
+    });
+
+    html += '</div>';
+    document.getElementById('content-area').innerHTML = html;
+}
+
+// ── Game Results ──
+function renderGameResults(doc) {
+    const table = doc.querySelector('table');
+    if (!table) { showError('No game results found.'); return; }
+
+    let html = `<div class="card">
+        <div class="card-title">Game Results <span>${weekLabel(currentWeek)} — ${formatDate(currentWeek)}</span></div>
+        <div class="dmb-wrap"><table class="dmb-table">`;
+
+    const rows = table.querySelectorAll('tr');
+    let inBody = false;
+    rows.forEach(row => {
+        if (row.classList.contains('dmrptsecttitle')) return;
+        if (row.classList.contains('dmrptsecthdr')) {
+            html += '<thead><tr>';
+            row.querySelectorAll('td').forEach(td => {
+                html += `<th>${escHtml(td.textContent.trim())}</th>`;
+            });
+            html += '</tr></thead><tbody>';
+            inBody = true;
+            return;
+        }
+        if (!inBody) return;
+
+        const cells = row.querySelectorAll('td');
+        if (!cells.length) return;
+        const isBlank = Array.from(cells).every(td => !td.textContent.trim() || td.textContent.trim() === '\u00a0');
+        if (isBlank) return;
+
+        html += '<tr>';
+        cells.forEach((td, ci) => {
+            const val = td.textContent.trim().replace(/\u00a0/g, '—');
+            const link = td.querySelector('a');
+
+            if (ci === 0 && link) {
+                // Date — keep as text (linking to raw files not useful in this viewer)
+                html += `<td style="font-weight:600;color:#1e3c72;">${escHtml(val)}</td>`;
+            } else if (ci === 1) {
+                // Home/Away indicator
+                const isAway = val === '@';
+                html += `<td>${isAway ? '<span class="away-badge">@</span>' : '<span class="home-badge">H</span>'}</td>`;
+            } else if (ci === 4) {
+                // W/L result
+                const cls = val === 'W' ? 'badge-w' : val === 'L' ? 'badge-l' : 'badge-t';
+                html += `<td><span class="${cls}">${escHtml(val)}</span></td>`;
+            } else {
+                html += `<td>${escHtml(val === '—' ? '' : val)}</td>`;
+            }
+        });
+        html += '</tr>';
+    });
+
+    html += '</tbody></table></div></div>';
+    document.getElementById('content-area').innerHTML = html;
+}
+
+// ── Leaders ──
+function renderLeaders(doc, title) {
+    // The leaders page uses multi-column layouts per table row
+    // We extract each leader group (every <td colspan=3> header)
+    const body = doc.querySelector('body');
+    if (!body) { showError('Could not parse leaders.'); return; }
+
+    // Find all leader groups
+    const groups = [];
+    const allTables = doc.querySelectorAll('table');
+
+    allTables.forEach(table => {
+        // Each group has a header cell with colspan=3 and class=dmrptbodyhdr
+        const headerCells = table.querySelectorAll('td[colspan="3"]');
+        if (!headerCells.length) return;
+
+        // Get all rows
+        const rows = Array.from(table.querySelectorAll('tr'));
+
+        // Split into groups by header cells
+        let currentGroup = null;
+        rows.forEach(row => {
+            const hdr = row.querySelector('td[colspan="3"]');
+            if (hdr && hdr.textContent.trim()) {
+                // Could be multiple groups per row (3-column layout)
+                const allHdrs = row.querySelectorAll('td[colspan="3"]');
+                allHdrs.forEach(h => {
+                    if (h.textContent.trim()) {
+                        groups.push({ name: h.textContent.trim(), rows: [] });
+                    }
+                });
+            } else {
+                // Data row — add to all open groups in this row
+                const tds = row.querySelectorAll('td');
+                if (tds.length === 0) return;
+
+                // 3-column layout: groups of 4 tds (name, team, val, spacer)
+                // Find active groups by counting how many exist
+                const activeGroups = groups.slice(-3); // last 3 groups
+                if (activeGroups.length === 0) return;
+
+                // Each "column" is 4 tds: name | team | val | &nbsp;
+                const colSize = Math.ceil(tds.length / activeGroups.length);
+                activeGroups.forEach((grp, gi) => {
+                    const base = gi * colSize;
+                    const nameTd = tds[base];
+                    const teamTd = tds[base + 1];
+                    const valTd  = tds[base + 2];
+                    if (!nameTd || !teamTd || !valTd) return;
+                    const name = nameTd.textContent.trim().replace(/\u00a0/g, '');
+                    const team = teamTd.textContent.trim().replace(/\u00a0/g, '');
+                    const val  = valTd.textContent.trim().replace(/\u00a0/g, '');
+                    if (name && team && val) grp.rows.push({ name, team, val });
+                });
+            }
+        });
+    });
+
+    if (!groups.length) {
+        renderGenericTable(doc, title);
+        return;
+    }
+
+    let html = `<div class="card">
+        <div class="card-title">${escHtml(title)} <span>${weekLabel(currentWeek)} — ${formatDate(currentWeek)}</span></div>
+        <div class="leaders-grid">`;
+
+    groups.forEach(grp => {
+        if (!grp.rows.length) return;
+        html += `<div class="leader-block">
+            <div class="leader-block-title">${escHtml(grp.name)}</div>`;
+        grp.rows.slice(0, 10).forEach((r, i) => {
+            const rankClass = i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : '';
+            html += `<div class="leader-row">
+                <span class="leader-rank ${rankClass}">${i + 1}</span>
+                <span class="leader-name">${escHtml(r.name)}</span>
+                <span class="leader-team">${escHtml(r.team)}</span>
+                <span class="leader-val">${escHtml(r.val)}</span>
+            </div>`;
+        });
+        html += '</div>';
+    });
+
+    html += '</div></div>';
+    document.getElementById('content-area').innerHTML = html;
+}
+
+// ── Generic table renderer ──
+function renderGenericTable(doc, title) {
+    const tables = doc.querySelectorAll('table');
+    if (!tables.length) { showError('No data found.'); return; }
+
+    let html = `<div class="card">
+        <div class="card-title">${escHtml(title)} <span>${weekLabel(currentWeek)} — ${formatDate(currentWeek)}</span></div>`;
+
+    tables.forEach(table => {
+        const titleRow = table.querySelector('tr.dmrptsecttitle');
+        const subTitle = titleRow ? titleRow.textContent.trim() : '';
+
+        if (subTitle) {
+            html += `<h3 style="font-size:0.82em;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;
+                                color:#1e3c72;margin:18px 0 8px;padding-bottom:5px;border-bottom:1px solid #e9ecef;">
+                        ${escHtml(subTitle)}
+                     </h3>`;
+        }
+
+        html += `<div class="dmb-wrap" style="margin-bottom:16px;"><table class="dmb-table">`;
+        let headerDone = false;
+        const rows = table.querySelectorAll('tr');
+        rows.forEach(row => {
+            if (row.classList.contains('dmrptsecttitle')) return;
+            const cells = row.querySelectorAll('td');
+            if (!cells.length) return;
+            const isBlank = Array.from(cells).every(td => !td.textContent.trim() || td.textContent.trim() === '\u00a0');
+            if (isBlank) return;
+
+            if (row.classList.contains('dmrptsecthdr')) {
+                if (!headerDone) {
+                    html += '<thead><tr>';
+                    cells.forEach(td => html += `<th>${escHtml(td.textContent.trim())}</th>`);
+                    html += '</tr></thead><tbody>';
+                    headerDone = true;
+                }
+                return;
+            }
+
+            if (!headerDone) { html += '<tbody>'; headerDone = true; }
+            html += '<tr>';
+            cells.forEach(td => {
+                const val = td.textContent.trim().replace(/\u00a0/g, '');
+                html += `<td>${escHtml(val)}</td>`;
+            });
+            html += '</tr>';
+        });
+        html += '</tbody></table></div>';
+    });
+
+    html += '</div>';
+    document.getElementById('content-area').innerHTML = html;
+}
+
+// ── Team sub-page ──
+function renderTeamSubPage(filename, teamName, text) {
+    const doc = parseHTML(text);
+    const h3 = doc.querySelector('h3');
+    const subTitle = h3 ? h3.textContent.trim() : filename;
+
+    // Use generic table renderer but inject into team-sub-content
+    const tables = doc.querySelectorAll('table');
+    let html = `<div class="card" style="margin-top:0;">
+        <div class="card-title">${escHtml(subTitle)}</div>`;
+
+    tables.forEach(table => {
+        const titleRow = table.querySelector('tr.dmrptsecttitle');
+        const secTitle = titleRow ? titleRow.textContent.trim() : '';
+        if (secTitle) {
+            html += `<h3 style="font-size:0.82em;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;
+                                color:#1e3c72;margin:18px 0 8px;padding-bottom:5px;border-bottom:1px solid #e9ecef;">
+                        ${escHtml(secTitle)}
+                     </h3>`;
+        }
+
+        html += `<div class="dmb-wrap" style="margin-bottom:16px;"><table class="dmb-table">`;
+        let headerDone = false;
+        table.querySelectorAll('tr').forEach(row => {
+            if (row.classList.contains('dmrptsecttitle')) return;
+            const cells = row.querySelectorAll('td');
+            if (!cells.length) return;
+            const isBlank = Array.from(cells).every(td => !td.textContent.trim() || td.textContent.trim() === '\u00a0');
+            if (isBlank) return;
+
+            if (row.classList.contains('dmrptsecthdr')) {
+                if (!headerDone) {
+                    html += '<thead><tr>';
+                    cells.forEach(td => html += `<th>${escHtml(td.textContent.trim())}</th>`);
+                    html += '</tr></thead><tbody>';
+                    headerDone = true;
+                }
+                return;
+            }
+            if (!headerDone) { html += '<tbody>'; headerDone = true; }
+            html += '<tr>';
+            cells.forEach(td => {
+                const val = td.textContent.trim().replace(/\u00a0/g, '');
+                html += `<td>${escHtml(val)}</td>`;
+            });
+            html += '</tr>';
+        });
+        html += '</tbody></table></div>';
+    });
+
+    html += '</div>';
+    const sub = document.getElementById('team-sub-content');
+    if (sub) sub.innerHTML = html;
+}
+
+// ── Team List overview ──
+function renderTeamList() {
+    if (!teamList.length) {
+        document.getElementById('content-area').innerHTML = '<div class="empty-state"><div class="icon">🏟</div><h3>No teams found</h3></div>';
+        return;
+    }
+    // Team nav handles loading; show placeholder until a team chip is clicked
+    document.getElementById('content-area').innerHTML =
+        `<div id="team-sub-content"><div class="empty-state"><div class="icon">🏟</div><h3>Select a team above</h3></div></div>`;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// Helpers
+// ═══════════════════════════════════════════════════════════════
+function escHtml(s) {
+    return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function setLoading(show) {
+    document.getElementById('loading').classList.toggle('show', show);
+}
+
+function showError(msg) {
+    document.getElementById('content-area').innerHTML = `<div class="error-state">⚠️ ${escHtml(msg)}</div>`;
+}
+</script>
+</body>
+</html>
