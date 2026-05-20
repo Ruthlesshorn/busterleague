@@ -678,6 +678,7 @@
             const user = await new Promise(resolve =>
                 window.firebaseOnAuthStateChanged(window.firebaseAuth, resolve));
             const draftBtn   = document.getElementById('draft-board-btn');
+            const resultsBtn  = document.getElementById('results-btn');
             const myTeamBtn  = document.getElementById('myteam-btn');
             const signoutBtn = document.getElementById('signout-btn');
             const loginBtn   = document.getElementById('login-btn');
