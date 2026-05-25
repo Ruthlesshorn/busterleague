@@ -423,7 +423,7 @@
 // Add new weeks to the END of this array.
 // ═══════════════════════════════════════════════════════════════
 const WEEKS = [
-    'week-1',// add new weeks below this line, e.g. 'week-2'
+    'week-1',   // add new weeks below this line, e.g. 'week-2'
 ];
 
 // Folder inside your repo where the week subfolders live.
@@ -512,7 +512,7 @@ async function loadWeek(folder) {
 
     // Update header
     document.getElementById('header-sub').textContent =
-        `Diamond Mine Baseball — ${weekLabel(folder)} • ${formatDate(folder)}`;
+        `Diamond Mine Baseball — ${weekLabel(folder)}`;
     document.getElementById('week-status').textContent =
         `${weekLabel(folder)} loaded`;
 
@@ -696,7 +696,7 @@ function renderSection(section, text) {
 // ── Standings ──
 function renderStandings(doc) {
     const tables = doc.querySelectorAll('table');
-    let html = `<div class="card"><div class="card-title">Standings <span>${weekLabel(currentWeek)} — ${formatDate(currentWeek)}</span></div>`;
+    let html = `<div class="card"><div class="card-title">Standings <span>${weekLabel(currentWeek)}</span></div>`;
 
     tables.forEach(table => {
         const titleRow = table.querySelector('tr.dmrptsecttitle');
@@ -779,7 +779,7 @@ function renderGameResults(doc) {
     if (!table) { showError('No game results found.'); return; }
 
     let html = `<div class="card">
-        <div class="card-title">Game Results <span>${weekLabel(currentWeek)} — ${formatDate(currentWeek)}</span></div>
+        <div class="card-title">Game Results <span>${weekLabel(currentWeek)}</span></div>
         <div class="dmb-wrap"><table class="dmb-table">`;
 
     const rows = table.querySelectorAll('tr');
@@ -893,7 +893,7 @@ function renderLeaders(doc, title) {
     }
 
     let html = `<div class="card">
-        <div class="card-title">${escHtml(title)} <span>${weekLabel(currentWeek)} — ${formatDate(currentWeek)}</span></div>
+        <div class="card-title">${escHtml(title)} <span>${weekLabel(currentWeek)}</span></div>
         <div class="leaders-grid">`;
 
     groups.forEach(grp => {
@@ -922,7 +922,7 @@ function renderGenericTable(doc, title) {
     if (!tables.length) { showError('No data found.'); return; }
 
     let html = `<div class="card">
-        <div class="card-title">${escHtml(title)} <span>${weekLabel(currentWeek)} — ${formatDate(currentWeek)}</span></div>`;
+        <div class="card-title">${escHtml(title)} <span>${weekLabel(currentWeek)}</span></div>`;
 
     tables.forEach(table => {
         const titleRow = table.querySelector('tr.dmrptsecttitle');
