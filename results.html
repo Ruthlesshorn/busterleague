@@ -854,9 +854,7 @@ async function openBoxScore(gameFile) {
     modal.style.display = 'block';
     document.body.style.overflow = 'hidden';
 
-    // Game files are prefixed with 'game-' to avoid Jekyll ignoring files starting with digits
-    const prefixedFile = gameFile.match(/^\d/) ? 'game-' + gameFile : gameFile;
-    const text = await fetchFile(currentWeek, prefixedFile);
+    const text = await fetchFile(currentWeek, gameFile);
     if (!text) {
         inner.innerHTML = `<div style="padding:40px;color:#842029;">Could not load box score file.</div>`;
         return;
