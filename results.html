@@ -423,8 +423,7 @@
 // Add new weeks to the END of this array.
 // ═══════════════════════════════════════════════════════════════
 const WEEKS = [
-    'week-1',  
-    'week-2', // add new weeks below this line, e.g. 'week-2'
+    'week-1',   // add new weeks below this line, e.g. 'week-2'
 ];
 
 // Folder inside your repo where the week subfolders live.
@@ -781,6 +780,7 @@ function renderGameResults(doc) {
 
     let html = `<div class="card">
         <div class="card-title">Game Results <span>${weekLabel(currentWeek)}</span></div>
+        <p style="font-size:0.82em;color:#6c757d;margin-bottom:12px;">Click a date to view the full box score.</p>
         <div class="dmb-wrap"><table class="dmb-table">`;
 
     const rows = table.querySelectorAll('tr');
@@ -805,29 +805,429 @@ function renderGameResults(doc) {
 
         html += '<tr>';
         cells.forEach((td, ci) => {
-            const val = td.textContent.trim().replace(/\u00a0/g, '—');
+            const val = td.textContent.trim().replace(/\u00a0/g, '');
             const link = td.querySelector('a');
 
             if (ci === 0 && link) {
-                // Date — keep as text (linking to raw files not useful in this viewer)
-                html += `<td style="font-weight:600;color:#1e3c72;">${escHtml(val)}</td>`;
-            } else if (ci === 1) {
-                // Home/Away indicator
-                const isAway = val === '@';
-                html += `<td>${isAway ? '<span class="away-badge">@</span>' : '<span class="home-badge">H</span>'}</td>`;
+                const gameFile = link.getAttribute('href');
+                html += `<td><button onclick="openBoxScore('${escHtml(gameFile)}')"
+                    style="background:none;border:none;color:#1e3c72;font-weight:700;font-size:inherit;
+                           cursor:pointer;text-decoration:underline;padding:0;font-family:inherit;"
+                    >${escHtml(val)}</button></td>`;
             } else if (ci === 4) {
                 // W/L result
                 const cls = val === 'W' ? 'badge-w' : val === 'L' ? 'badge-l' : 'badge-t';
-                html += `<td><span class="${cls}">${escHtml(val)}</span></td>`;
+                html += `<td><span class="${cls}">${escHtml(val || '—')}</span></td>`;
             } else {
-                html += `<td>${escHtml(val === '—' ? '' : val)}</td>`;
+                html += `<td>${escHtml(val || '')}</td>`;
             }
         });
         html += '</tr>';
     });
 
     html += '</tbody></table></div></div>';
+
+    // Inject modal scaffold if not present
+    if (!document.getElementById('boxscore-modal')) {
+        document.body.insertAdjacentHTML('beforeend', `
+            <div id="boxscore-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);
+                 z-index:2000;overflow-y:auto;padding:20px;" onclick="closeBoxScore(event)">
+                <div id="boxscore-inner" style="max-width:900px;margin:0 auto;background:white;
+                     border-radius:16px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.4);">
+                </div>
+            </div>
+        `);
+    }
+
     document.getElementById('content-area').innerHTML = html;
+}
+
+// ── Box Score Modal ──
+async function openBoxScore(gameFile) {
+    const modal = document.getElementById('boxscore-modal');
+    const inner = document.getElementById('boxscore-inner');
+    inner.innerHTML = `<div style="padding:40px;text-align:center;color:#6c757d;">
+        <div style="width:32px;height:32px;border:3px solid #f0f0f0;border-top-color:#c41e3a;
+             border-radius:50%;animation:spin 0.7s linear infinite;margin:0 auto 12px;"></div>
+        Loading box score…
+    </div>`;
+    modal.style.display = 'block';
+    document.body.style.overflow = 'hidden';
+
+    const text = await fetchFile(currentWeek, gameFile);
+    if (!text) {
+        inner.innerHTML = `<div style="padding:40px;color:#842029;">Could not load box score file.</div>`;
+        return;
+    }
+
+    inner.innerHTML = renderBoxScore(text);
+}
+
+function closeBoxScore(e) {
+    if (e && e.target !== document.getElementById('boxscore-modal')) return;
+    document.getElementById('boxscore-modal').style.display = 'none';
+    document.body.style.overflow = '';
+}
+
+function renderBoxScore(rawText) {
+    // The file contains one <pre> block; split on form feed (\f) into box score + play-by-play
+    const preMatch = rawText.match(/<pre>([\s\S]*?)<\/pre>/i);
+    if (!preMatch) return `<div style="padding:20px;">Could not parse box score.</div>`;
+
+    const full = preMatch[1].replace(/\r\n/g, '\n');
+    const parts = full.split('\f');
+    const boxRaw = parts[0].trim();
+    const pbpRaw = parts[1] ? parts[1].trim() : '';
+
+    // ── Parse header line ──
+    const lines = boxRaw.split('\n');
+    const headerLine = lines[0].trim(); // e.g. "4/5/2025, Cle25-Bal25, Oriole Park at Camden Yards"
+    const headerParts = headerLine.split(',').map(s => s.trim());
+    const dateStr   = headerParts[0] || '';
+    const matchup   = headerParts[1] || '';
+    const venue     = headerParts.slice(2).join(',').trim();
+
+    // ── Parse line score ──
+    // Lines 2-4 are the linescore header + 2 team rows
+    const lsHeader = lines[2] || '';
+    const lsAway   = lines[3] || '';
+    const lsHome   = lines[4] || '';
+
+    // ── Split remaining into sections ──
+    // Sections separated by blank lines; batter lines, pitcher lines, notes
+    const remaining = lines.slice(5).join('\n');
+
+    // Find batting section (two columns of batters)
+    // Find pitching sections
+    // Find notes (E-, 2B-, HR-, etc.)
+    const sections = remaining.split(/\n\s*\n/).filter(s => s.trim());
+
+    let batterSection = '', awayPitchers = '', homePitchers = '', notes = '';
+    sections.forEach(sec => {
+        const trimmed = sec.trim();
+        if (!trimmed) return;
+        // Batting: contains "AB  R  H BI"
+        if (trimmed.includes('AB  R  H BI') || trimmed.match(/^\S.*\s{2,}\d+\s+\d+\s+\d+\s+\d+/m)) {
+            batterSection = trimmed;
+        }
+        // Pitching: contains "INN  H  R ER"
+        else if (trimmed.includes('INN  H  R ER')) {
+            if (!awayPitchers) awayPitchers = trimmed;
+            else homePitchers = trimmed;
+        }
+        // Notes: starts with team abbrev or E- or 2B-
+        else if (trimmed.match(/^[A-Z][a-z]{1,2}:|^E-|^RBI|^HR|^2B|^SB|^K-|^BB-|^WP|^BALK|^GWRBI|^Temp/m)) {
+            notes += trimmed + '\n';
+        }
+    });
+
+    // ── Build linescore table ──
+    function buildLineScore() {
+        // Parse inning columns from header
+        const hCols = lsHeader.trim().split(/\s+/);
+        // Team rows: team name (up to col 22), then inning nums, then R H E LOB DP
+        const parseTeamRow = (row) => {
+            if (!row.trim()) return null;
+            const name = row.substring(0, 22).trim();
+            const rest = row.substring(22).trim().split(/\s+/);
+            return { name, cols: rest };
+        };
+        const away = parseTeamRow(lsAway);
+        const home = parseTeamRow(lsHome);
+        if (!away || !home) return '';
+
+        const numInnings = away.cols.length;
+        // Last 4 are R H E LOB (and maybe DP)
+        const statCount = 4;
+        const inningCount = numInnings - statCount;
+
+        let t = `<table style="width:100%;border-collapse:collapse;font-size:0.88em;font-family:monospace;">
+            <thead><tr style="background:#1e3c72;color:white;">
+                <th style="padding:8px 12px;text-align:left;min-width:140px;">Team</th>`;
+        for (let i = 1; i <= inningCount; i++) {
+            t += `<th style="padding:8px 6px;text-align:center;width:28px;">${i}</th>`;
+        }
+        t += `<th style="padding:8px 10px;text-align:center;border-left:2px solid rgba(255,255,255,0.3);">R</th>
+              <th style="padding:8px 6px;text-align:center;">H</th>
+              <th style="padding:8px 6px;text-align:center;">E</th>
+              <th style="padding:8px 6px;text-align:center;">LOB</th>
+            </tr></thead><tbody>`;
+
+        [away, home].forEach((team, ti) => {
+            const bg = ti === 0 ? '#f8f9fa' : 'white';
+            t += `<tr style="background:${bg};">
+                <td style="padding:8px 12px;font-weight:700;font-family:'DM Sans',sans-serif;">${escHtml(team.name)}</td>`;
+            for (let i = 0; i < inningCount; i++) {
+                const v = team.cols[i] || '';
+                t += `<td style="padding:8px 6px;text-align:center;">${v === 'x' ? '<span style="color:#adb5bd;">x</span>' : escHtml(v)}</td>`;
+            }
+            for (let i = inningCount; i < inningCount + 4; i++) {
+                const v = team.cols[i] || '';
+                const isBold = i === inningCount; // R column
+                t += `<td style="padding:8px 10px;text-align:center;${isBold ? 'font-weight:800;font-size:1.05em;border-left:2px solid #dee2e6;' : ''}">${escHtml(v)}</td>`;
+            }
+            t += '</tr>';
+        });
+        t += '</tbody></table>';
+        return t;
+    }
+
+    // ── Build batter tables ──
+    function buildBatterTables() {
+        if (!batterSection) return '';
+        const bLines = batterSection.split('\n');
+        // Header line has both team names + "AB  R  H BI   AVG"
+        const headerIdx = bLines.findIndex(l => l.includes('AB  R  H BI'));
+        if (headerIdx < 0) return '';
+
+        const headerRow = bLines[headerIdx];
+        // Split into left/right at column ~44
+        const splitCol = 44;
+
+        const awayTeam = headerRow.substring(0, splitCol).split(/\s{2,}/)[0].trim();
+        const homeTeam = headerRow.substring(splitCol).split(/\s{2,}/)[0].trim();
+
+        const awayBatters = [], homeBatters = [];
+        bLines.slice(headerIdx + 1).forEach(line => {
+            if (!line.trim() || line.match(/^\s+\d+\s+\d+\s+\d+\s+\d+\s*$/)) {
+                // Totals line or blank
+                const left  = line.substring(0, splitCol).trim();
+                const right = line.substring(splitCol).trim();
+                if (left)  awayBatters.push({ totals: true, raw: left });
+                if (right) homeBatters.push({ totals: true, raw: right });
+                return;
+            }
+            const left  = line.substring(0, splitCol);
+            const right = line.substring(splitCol);
+            if (left.trim())  awayBatters.push({ totals: false, raw: left });
+            if (right.trim()) homeBatters.push({ totals: false, raw: right });
+        });
+
+        function parseBatterLine(raw) {
+            // Format: "Name           pos  AB  R  H BI   AVG"
+            // Name+pos up to ~20 chars, then numbers
+            const m = raw.match(/^(.{1,22}?)\s{2,}(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+([\.\d]+)\s*$/);
+            if (m) return { name: m[1].trim(), ab: m[2], r: m[3], h: m[4], bi: m[5], avg: m[6] };
+            // Totals line
+            const t = raw.match(/(\d+)\s+(\d+)\s+(\d+)\s+(\d+)/);
+            if (t) return { totals: true, ab: t[1], r: t[2], h: t[3], bi: t[4] };
+            return { name: raw.trim() };
+        }
+
+        function renderBatterTable(batters, teamName) {
+            let t = `<div style="flex:1;min-width:280px;">
+                <div style="background:#1e3c72;color:white;padding:8px 12px;font-weight:800;font-size:0.8em;letter-spacing:1px;text-transform:uppercase;">${escHtml(teamName)}</div>
+                <table style="width:100%;border-collapse:collapse;font-size:0.82em;">
+                <thead><tr style="background:#e8eef8;color:#1e3c72;">
+                    <th style="padding:6px 10px;text-align:left;">Batter</th>
+                    <th style="padding:6px 6px;text-align:center;">AB</th>
+                    <th style="padding:6px 6px;text-align:center;">R</th>
+                    <th style="padding:6px 6px;text-align:center;">H</th>
+                    <th style="padding:6px 6px;text-align:center;">BI</th>
+                    <th style="padding:6px 8px;text-align:center;">AVG</th>
+                </tr></thead><tbody>`;
+
+            batters.forEach(b => {
+                const p = parseBatterLine(b.raw);
+                if (b.totals || p.totals) {
+                    t += `<tr style="background:#f0f4fb;font-weight:800;border-top:2px solid #dee2e6;">
+                        <td style="padding:5px 10px;">Totals</td>
+                        <td style="padding:5px 6px;text-align:center;">${p.ab||''}</td>
+                        <td style="padding:5px 6px;text-align:center;">${p.r||''}</td>
+                        <td style="padding:5px 6px;text-align:center;">${p.h||''}</td>
+                        <td style="padding:5px 6px;text-align:center;">${p.bi||''}</td>
+                        <td style="padding:5px 8px;text-align:center;"></td>
+                    </tr>`;
+                } else if (p.name) {
+                    const isPH = p.name.startsWith(' ') || p.name.match(/^\s*\w+\s+ph\s*$/i);
+                    t += `<tr style="border-bottom:1px solid #f0f0f0;${isPH ? 'color:#6c757d;font-style:italic;' : ''}">
+                        <td style="padding:5px 10px;font-weight:600;white-space:nowrap;">${escHtml(p.name)}</td>
+                        <td style="padding:5px 6px;text-align:center;">${p.ab||'—'}</td>
+                        <td style="padding:5px 6px;text-align:center;">${p.r||'—'}</td>
+                        <td style="padding:5px 6px;text-align:center;">${p.h||'—'}</td>
+                        <td style="padding:5px 6px;text-align:center;">${p.bi||'—'}</td>
+                        <td style="padding:5px 8px;text-align:center;color:#6c757d;">${p.avg||'—'}</td>
+                    </tr>`;
+                }
+            });
+            t += '</tbody></table></div>';
+            return t;
+        }
+
+        return `<div style="display:flex;gap:16px;flex-wrap:wrap;">
+            ${renderBatterTable(awayBatters, awayTeam)}
+            ${renderBatterTable(homeBatters, homeTeam)}
+        </div>`;
+    }
+
+    // ── Build pitcher table ──
+    function buildPitcherTable(raw) {
+        if (!raw) return '';
+        const pLines = raw.split('\n').filter(l => l.trim());
+        const teamName = pLines[0].split(/\s{3,}/)[0].trim();
+
+        let t = `<div style="flex:1;min-width:260px;">
+            <div style="background:#1e3c72;color:white;padding:8px 12px;font-weight:800;font-size:0.8em;letter-spacing:1px;text-transform:uppercase;">${escHtml(teamName)}</div>
+            <table style="width:100%;border-collapse:collapse;font-size:0.82em;">
+            <thead><tr style="background:#e8eef8;color:#1e3c72;">
+                <th style="padding:6px 10px;text-align:left;">Pitcher</th>
+                <th style="padding:6px 6px;text-align:center;">IP</th>
+                <th style="padding:6px 6px;text-align:center;">H</th>
+                <th style="padding:6px 6px;text-align:center;">R</th>
+                <th style="padding:6px 6px;text-align:center;">ER</th>
+                <th style="padding:6px 6px;text-align:center;">BB</th>
+                <th style="padding:6px 6px;text-align:center;">K</th>
+                <th style="padding:6px 8px;text-align:center;">ERA</th>
+            </tr></thead><tbody>`;
+
+        pLines.slice(1).forEach(line => {
+            if (!line.trim()) return;
+            // Format: "Name       W/L dec  INN  H  R ER BB  K PCH STR   ERA"
+            const m = line.match(/^(.{1,25?}?)\s{2,}([\d.]+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+\d+\s+\d+\s+([\d.]+)\s*$/);
+            if (m) {
+                const isTotals = m[1].trim() === '' || /^\s+\d/.test(line);
+                const name = m[1].trim();
+                // Check for W/L decision in name
+                const decMatch = name.match(/^(.*?)\s+(W|L|S)\s+[\d-]+\s*$/);
+                const displayName = decMatch ? decMatch[1] : name;
+                const decision = decMatch ? `<span style="font-size:0.75em;font-weight:800;padding:1px 5px;border-radius:3px;background:${decMatch[2]==='W'?'#d1e7dd':decMatch[2]==='L'?'#f8d7da':'#fff3cd'};color:${decMatch[2]==='W'?'#0a3622':decMatch[2]==='L'?'#58151c':'#664d03'};">${decMatch[2]}</span>` : '';
+
+                if (isTotals || !name) {
+                    t += `<tr style="background:#f0f4fb;font-weight:800;border-top:2px solid #dee2e6;">
+                        <td style="padding:5px 10px;">Totals</td>
+                        <td style="padding:5px 6px;text-align:center;">${m[2]}</td>
+                        <td style="padding:5px 6px;text-align:center;">${m[3]}</td>
+                        <td style="padding:5px 6px;text-align:center;">${m[4]}</td>
+                        <td style="padding:5px 6px;text-align:center;">${m[5]}</td>
+                        <td style="padding:5px 6px;text-align:center;">${m[6]}</td>
+                        <td style="padding:5px 6px;text-align:center;">${m[7]}</td>
+                        <td style="padding:5px 8px;text-align:center;"></td>
+                    </tr>`;
+                } else {
+                    t += `<tr style="border-bottom:1px solid #f0f0f0;">
+                        <td style="padding:5px 10px;font-weight:600;white-space:nowrap;">${escHtml(displayName)} ${decision}</td>
+                        <td style="padding:5px 6px;text-align:center;">${m[2]}</td>
+                        <td style="padding:5px 6px;text-align:center;">${m[3]}</td>
+                        <td style="padding:5px 6px;text-align:center;">${m[4]}</td>
+                        <td style="padding:5px 6px;text-align:center;">${m[5]}</td>
+                        <td style="padding:5px 6px;text-align:center;">${m[6]}</td>
+                        <td style="padding:5px 6px;text-align:center;">${m[7]}</td>
+                        <td style="padding:5px 8px;text-align:center;color:#c41e3a;font-weight:700;">${m[8]}</td>
+                    </tr>`;
+                }
+            } else if (line.trim()) {
+                // Totals row or unmatched — show as plain
+                t += `<tr style="background:#f0f4fb;border-top:2px solid #dee2e6;">
+                    <td colspan="8" style="padding:5px 10px;font-size:0.85em;color:#495057;">${escHtml(line.trim())}</td>
+                </tr>`;
+            }
+        });
+        t += '</tbody></table></div>';
+        return t;
+    }
+
+    // ── Build play-by-play ──
+    function buildPBP() {
+        if (!pbpRaw) return '';
+        const pbpLines = pbpRaw.split('\n');
+        let html = '';
+        pbpLines.forEach(line => {
+            const trimmed = line.trim();
+            if (!trimmed) return;
+            if (trimmed.startsWith('**')) {
+                // Inning header
+                const inning = trimmed.replace(/\*/g, '').trim();
+                html += `<div style="background:#1e3c72;color:white;padding:6px 14px;font-weight:800;
+                          font-size:0.78em;letter-spacing:1px;text-transform:uppercase;margin-top:8px;">
+                          ${escHtml(inning)}</div>`;
+            } else if (trimmed.match(/^\d+-\d+\s+\d+/)) {
+                // Play line: score | outs | bases | pitch count | description
+                const m = trimmed.match(/^(\d+-\d+)\s+(\d+)\s+(\S+)\s+(\d+)\s+(.*)$/);
+                if (m) {
+                    const [_, score, outs, bases, count, desc] = m;
+                    const outDots = '●'.repeat(parseInt(outs)) + '○'.repeat(Math.max(0, 2 - parseInt(outs)));
+                    html += `<div style="display:flex;gap:10px;padding:4px 14px;border-bottom:1px solid #f0f0f0;font-size:0.82em;align-items:baseline;">
+                        <span style="color:#6c757d;font-family:monospace;min-width:45px;">${escHtml(score)}</span>
+                        <span style="color:#c41e3a;font-size:0.85em;min-width:22px;">${outDots}</span>
+                        <span style="color:#1e3c72;font-family:monospace;min-width:35px;font-size:0.85em;">${escHtml(bases)}</span>
+                        <span style="flex:1;">${escHtml(desc)}</span>
+                    </div>`;
+                } else {
+                    html += `<div style="padding:3px 14px;font-size:0.82em;color:#495057;padding-left:126px;">${escHtml(trimmed)}</div>`;
+                }
+            } else if (trimmed.match(/^\s/) || trimmed.includes('now pitching') || trimmed.includes('pinch hitting')) {
+                // Continuation / sub lines
+                html += `<div style="padding:2px 14px 2px 126px;font-size:0.8em;color:#6c757d;font-style:italic;">${escHtml(trimmed)}</div>`;
+            } else {
+                html += `<div style="padding:3px 14px;font-size:0.82em;color:#495057;">${escHtml(trimmed)}</div>`;
+            }
+        });
+        return html;
+    }
+
+    // ── Assemble modal ──
+    return `
+        <!-- Modal header -->
+        <div style="background:linear-gradient(135deg,#c41e3a,#d94e59);color:white;padding:20px 24px;
+                    display:flex;justify-content:space-between;align-items:flex-start;">
+            <div>
+                <div style="font-family:'Bebas Neue',sans-serif;font-size:1.5em;letter-spacing:2px;">
+                    ${escHtml(matchup.replace(/\d{4}/g, '').replace(/-/, ' @ '))}
+                </div>
+                <div style="font-size:0.85em;opacity:0.85;margin-top:2px;">
+                    ${escHtml(dateStr)} &nbsp;•&nbsp; ${escHtml(venue)}
+                </div>
+            </div>
+            <button onclick="document.getElementById('boxscore-modal').style.display='none';document.body.style.overflow='';"
+                style="background:rgba(255,255,255,0.2);border:none;color:white;font-size:1.2em;
+                       padding:6px 12px;border-radius:6px;cursor:pointer;font-weight:700;">✕</button>
+        </div>
+
+        <!-- Line score -->
+        <div style="padding:16px 20px 12px;border-bottom:2px solid #f0f0f0;">
+            <div style="font-size:0.75em;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;
+                        color:#1e3c72;margin-bottom:8px;">Line Score</div>
+            <div style="overflow-x:auto;">${buildLineScore()}</div>
+        </div>
+
+        <!-- Batting -->
+        <div style="padding:16px 20px 12px;border-bottom:2px solid #f0f0f0;">
+            <div style="font-size:0.75em;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;
+                        color:#1e3c72;margin-bottom:10px;">Batting</div>
+            ${buildBatterTables()}
+        </div>
+
+        <!-- Pitching -->
+        <div style="padding:16px 20px 12px;border-bottom:2px solid #f0f0f0;">
+            <div style="font-size:0.75em;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;
+                        color:#1e3c72;margin-bottom:10px;">Pitching</div>
+            <div style="display:flex;gap:16px;flex-wrap:wrap;">
+                ${buildPitcherTable(awayPitchers)}
+                ${buildPitcherTable(homePitchers)}
+            </div>
+        </div>
+
+        <!-- Notes -->
+        ${notes ? `<div style="padding:16px 20px 12px;border-bottom:2px solid #f0f0f0;">
+            <div style="font-size:0.75em;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;
+                        color:#1e3c72;margin-bottom:8px;">Game Notes</div>
+            <div style="font-size:0.84em;color:#495057;line-height:1.7;white-space:pre-wrap;">${escHtml(notes.trim())}</div>
+        </div>` : ''}
+
+        <!-- Play by Play -->
+        ${pbpRaw ? `<div style="padding:16px 20px 0;">
+            <div style="font-size:0.75em;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;
+                        color:#1e3c72;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;">
+                Play by Play
+                <button onclick="this.closest('div').nextElementSibling.style.display=this.closest('div').nextElementSibling.style.display==='none'?'block':'none';this.textContent=this.textContent==='▾ Hide'?'▸ Show':'▾ Hide';"
+                    style="background:none;border:1px solid #dee2e6;border-radius:4px;padding:2px 10px;
+                           font-size:0.9em;cursor:pointer;color:#495057;">▾ Hide</button>
+            </div>
+            <div style="max-height:400px;overflow-y:auto;border:1px solid #e9ecef;border-radius:8px;margin-bottom:20px;">
+                ${buildPBP()}
+            </div>
+        </div>` : ''}
+    `;
 }
 
 // ── Leaders ──
