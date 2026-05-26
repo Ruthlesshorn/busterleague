@@ -854,7 +854,9 @@ async function openBoxScore(gameFile) {
     modal.style.display = 'block';
     document.body.style.overflow = 'hidden';
 
-    const text = await fetchFile(currentWeek, gameFile);
+    // Game files are prefixed with 'game-' to avoid Jekyll ignoring files starting with digits
+    const prefixedFile = gameFile.match(/^\d/) ? 'game-' + gameFile : gameFile;
+    const text = await fetchFile(currentWeek, prefixedFile);
     if (!text) {
         inner.innerHTML = `<div style="padding:40px;color:#842029;">Could not load box score file.</div>`;
         return;
@@ -895,30 +897,36 @@ function renderBoxScore(rawText) {
 
     // ── Split remaining into sections ──
     // Sections separated by blank lines; batter lines, pitcher lines, notes
-    const remaining = lines.slice(5).join('\n');
-
-    // Find batting section (two columns of batters)
-    // Find pitching sections
-    // Find notes (E-, 2B-, HR-, etc.)
-    const sections = remaining.split(/\n\s*\n/).filter(s => s.trim());
-
+    // ── Parse sections line by line ──
+    // Look for specific header markers to identify each section
     let batterSection = '', awayPitchers = '', homePitchers = '', notes = '';
-    sections.forEach(sec => {
-        const trimmed = sec.trim();
-        if (!trimmed) return;
-        // Batting: contains "AB  R  H BI"
-        if (trimmed.includes('AB  R  H BI') || trimmed.match(/^\S.*\s{2,}\d+\s+\d+\s+\d+\s+\d+/m)) {
-            batterSection = trimmed;
+
+    let mode = 'scan'; // scan | batting | away_pitch | home_pitch | notes
+    const bodyLines = lines.slice(5);
+
+    bodyLines.forEach(line => {
+        const t = line.trimEnd();
+
+        // Detect section starts
+        if (t.includes('AB  R  H BI')) {
+            mode = 'batting';
+            batterSection += t + '\n';
+            return;
         }
-        // Pitching: contains "INN  H  R ER"
-        else if (trimmed.includes('INN  H  R ER')) {
-            if (!awayPitchers) awayPitchers = trimmed;
-            else homePitchers = trimmed;
+        if (t.includes('INN  H  R ER')) {
+            if (!awayPitchers) { mode = 'away_pitch'; awayPitchers += t + '\n'; }
+            else               { mode = 'home_pitch'; homePitchers += t + '\n'; }
+            return;
         }
-        // Notes: starts with team abbrev or E- or 2B-
-        else if (trimmed.match(/^[A-Z][a-z]{1,2}:|^E-|^RBI|^HR|^2B|^SB|^K-|^BB-|^WP|^BALK|^GWRBI|^Temp/m)) {
-            notes += trimmed + '\n';
+        // Notes start with team abbrev (e.g. "Cle:") or stat abbreviations
+        if (mode !== 'notes' && t.match(/^[A-Z][a-z]{1,2}:|^E-|^2B-|^HR-|^RBI-|^SB-|^CS-|^WP-|^BALK|^GWRBI|^HBP|^Temp/)) {
+            mode = 'notes';
         }
+
+        if (mode === 'batting')     batterSection  += t + '\n';
+        else if (mode === 'away_pitch') awayPitchers += t + '\n';
+        else if (mode === 'home_pitch') homePitchers += t + '\n';
+        else if (mode === 'notes')  notes          += t + '\n';
     });
 
     // ── Build linescore table ──
@@ -981,16 +989,27 @@ function renderBoxScore(rawText) {
         if (headerIdx < 0) return '';
 
         const headerRow = bLines[headerIdx];
-        // Split into left/right at column ~44
-        const splitCol = 44;
+        // The header row looks like:
+        // "Indians              AB  R  H BI   AVG    Orioles              AB  R  H BI   AVG"
+        // Find the split point: second team name starts after the first "AVG"
+        const firstAvg = headerRow.indexOf('AVG');
+        // Find where the second team name starts (non-space after the first AVG block)
+        let splitCol = firstAvg + 3;
+        while (splitCol < headerRow.length && headerRow[splitCol] === ' ') splitCol++;
+        // Back up to find where the second team header really starts (at least 3 spaces gap)
+        const splitMatch = headerRow.match(/AVG\s{2,}(\S)/);
+        if (splitMatch) splitCol = headerRow.indexOf(splitMatch[0]) + splitMatch[0].length - 1;
 
         const awayTeam = headerRow.substring(0, splitCol).split(/\s{2,}/)[0].trim();
         const homeTeam = headerRow.substring(splitCol).split(/\s{2,}/)[0].trim();
 
         const awayBatters = [], homeBatters = [];
         bLines.slice(headerIdx + 1).forEach(line => {
-            if (!line.trim() || line.match(/^\s+\d+\s+\d+\s+\d+\s+\d+\s*$/)) {
-                // Totals line or blank
+            if (!line.trim()) return;
+            // Totals line: starts with spaces then numbers only (no name)
+            // e.g. "                     33  0  6  0"
+            const isTotalsLine = line.match(/^\s{10,}\d+\s+\d+\s+\d+\s+\d+\s*$/);
+            if (isTotalsLine) {
                 const left  = line.substring(0, splitCol).trim();
                 const right = line.substring(splitCol).trim();
                 if (left)  awayBatters.push({ totals: true, raw: left });
@@ -1004,13 +1023,20 @@ function renderBoxScore(rawText) {
         });
 
         function parseBatterLine(raw) {
-            // Format: "Name           pos  AB  R  H BI   AVG"
-            // Name+pos up to ~20 chars, then numbers
-            const m = raw.match(/^(.{1,22}?)\s{2,}(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+([\.\d]+)\s*$/);
-            if (m) return { name: m[1].trim(), ab: m[2], r: m[3], h: m[4], bi: m[5], avg: m[6] };
-            // Totals line
-            const t = raw.match(/(\d+)\s+(\d+)\s+(\d+)\s+(\d+)/);
-            if (t) return { totals: true, ab: t[1], r: t[2], h: t[3], bi: t[4] };
+            raw = raw.trimEnd();
+            // Totals: just numbers
+            if (raw.match(/^\s*\d+\s+\d+\s+\d+\s+\d+\s*$/)) {
+                const t = raw.trim().split(/\s+/);
+                return { totals: true, ab: t[0], r: t[1], h: t[2], bi: t[3] };
+            }
+            // Player line format (fixed columns):
+            // "McKinstry         rf  4  1  1  0  .167"
+            // Name+pos = first 22 chars, then AB R H BI AVG
+            const namePos = raw.substring(0, 22).trim();
+            const stats   = raw.substring(22).trim().split(/\s+/);
+            if (stats.length >= 5) {
+                return { name: namePos, ab: stats[0], r: stats[1], h: stats[2], bi: stats[3], avg: stats[4] };
+            }
             return { name: raw.trim() };
         }
 
@@ -1039,7 +1065,7 @@ function renderBoxScore(rawText) {
                         <td style="padding:5px 8px;text-align:center;"></td>
                     </tr>`;
                 } else if (p.name) {
-                    const isPH = p.name.startsWith(' ') || p.name.match(/^\s*\w+\s+ph\s*$/i);
+                    const isPH = b.raw.startsWith(' ');
                     t += `<tr style="border-bottom:1px solid #f0f0f0;${isPH ? 'color:#6c757d;font-style:italic;' : ''}">
                         <td style="padding:5px 10px;font-weight:600;white-space:nowrap;">${escHtml(p.name)}</td>
                         <td style="padding:5px 6px;text-align:center;">${p.ab||'—'}</td>
@@ -1064,6 +1090,8 @@ function renderBoxScore(rawText) {
     function buildPitcherTable(raw) {
         if (!raw) return '';
         const pLines = raw.split('\n').filter(l => l.trim());
+        // Header line: "Indians                          INN  H  R ER BB  K PCH STR   ERA"
+        // Team name is first chunk before lots of spaces
         const teamName = pLines[0].split(/\s{3,}/)[0].trim();
 
         let t = `<div style="flex:1;min-width:260px;">
@@ -1082,43 +1110,55 @@ function renderBoxScore(rawText) {
 
         pLines.slice(1).forEach(line => {
             if (!line.trim()) return;
-            // Format: "Name       W/L dec  INN  H  R ER BB  K PCH STR   ERA"
-            const m = line.match(/^(.{1,25?}?)\s{2,}([\d.]+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+\d+\s+\d+\s+([\d.]+)\s*$/);
-            if (m) {
-                const isTotals = m[1].trim() === '' || /^\s+\d/.test(line);
-                const name = m[1].trim();
-                // Check for W/L decision in name
-                const decMatch = name.match(/^(.*?)\s+(W|L|S)\s+[\d-]+\s*$/);
-                const displayName = decMatch ? decMatch[1] : name;
-                const decision = decMatch ? `<span style="font-size:0.75em;font-weight:800;padding:1px 5px;border-radius:3px;background:${decMatch[2]==='W'?'#d1e7dd':decMatch[2]==='L'?'#f8d7da':'#fff3cd'};color:${decMatch[2]==='W'?'#0a3622':decMatch[2]==='L'?'#58151c':'#664d03'};">${decMatch[2]}</span>` : '';
 
-                if (isTotals || !name) {
-                    t += `<tr style="background:#f0f4fb;font-weight:800;border-top:2px solid #dee2e6;">
-                        <td style="padding:5px 10px;">Totals</td>
-                        <td style="padding:5px 6px;text-align:center;">${m[2]}</td>
-                        <td style="padding:5px 6px;text-align:center;">${m[3]}</td>
-                        <td style="padding:5px 6px;text-align:center;">${m[4]}</td>
-                        <td style="padding:5px 6px;text-align:center;">${m[5]}</td>
-                        <td style="padding:5px 6px;text-align:center;">${m[6]}</td>
-                        <td style="padding:5px 6px;text-align:center;">${m[7]}</td>
-                        <td style="padding:5px 8px;text-align:center;"></td>
-                    </tr>`;
-                } else {
-                    t += `<tr style="border-bottom:1px solid #f0f0f0;">
-                        <td style="padding:5px 10px;font-weight:600;white-space:nowrap;">${escHtml(displayName)} ${decision}</td>
-                        <td style="padding:5px 6px;text-align:center;">${m[2]}</td>
-                        <td style="padding:5px 6px;text-align:center;">${m[3]}</td>
-                        <td style="padding:5px 6px;text-align:center;">${m[4]}</td>
-                        <td style="padding:5px 6px;text-align:center;">${m[5]}</td>
-                        <td style="padding:5px 6px;text-align:center;">${m[6]}</td>
-                        <td style="padding:5px 6px;text-align:center;">${m[7]}</td>
-                        <td style="padding:5px 8px;text-align:center;color:#c41e3a;font-weight:700;">${m[8]}</td>
-                    </tr>`;
-                }
-            } else if (line.trim()) {
-                // Totals row or unmatched — show as plain
-                t += `<tr style="background:#f0f4fb;border-top:2px solid #dee2e6;">
-                    <td colspan="8" style="padding:5px 10px;font-size:0.85em;color:#495057;">${escHtml(line.trim())}</td>
+            // Totals line: starts with lots of spaces then IP H R ER BB K PCH STR (no ERA)
+            // e.g. "                                 9.0  7  2  2  2  7 124  78 "
+            if (line.match(/^\s{20,}[\d.]+\s+\d+\s+\d+\s+\d+\s+\d+\s+\d+/)) {
+                const nums = line.trim().split(/\s+/);
+                t += `<tr style="background:#f0f4fb;font-weight:800;border-top:2px solid #dee2e6;">
+                    <td style="padding:5px 10px;">Totals</td>
+                    <td style="padding:5px 6px;text-align:center;">${nums[0]||''}</td>
+                    <td style="padding:5px 6px;text-align:center;">${nums[1]||''}</td>
+                    <td style="padding:5px 6px;text-align:center;">${nums[2]||''}</td>
+                    <td style="padding:5px 6px;text-align:center;">${nums[3]||''}</td>
+                    <td style="padding:5px 6px;text-align:center;">${nums[4]||''}</td>
+                    <td style="padding:5px 6px;text-align:center;">${nums[5]||''}</td>
+                    <td style="padding:5px 8px;text-align:center;"></td>
+                </tr>`;
+                return;
+            }
+
+            // Pitcher line: name (up to col 33) + decision (optional) + stats
+            // "Abbott           W 1-0           7.0  6  2  2  2  6  99  63  2.57"
+            // Name field is first 17 chars, decision next ~16, then stats
+            const namePart = line.substring(0, 17).trim();
+            const rest     = line.substring(17).trim();
+
+            // Check for W/L/S decision
+            const decMatch = rest.match(/^(W|L|S)\s+([\d]+-[\d]+)\s+(.*)/);
+            let decision = '', statsStr = '';
+            if (decMatch) {
+                const dec = decMatch[1];
+                statsStr  = decMatch[3];
+                decision  = `<span style="font-size:0.75em;font-weight:800;padding:1px 5px;border-radius:3px;
+                    background:${dec==='W'?'#d1e7dd':dec==='L'?'#f8d7da':'#fff3cd'};
+                    color:${dec==='W'?'#0a3622':dec==='L'?'#58151c':'#664d03'};">${dec}</span>`;
+            } else {
+                statsStr = rest;
+            }
+
+            const stats = statsStr.trim().split(/\s+/);
+            // stats: IP H R ER BB K PCH STR ERA
+            if (stats.length >= 7 && namePart) {
+                t += `<tr style="border-bottom:1px solid #f0f0f0;">
+                    <td style="padding:5px 10px;font-weight:600;white-space:nowrap;">${escHtml(namePart)} ${decision}</td>
+                    <td style="padding:5px 6px;text-align:center;">${stats[0]||'—'}</td>
+                    <td style="padding:5px 6px;text-align:center;">${stats[1]||'—'}</td>
+                    <td style="padding:5px 6px;text-align:center;">${stats[2]||'—'}</td>
+                    <td style="padding:5px 6px;text-align:center;">${stats[3]||'—'}</td>
+                    <td style="padding:5px 6px;text-align:center;">${stats[4]||'—'}</td>
+                    <td style="padding:5px 6px;text-align:center;">${stats[5]||'—'}</td>
+                    <td style="padding:5px 8px;text-align:center;color:#c41e3a;font-weight:700;">${stats[8]||stats[6]||'—'}</td>
                 </tr>`;
             }
         });
