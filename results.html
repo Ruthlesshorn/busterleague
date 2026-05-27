@@ -366,10 +366,10 @@
     <div class="header">
         <div class="header-left">
             <h1>⚾ Buster League Results</h1>
-            <p id="header-sub">Diamond Mind Baseball — Season Reports</p>
+            <p id="header-sub">Diamond Mine Baseball — Season Reports</p>
         </div>
         <div class="header-right">
-           <a href="myteam.html" class="btn btn-ghost">My Team →</a>
+            <a href="myteam.html" class="btn btn-ghost">My Team →</a>
         </div>
     </div>
 
@@ -423,10 +423,7 @@
 // Add new weeks to the END of this array.
 // ═══════════════════════════════════════════════════════════════
 const WEEKS = [
-    'week-1',
-    'week-2',
-    'week-4',
-    // add new weeks below this line, e.g. 'week-2'
+    'week-1',   // add new weeks below this line, e.g. 'week-2'
 ];
 
 // Folder inside your repo where the week subfolders live.
@@ -847,23 +844,7 @@ function renderGameResults(doc) {
 
 // ── Box Score Modal ──
 async function openBoxScore(gameFile) {
-    const modal = document.getElementById('boxscore-modal');
-    const inner = document.getElementById('boxscore-inner');
-    inner.innerHTML = `<div style="padding:40px;text-align:center;color:#6c757d;">
-        <div style="width:32px;height:32px;border:3px solid #f0f0f0;border-top-color:#c41e3a;
-             border-radius:50%;animation:spin 0.7s linear infinite;margin:0 auto 12px;"></div>
-        Loading box score…
-    </div>`;
-    modal.style.display = 'block';
-    document.body.style.overflow = 'hidden';
-
-    const text = await fetchFile(currentWeek, gameFile);
-    if (!text) {
-        inner.innerHTML = `<div style="padding:40px;color:#842029;">Could not load box score file.</div>`;
-        return;
-    }
-
-    inner.innerHTML = renderBoxScore(text);
+    window.open(`${DMB_BASE}/${currentWeek}/${gameFile}`, '_blank');
 }
 
 function closeBoxScore(e) {
