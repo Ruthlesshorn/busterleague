@@ -423,10 +423,7 @@
 // Add new weeks to the END of this array.
 // ═══════════════════════════════════════════════════════════════
 const WEEKS = [
-    'week-1', 
-    'week-2',
-    'week-3',
-    'week-4', // add new weeks below this line, e.g. 'week-2'
+    'week-1',   // add new weeks below this line, e.g. 'week-2'
 ];
 
 // Folder inside your repo where the week subfolders live.
@@ -1402,6 +1399,16 @@ function renderTeamSubPage(filename, teamName, text) {
     const h3 = doc.querySelector('h3');
     const subTitle = h3 ? h3.textContent.trim() : filename;
 
+    // Make any game file links (numbered .htm files) open as box scores in new tab
+    doc.querySelectorAll('a[href]').forEach(a => {
+        const href = a.getAttribute('href');
+        if (href && href.match(/^\d+\.htm$/)) {
+            a.setAttribute('href', `${DMB_BASE}/${currentWeek}/${href}`);
+            a.setAttribute('target', '_blank');
+            a.style.cssText = 'color:#1e3c72;font-weight:700;text-decoration:underline;';
+        }
+    });
+
     // Use generic table renderer but inject into team-sub-content
     const tables = doc.querySelectorAll('table');
     let html = `<div class="card" style="margin-top:0;">
@@ -1438,16 +1445,15 @@ function renderTeamSubPage(filename, teamName, text) {
             if (!headerDone) { html += '<tbody>'; headerDone = true; }
             html += '<tr>';
             cells.forEach(td => {
-                const val = td.textContent.trim().replace(/\u00a0/g, '');
-                html += `<td>${escHtml(val)}</td>`;
+                const link = td.querySelector('a[target="_blank"]');
+                if (link) {
+                    html += `<td><a href="${link.getAttribute('href')}" target="_blank" style="color:#1e3c72;font-weight:700;text-decoration:underline;">${escHtml(td.textContent.trim())}</a></td>`;
+                } else {
+                    const val = td.textContent.trim().replace(/\u00a0/g, '');
+                    html += `<td>${escHtml(val)}</td>`;
+                }
             });
             html += '</tr>';
-        });
-        html += '</tbody></table></div>';
-    });
-
-    html += '</div>';
-    const sub = document.getElementById('team-sub-content');
     if (sub) sub.innerHTML = html;
 }
 
