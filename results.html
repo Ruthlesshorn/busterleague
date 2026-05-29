@@ -1447,7 +1447,9 @@ function renderTeamSubPage(filename, teamName, text) {
             cells.forEach(td => {
                 const link = td.querySelector('a[target="_blank"]');
                 if (link) {
-                    html += `<td><a href="${link.getAttribute('href')}" target="_blank" style="color:#1e3c72;font-weight:700;text-decoration:underline;">${escHtml(td.textContent.trim())}</a></td>`;
+                    const href = link.getAttribute('href');
+                    const label = escHtml(td.textContent.trim());
+                    html += '<td><a href="' + href + '" target="_blank" style="color:#1e3c72;font-weight:700;text-decoration:underline;">' + label + '</a></td>';
                 } else {
                     const val = td.textContent.trim().replace(/\u00a0/g, '');
                     html += `<td>${escHtml(val)}</td>`;
