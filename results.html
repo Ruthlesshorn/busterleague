@@ -1456,6 +1456,12 @@ function renderTeamSubPage(filename, teamName, text) {
                 }
             });
             html += '</tr>';
+        });
+        html += '</tbody></table></div>';
+    });
+
+    html += '</div>';
+    const sub = document.getElementById('team-sub-content');
     if (sub) sub.innerHTML = html;
 }
 
