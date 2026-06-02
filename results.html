@@ -1431,7 +1431,8 @@ function renderTeamSubPage(filename, teamName, text) {
         }
 
         html += `<div class="dmb-wrap" style="margin-bottom:16px;"><table class="dmb-table">`;
-        let headerDone = false;
+        let headerOpen = false;
+        let bodyOpen = false;
         table.querySelectorAll('tr').forEach(row => {
             if (row.classList.contains('dmrptsecttitle')) return;
             const cells = row.querySelectorAll('td');
@@ -1440,20 +1441,26 @@ function renderTeamSubPage(filename, teamName, text) {
             if (isBlank) return;
 
             if (row.classList.contains('dmrptsecthdr')) {
-                if (!headerDone) {
-                    html += '<thead><tr>';
-                    cells.forEach(td => html += `<th>${escHtml(td.textContent.trim())}</th>`);
-                    html += '</tr></thead><tbody>';
-                    headerDone = true;
-                }
+                if (!headerOpen) { html += '<thead>'; headerOpen = true; }
+                html += '<tr>';
+                cells.forEach(td => {
+                    const colspan = td.getAttribute('colspan') ? ` colspan="${td.getAttribute('colspan')}"` : '';
+                    const align   = td.getAttribute('align')   ? ` style="text-align:${td.getAttribute('align')}"` : '';
+                    const val     = td.textContent.trim().replace(/\u00a0/g, '');
+                    html += `<th${colspan}${align}>${escHtml(val)}</th>`;
+                });
+                html += '</tr>';
                 return;
             }
-            if (!headerDone) { html += '<tbody>'; headerDone = true; }
+
+            if (headerOpen && !bodyOpen) { html += '</thead><tbody>'; bodyOpen = true; }
+            if (!bodyOpen) { html += '<tbody>'; bodyOpen = true; }
+
             html += '<tr>';
             cells.forEach(td => {
                 const link = td.querySelector('a[target="_blank"]');
                 if (link) {
-                    const href = link.getAttribute('href');
+                    const href  = link.getAttribute('href');
                     const label = escHtml(td.textContent.trim());
                     html += '<td><a href="' + href + '" target="_blank" style="color:#1e3c72;font-weight:700;text-decoration:underline;">' + label + '</a></td>';
                 } else {
