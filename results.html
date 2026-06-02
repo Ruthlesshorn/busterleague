@@ -1447,30 +1447,33 @@ function renderTeamSubPage(filename, teamName, text) {
             if (isBlank && !row.classList.contains('dmrptsecthdr')) return;
 
             if (row.classList.contains('dmrptsecthdr')) {
-                if (!headerOpen) {
-                    html += '<thead>';
-                    headerOpen = true;
-                    // Collect ALL header rows first, then render them together
+                if (headerOpen !== 'collecting') {
                     headerOpen = 'collecting';
-                    headerRows = [row];
-                } else if (headerOpen === 'collecting') {
-                    headerRows.push(row);
+                    headerRows = [];
                 }
+                headerRows.push(row);
                 return;
             }
 
             // First data row — flush collected header rows
             if (headerOpen === 'collecting') {
                 html += '<thead>';
-                headerRows.forEach(hr => {
+                headerRows.forEach((hr, hri) => {
+                    // Is this a group-label row? (has any colspan > 1)
+                    const isGroupRow = Array.from(hr.querySelectorAll('td')).some(td => parseInt(td.getAttribute('colspan')||'1') > 1);
+                    const isLastHdr  = hri === headerRows.length - 1;
                     html += '<tr>';
                     hr.querySelectorAll('td').forEach(td => {
-                        const colspan = td.getAttribute('colspan');
-                        const align   = td.getAttribute('align') || 'left';
+                        const colspan = parseInt(td.getAttribute('colspan') || '1');
                         const val     = td.textContent.trim().replace(/\u00a0/g, '');
-                        const cs      = colspan && colspan !== '1' ? ` colspan="${colspan}"` : '';
-                        const minw    = !val ? ' min-width:44px;' : '';
-                        html += `<th${cs} style="text-align:${align};${minw}">${escHtml(val)}</th>`;
+                        const cs      = colspan > 1 ? ` colspan="${colspan}"` : '';
+                        // Group row: center all; last header row: use source alignment
+                        let align = 'center';
+                        if (!isGroupRow) {
+                            align = td.getAttribute('align') || 'left';
+                        }
+                        const border = isGroupRow && val ? ' border-bottom:2px solid rgba(255,255,255,0.4);' : '';
+                        html += `<th${cs} style="text-align:${align};${border}">${escHtml(val)}</th>`;
                     });
                     html += '</tr>';
                 });
@@ -1495,15 +1498,15 @@ function renderTeamSubPage(filename, teamName, text) {
         });
         if (headerOpen === 'collecting') {
             html += '<thead>';
-            headerRows.forEach(hr => {
+            headerRows.forEach((hr, hri) => {
+                const isGroupRow = Array.from(hr.querySelectorAll('td')).some(td => parseInt(td.getAttribute('colspan')||'1') > 1);
                 html += '<tr>';
                 hr.querySelectorAll('td').forEach(td => {
-                    const colspan = td.getAttribute('colspan');
-                    const align   = td.getAttribute('align') || 'left';
+                    const colspan = parseInt(td.getAttribute('colspan') || '1');
                     const val     = td.textContent.trim().replace(/\u00a0/g, '');
-                    const cs      = colspan && colspan !== '1' ? ` colspan="${colspan}"` : '';
-                    const minw    = !val ? ' min-width:44px;' : '';
-                    html += `<th${cs} style="text-align:${align};${minw}">${escHtml(val)}</th>`;
+                    const cs      = colspan > 1 ? ` colspan="${colspan}"` : '';
+                    const align   = isGroupRow ? 'center' : (td.getAttribute('align') || 'left');
+                    html += `<th${cs} style="text-align:${align};">${escHtml(val)}</th>`;
                 });
                 html += '</tr>';
             });
