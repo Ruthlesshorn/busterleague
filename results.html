@@ -1437,6 +1437,7 @@ function renderTeamSubPage(filename, teamName, text) {
         html += `<div class="dmb-wrap" style="margin-bottom:16px;"><table class="dmb-table">`;
         let headerOpen = false;
         let bodyOpen = false;
+        let headerRows = [];
         table.querySelectorAll('tr').forEach(row => {
             if (row.classList.contains('dmrptsecttitle')) return;
             const cells = row.querySelectorAll('td');
@@ -1446,21 +1447,37 @@ function renderTeamSubPage(filename, teamName, text) {
             if (isBlank && !row.classList.contains('dmrptsecthdr')) return;
 
             if (row.classList.contains('dmrptsecthdr')) {
-                if (!headerOpen) { html += '<thead>'; headerOpen = true; }
-                html += '<tr>';
-                cells.forEach(td => {
-                    const colspan = td.getAttribute('colspan') ? ` colspan="${td.getAttribute('colspan')}"` : '';
-                    const align   = td.getAttribute('align')   ? ` text-align:${td.getAttribute('align')};` : '';
-                    const val     = td.textContent.trim().replace(/\u00a0/g, '');
-                    const minw    = !val && !colspan ? ' min-width:50px;' : '';
-                    html += `<th${colspan} style="${align}${minw}">${escHtml(val)}</th>`;
-                });
-                html += '</tr>';
+                if (!headerOpen) {
+                    html += '<thead>';
+                    headerOpen = true;
+                    // Collect ALL header rows first, then render them together
+                    headerOpen = 'collecting';
+                    headerRows = [row];
+                } else if (headerOpen === 'collecting') {
+                    headerRows.push(row);
+                }
                 return;
             }
 
-            if (headerOpen && !bodyOpen) { html += '</thead><tbody>'; bodyOpen = true; }
-            if (!bodyOpen) { html += '<tbody>'; bodyOpen = true; }
+            // First data row — flush collected header rows
+            if (headerOpen === 'collecting') {
+                html += '<thead>';
+                headerRows.forEach(hr => {
+                    html += '<tr>';
+                    hr.querySelectorAll('td').forEach(td => {
+                        const colspan = td.getAttribute('colspan');
+                        const align   = td.getAttribute('align') || 'left';
+                        const val     = td.textContent.trim().replace(/\u00a0/g, '');
+                        const cs      = colspan && colspan !== '1' ? ` colspan="${colspan}"` : '';
+                        const minw    = !val ? ' min-width:44px;' : '';
+                        html += `<th${cs} style="text-align:${align};${minw}">${escHtml(val)}</th>`;
+                    });
+                    html += '</tr>';
+                });
+                html += '</thead><tbody>';
+                headerOpen = true;
+                bodyOpen = true;
+            }
 
             html += '<tr>';
             cells.forEach(td => {
@@ -1476,6 +1493,22 @@ function renderTeamSubPage(filename, teamName, text) {
             });
             html += '</tr>';
         });
+        if (headerOpen === 'collecting') {
+            html += '<thead>';
+            headerRows.forEach(hr => {
+                html += '<tr>';
+                hr.querySelectorAll('td').forEach(td => {
+                    const colspan = td.getAttribute('colspan');
+                    const align   = td.getAttribute('align') || 'left';
+                    const val     = td.textContent.trim().replace(/\u00a0/g, '');
+                    const cs      = colspan && colspan !== '1' ? ` colspan="${colspan}"` : '';
+                    const minw    = !val ? ' min-width:44px;' : '';
+                    html += `<th${cs} style="text-align:${align};${minw}">${escHtml(val)}</th>`;
+                });
+                html += '</tr>';
+            });
+            html += '</thead>';
+        }
         html += '</tbody></table></div>';
     });
 
