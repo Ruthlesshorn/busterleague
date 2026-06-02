@@ -1438,7 +1438,8 @@ function renderTeamSubPage(filename, teamName, text) {
             const cells = row.querySelectorAll('td');
             if (!cells.length) return;
             const isBlank = Array.from(cells).every(td => !td.textContent.trim() || td.textContent.trim() === '\u00a0');
-            if (isBlank) return;
+            // Skip blank rows only for data rows, not header rows
+            if (isBlank && !row.classList.contains('dmrptsecthdr')) return;
 
             if (row.classList.contains('dmrptsecthdr')) {
                 if (!headerOpen) { html += '<thead>'; headerOpen = true; }
