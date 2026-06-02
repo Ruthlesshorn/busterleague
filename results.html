@@ -423,7 +423,11 @@
 // Add new weeks to the END of this array.
 // ═══════════════════════════════════════════════════════════════
 const WEEKS = [
-    'week-1',   // add new weeks below this line, e.g. 'week-2'
+    'week-1',
+    'week-2',
+    'week-3',
+    'week-4',
+    'week-5',
 ];
 
 // Folder inside your repo where the week subfolders live.
@@ -1446,9 +1450,10 @@ function renderTeamSubPage(filename, teamName, text) {
                 html += '<tr>';
                 cells.forEach(td => {
                     const colspan = td.getAttribute('colspan') ? ` colspan="${td.getAttribute('colspan')}"` : '';
-                    const align   = td.getAttribute('align')   ? ` style="text-align:${td.getAttribute('align')}"` : '';
+                    const align   = td.getAttribute('align')   ? ` text-align:${td.getAttribute('align')};` : '';
                     const val     = td.textContent.trim().replace(/\u00a0/g, '');
-                    html += `<th${colspan}${align}>${escHtml(val)}</th>`;
+                    const minw    = !val && !colspan ? ' min-width:50px;' : '';
+                    html += `<th${colspan} style="${align}${minw}">${escHtml(val)}</th>`;
                 });
                 html += '</tr>';
                 return;
