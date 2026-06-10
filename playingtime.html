@@ -359,9 +359,10 @@ async function discoverTeams(folder) {
 }
 
 async function loadTeamData(folder, team) {
-    const [batText, pchText] = await Promise.all([
+    const [batText, pchText, rosterText] = await Promise.all([
         fetchFile(folder, team.batFile),
         fetchFile(folder, team.pchFile),
+        fetchFile(folder, `tm${team.tmNum}_tmroster.htm`),
     ]);
 
     const entry = {
@@ -373,9 +374,17 @@ async function loadTeamData(folder, team) {
     };
 
     if (batText) parseBatFile(batText, entry);
-    if (pchText) parsePchFile(pchText, entry);
+    if (pchText) parsePchFile(pchText, entry, rosterText);
 
     teamData.push(entry);
+}
+
+// Normalize accented characters and special chars for fuzzy matching
+function normalizeStr(s) {
+    return (s || '').toLowerCase()
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // remove accents
+        .replace(/[^a-z0-9 ]/g, '')                       // remove punctuation
+        .replace(/\s+/g, ' ').trim();
 }
 
 // ═══════════════════════════════════════════════════════
@@ -484,46 +493,120 @@ function parseBatFile(text, entry) {
     });
 }
 
-function parsePchFile(text, entry) {
-    const doc = parseHTML(text);
-    const tables = doc.querySelectorAll('table');
+function parsePchFile(text, entry, rosterText) {
+    // Step 1: Get all pitchers from roster file (source of truth for names)
+    const rosterPitchers = rosterText ? parsePitchersFromRoster(rosterText) : [];
 
-    tables.forEach(table => {
-        const titleCell = table.querySelector('tr.dmrptsecttitle td');
-        if (!titleCell || titleCell.textContent.trim() !== 'Primary') return;
-
-        const hdrRow = table.querySelector('tr.dmrptsecthdr');
-        if (!hdrRow) return;
-        const hdrs = Array.from(hdrRow.querySelectorAll('td')).map(td => td.textContent.trim());
-
-        const rows = table.querySelectorAll('tr.dmrptbody, tr.dmrptbody2');
-        rows.forEach(row => {
-            const cells = row.querySelectorAll('td');
-            const name = cells[1] ? cells[1].textContent.trim() : '';
-            if (!name || name === 'Total') return;
-
-            const innStr = getCellByHeader(hdrs, cells, 'INN') || '0';
-            const dmIP   = parseInnings(innStr);
-
-            // Find in players.json
-            const player = findPlayer(name, entry.name);
-            const actualIP = player ? (parseFloat(player.IP) || 0) : 0;
-
-            if (!actualIP && !dmIP) return;
-
-            const ipNeeded  = actualIP / 2;
-            const qualified = dmIP >= ipNeeded;
-
-            entry.pitchers.push({
-                name,
-                actualIP,
-                ipNeeded,
-                dmIP,
-                qualified,
-                pctComplete: ipNeeded > 0 ? Math.min(dmIP / ipNeeded, 1) : 1,
+    // Step 2: Get DMB IP from pitching stats file
+    const dmIPByName = {};
+    if (text) {
+        const doc = parseHTML(text);
+        doc.querySelectorAll('table').forEach(table => {
+            const titleCell = table.querySelector('tr.dmrptsecttitle td');
+            if (!titleCell || titleCell.textContent.trim() !== 'Primary') return;
+            const hdrRow = table.querySelector('tr.dmrptsecthdr');
+            if (!hdrRow) return;
+            const hdrs = Array.from(hdrRow.querySelectorAll('td')).map(td => td.textContent.trim());
+            table.querySelectorAll('tr.dmrptbody, tr.dmrptbody2').forEach(row => {
+                const cells = row.querySelectorAll('td');
+                const name = cells[1] ? cells[1].textContent.trim() : '';
+                if (!name || name === 'Total') return;
+                const innStr = getCellByHeader(hdrs, cells, 'INN') || '0';
+                dmIPByName[normalizeStr(name)] = parseInnings(innStr);
             });
         });
+    }
+
+    // Step 3: Build pitcher rows — one per rostered pitcher
+    const usedNames = new Set();
+    rosterPitchers.forEach(rosterName => {
+        const normRoster = normalizeStr(rosterName);
+        if (usedNames.has(normRoster)) return;
+        usedNames.add(normRoster);
+
+        // Find DMB IP by normalized name match
+        let dmIP = 0;
+        for (const [normStat, ip] of Object.entries(dmIPByName)) {
+            if (namesMatch(normRoster, normStat)) { dmIP = ip; break; }
+        }
+
+        // Find in players.json
+        const player = findPlayer(rosterName, entry.name);
+        const actualIP = player ? (parseFloat(player.IP) || 0) : 0;
+        const ipNeeded = actualIP / 2;
+        const qualified = ipNeeded > 0 ? dmIP >= ipNeeded : false;
+
+        entry.pitchers.push({
+            name: rosterName,
+            actualIP,
+            ipNeeded,
+            dmIP,
+            qualified,
+            pctComplete: ipNeeded > 0 ? Math.min(dmIP / ipNeeded, 1) : (dmIP > 0 ? 1 : 0),
+        });
     });
+
+    // Step 4: Add any pitchers in stats file not on roster (e.g. mid-season additions)
+    Object.entries(dmIPByName).forEach(([normStat, dmIP]) => {
+        const alreadyAdded = entry.pitchers.some(p => namesMatch(normalizeStr(p.name), normStat));
+        if (alreadyAdded) return;
+        const player = findPlayerByNorm(normStat);
+        const actualIP = player ? (parseFloat(player.IP) || 0) : 0;
+        const ipNeeded = actualIP / 2;
+        entry.pitchers.push({
+            name: player ? `${player.First} ${player.Last}` : normStat,
+            actualIP,
+            ipNeeded,
+            dmIP,
+            qualified: ipNeeded > 0 ? dmIP >= ipNeeded : false,
+            pctComplete: ipNeeded > 0 ? Math.min(dmIP / ipNeeded, 1) : 0,
+        });
+    });
+}
+
+function parsePitchersFromRoster(text) {
+    const doc = parseHTML(text);
+    const pitchers = [];
+    let inPitcherSection = false;
+
+    doc.querySelectorAll('table').forEach(table => {
+        const titleCell = table.querySelector('tr.dmrptsecttitle td');
+        const sectionName = titleCell ? titleCell.textContent.trim() : '';
+        if (sectionName === 'Pitcher Ratings') inPitcherSection = true;
+        else if (sectionName === 'Fielding Ratings') inPitcherSection = false;
+        if (!inPitcherSection) return;
+
+        table.querySelectorAll('tr.dmrptbody, tr.dmrptbody2').forEach(row => {
+            const cells = row.querySelectorAll('td');
+            // Pitcher name is typically in cell index 1
+            const name = cells[1] ? cells[1].textContent.trim() : '';
+            if (name && name !== 'Total' && name !== 'Player') pitchers.push(name);
+        });
+    });
+
+    return pitchers;
+}
+
+function namesMatch(a, b) {
+    if (a === b) return true;
+    // Check if all words of the shorter name appear in the longer
+    const aParts = a.split(' ');
+    const bParts = b.split(' ');
+    // Last name match + at least first letter of first name
+    const aLast = aParts[0], bLast = bParts[0];
+    if (aLast !== bLast) return false;
+    if (aParts.length > 1 && bParts.length > 1) {
+        return aParts[1][0] === bParts[1][0];
+    }
+    return true;
+}
+
+function findPlayerByNorm(normName) {
+    return players.find(p => {
+        const full = normalizeStr(`${p.Last} ${p.First}`);
+        const rev  = normalizeStr(`${p.First} ${p.Last}`);
+        return namesMatch(normName, full) || namesMatch(normName, rev);
+    }) || null;
 }
 
 // ═══════════════════════════════════════════════════════
@@ -545,30 +628,29 @@ function parseInnings(s) {
 }
 
 function findPlayer(dmName, teamName) {
-    // Try to match DMB name ("Last, First" or "First Last") to players.json
-    // players.json has First and Last fields
-    const normalized = dmName.replace(/,/g, '').toLowerCase().replace(/\s+/g, ' ').trim();
-
-    // Try exact last+first match
+    const normalized = normalizeStr(dmName);
+    // Try full name match both ways
     let match = players.find(p => {
-        const full = `${p.Last} ${p.First}`.toLowerCase().replace(/\s+/g, ' ');
-        const rev  = `${p.First} ${p.Last}`.toLowerCase().replace(/\s+/g, ' ');
+        const full = normalizeStr(`${p.Last} ${p.First}`);
+        const rev  = normalizeStr(`${p.First} ${p.Last}`);
         return full === normalized || rev === normalized;
     });
     if (match) return match;
 
-    // Try last name only match within team (for "Baez" style short names)
+    // Try namesMatch (last name + first initial)
+    match = players.find(p => {
+        const full = normalizeStr(`${p.Last} ${p.First}`);
+        return namesMatch(normalized, full);
+    });
+    if (match) return match;
+
+    // Last name only if unique
     const parts = normalized.split(' ');
     const lastName = parts[0];
-    const candidates = players.filter(p => p.Last && p.Last.toLowerCase() === lastName);
+    const candidates = players.filter(p => normalizeStr(p.Last) === lastName);
     if (candidates.length === 1) return candidates[0];
 
-    // Try first word match on full name
-    match = players.find(p => {
-        const pLast = (p.Last || '').toLowerCase();
-        return pLast === lastName && normalized.includes((p.First || '').toLowerCase());
-    });
-    return match || null;
+    return null;
 }
 
 function fmt1(n) { return n == null ? '—' : n.toFixed(1); }
@@ -822,7 +904,7 @@ function renderPitchers() {
         <thead><tr>
             ${thSort('team','Team','left')}
             ${thSort('name','Pitcher','left')}
-            ${thSort('actualIP','2024 Real IP','right')}
+            ${thSort('actualIP','2025 Real IP','right')}
             ${thSort('ipNeeded','IP Needed to Qualify','right')}
             ${thSort('dmIP','DMB IP','right')}
             <th class="center">Progress</th>
