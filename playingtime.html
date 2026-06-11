@@ -548,7 +548,10 @@ function parsePchFile(text, entry, rosterText) {
 
     // Step 4: Add any pitchers in stats file not on roster (e.g. mid-season additions)
     Object.entries(dmIPByName).forEach(([normStat, dmIP]) => {
-        const alreadyAdded = entry.pitchers.some(p => namesMatch(normalizeStr(p.name), normStat));
+        const alreadyAdded = entry.pitchers.some(p => {
+            const normP = normalizeStr(p.name);
+            return normP === normStat || namesMatch(normP, normStat);
+        });
         if (alreadyAdded) return;
         const player = findPlayerByNorm(normStat);
         const actualIP = player ? (parseFloat(player.IP) || 0) : 0;
