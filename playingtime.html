@@ -549,6 +549,45 @@ function parsePchFile(text, entry, rosterText) {
             pctComplete: ipNeeded > 0 ? Math.min(dmIP / ipNeeded, 1) : 0,
         });
     });
+
+    // Step 5: Dedup — merge entries that refer to the same pitcher
+    // (handles cases where roster parsing produced duplicate rows for the same player,
+    // e.g. one with full name + IP data, and one with just a surname and zero data)
+    const ageByPname = {};
+    rosterPitchers.forEach(rp => { ageByPname[normalizeStr(rp.name)] = rp.age; });
+
+    const merged = {};
+    entry.pitchers.forEach(p => {
+        const norm = normalizeStr(p.name);
+        const parts = norm.split(' ').filter(Boolean);
+        const surname = parts[parts.length - 1];
+        const age = ageByPname[norm];
+        // Group key: surname + age (if available) + first initial — most specific available
+        const initial = parts.length > 1 ? parts[0][0] : '';
+        const key = age != null ? `${surname}|age${age}` : `${surname}|${initial}`;
+
+        if (!merged[key]) {
+            merged[key] = p;
+        } else {
+            // Merge: prefer the entry with the longer (fuller) name,
+            // and combine non-zero stats from both
+            const existing = merged[key];
+            const better = (norm.length > normalizeStr(existing.name).length) ? p : existing;
+            const worse  = (better === p) ? existing : p;
+            merged[key] = {
+                ...better,
+                actualIP: better.actualIP || worse.actualIP,
+                ipNeeded: better.ipNeeded || worse.ipNeeded,
+                dmIP: Math.max(better.dmIP, worse.dmIP),
+            };
+            // Recompute derived fields after merge
+            merged[key].qualified = merged[key].ipNeeded > 0 ? merged[key].dmIP >= merged[key].ipNeeded : false;
+            merged[key].pctComplete = merged[key].ipNeeded > 0
+                ? Math.min(merged[key].dmIP / merged[key].ipNeeded, 1)
+                : (merged[key].dmIP > 0 ? 1 : 0);
+        }
+    });
+    entry.pitchers = Object.values(merged);
 }
 
 function parseBatterAgesFromRoster(rosterText) {
