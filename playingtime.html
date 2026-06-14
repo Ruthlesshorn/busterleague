@@ -550,21 +550,19 @@ function parsePchFile(text, entry, rosterText) {
         });
     });
 
-    // Step 5: Dedup — merge entries that refer to the same pitcher
-    // (handles cases where roster parsing produced duplicate rows for the same player,
-    // e.g. one with full name + IP data, and one with just a surname and zero data)
-    const ageByPname = {};
-    rosterPitchers.forEach(rp => { ageByPname[normalizeStr(rp.name)] = rp.age; });
-
+    // Step 5: Dedup — merge entries that refer to the same pitcher.
+    // Two entries with the same surname AND the same actualIP (i.e. they both
+    // resolved to the same players.json record) are the same person —
+    // this handles cases where the roster file produced a stray duplicate row
+    // with just a surname and zero DMB stats.
     const merged = {};
     entry.pitchers.forEach(p => {
         const norm = normalizeStr(p.name);
         const parts = norm.split(' ').filter(Boolean);
         const surname = parts[parts.length - 1];
-        const age = ageByPname[norm];
-        // Group key: surname + age (if available) + first initial — most specific available
-        const initial = parts.length > 1 ? parts[0][0] : '';
-        const key = age != null ? `${surname}|age${age}` : `${surname}|${initial}`;
+        // Primary key: surname + matched actualIP (same player = same real-life IP)
+        // Fallback distinguishes by full normalized name if actualIP is 0/unmatched for both
+        const key = p.actualIP > 0 ? `${surname}|ip${p.actualIP}` : norm;
 
         if (!merged[key]) {
             merged[key] = p;
