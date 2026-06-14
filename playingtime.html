@@ -373,7 +373,7 @@ async function loadTeamData(folder, team) {
         pitchers: [],
     };
 
-    if (batText) parseBatFile(batText, entry);
+    if (batText) parseBatFile(batText, entry, rosterText);
     if (pchText) parsePchFile(pchText, entry, rosterText);
 
     teamData.push(entry);
@@ -390,18 +390,11 @@ function normalizeStr(s) {
 // ═══════════════════════════════════════════════════════
 // Parsers
 // ═══════════════════════════════════════════════════════
-function parseBatFile(text, entry) {
+function parseBatFile(text, entry, rosterText) {
     const doc = parseHTML(text);
 
-    // Team name + games played from H3
-    const h3 = doc.querySelector('h3');
-    if (h3) {
-        // "Team batting -- 2025 Boston Red Sox\nRegular season -- as of 5/30/2025"
-        const h3text = h3.textContent;
-        // Extract team abbrev from name — use entry.name already set
-        // Games played: from "as of" date we can't get count directly,
-        // so use the Total row G column in Primary table
-    }
+    // Build name → age lookup from roster "Batter Ratings" section
+    const ageByName = parseBatterAgesFromRoster(rosterText);
 
     const tables = doc.querySelectorAll('table');
     let primaryCols = [], secondaryCols = [];
@@ -461,7 +454,8 @@ function parseBatFile(text, entry) {
         const sData = secondaryData[dmName] || { GS: 0 };
 
         // Find matching player in players.json
-        const player = findPlayer(dmName, entry.name);
+        const age = ageByName[normalizeStr(dmName)];
+        const player = findPlayer(dmName, entry.name, age);
         const actualAB = player ? (parseFloat(player.AB) || 0) : 0;
 
         // Skip players with no actual AB data and no DMB appearances
@@ -494,10 +488,10 @@ function parseBatFile(text, entry) {
 }
 
 function parsePchFile(text, entry, rosterText) {
-    // Step 1: Get all pitchers from roster file (source of truth for names)
+    // Step 1: Get all pitchers + ages from roster file (source of truth for names)
     const rosterPitchers = rosterText ? parsePitchersFromRoster(rosterText) : [];
 
-    // Step 2: Get DMB IP from pitching stats file
+    // Step 2: Get DMB IP from pitching stats file (full names, exact match expected)
     const dmIPByName = {};
     if (text) {
         const doc = parseHTML(text);
@@ -517,27 +511,19 @@ function parsePchFile(text, entry, rosterText) {
         });
     }
 
-    // Step 3: Build pitcher rows — one per rostered pitcher
-    const usedNames = new Set();
-    rosterPitchers.forEach(rosterName => {
-        const normRoster = normalizeStr(rosterName);
-        if (usedNames.has(normRoster)) return;
-        usedNames.add(normRoster);
+    // Step 3: Build pitcher rows — one per rostered pitcher, exact name match to stats
+    rosterPitchers.forEach(rp => {
+        const normRoster = normalizeStr(rp.name);
+        const dmIP = dmIPByName[normRoster] || 0;
 
-        // Find DMB IP by normalized name match
-        let dmIP = 0;
-        for (const [normStat, ip] of Object.entries(dmIPByName)) {
-            if (namesMatch(normRoster, normStat)) { dmIP = ip; break; }
-        }
-
-        // Find in players.json
-        const player = findPlayer(rosterName, entry.name);
+        // Find in players.json — disambiguate same-surname using Age
+        const player = findPlayer(rp.name, entry.name, rp.age);
         const actualIP = player ? (parseFloat(player.IP) || 0) : 0;
         const ipNeeded = actualIP / 2;
         const qualified = ipNeeded > 0 ? dmIP >= ipNeeded : false;
 
         entry.pitchers.push({
-            name: rosterName,
+            name: rp.name,
             actualIP,
             ipNeeded,
             dmIP,
@@ -546,13 +532,11 @@ function parsePchFile(text, entry, rosterText) {
         });
     });
 
-    // Step 4: Add any pitchers in stats file not on roster (e.g. mid-season additions)
+    // Step 4: Add any pitchers in stats file whose exact normalized name isn't on the roster
+    // (e.g. mid-season trades/additions not yet reflected in roster file)
+    const rosterNorms = new Set(rosterPitchers.map(rp => normalizeStr(rp.name)));
     Object.entries(dmIPByName).forEach(([normStat, dmIP]) => {
-        const alreadyAdded = entry.pitchers.some(p => {
-            const normP = normalizeStr(p.name);
-            return normP === normStat || namesMatch(normP, normStat);
-        });
-        if (alreadyAdded) return;
+        if (rosterNorms.has(normStat)) return;
         const player = findPlayerByNorm(normStat);
         const actualIP = player ? (parseFloat(player.IP) || 0) : 0;
         const ipNeeded = actualIP / 2;
@@ -565,6 +549,32 @@ function parsePchFile(text, entry, rosterText) {
             pctComplete: ipNeeded > 0 ? Math.min(dmIP / ipNeeded, 1) : 0,
         });
     });
+}
+
+function parseBatterAgesFromRoster(rosterText) {
+    const ages = {};
+    if (!rosterText) return ages;
+    const doc = parseHTML(rosterText);
+    let inBatterSection = false;
+
+    doc.querySelectorAll('table').forEach(table => {
+        const titleCell = table.querySelector('tr.dmrptsecttitle td');
+        const sectionName = titleCell ? titleCell.textContent.trim() : '';
+        if (sectionName === 'Batter Ratings') inBatterSection = true;
+        else if (sectionName === 'Pitcher Ratings') inBatterSection = false;
+        if (!inBatterSection) return;
+
+        table.querySelectorAll('tr.dmrptbody, tr.dmrptbody2').forEach(row => {
+            const cells = row.querySelectorAll('td');
+            const name = cells[1] ? cells[1].textContent.trim() : '';
+            const age  = cells[4] ? parseFloat(cells[4].textContent.trim()) : null;
+            if (name && name !== 'Total' && !isNaN(age)) {
+                ages[normalizeStr(name)] = age;
+            }
+        });
+    });
+
+    return ages;
 }
 
 function parsePitchersFromRoster(text) {
@@ -581,9 +591,11 @@ function parsePitchersFromRoster(text) {
 
         table.querySelectorAll('tr.dmrptbody, tr.dmrptbody2').forEach(row => {
             const cells = row.querySelectorAll('td');
-            // Pitcher name is typically in cell index 1
             const name = cells[1] ? cells[1].textContent.trim() : '';
-            if (name && name !== 'Total' && name !== 'Player') pitchers.push(name);
+            const age  = cells[4] ? parseFloat(cells[4].textContent.trim()) : null;
+            if (name && name !== 'Total' && name !== 'Player') {
+                pitchers.push({ name, age: isNaN(age) ? null : age });
+            }
         });
     });
 
@@ -592,24 +604,22 @@ function parsePitchersFromRoster(text) {
 
 function namesMatch(a, b) {
     if (a === b) return true;
-    // Check if all words of the shorter name appear in the longer
-    const aParts = a.split(' ');
-    const bParts = b.split(' ');
-    // Last name match + at least first letter of first name
-    const aLast = aParts[0], bLast = bParts[0];
-    if (aLast !== bLast) return false;
-    if (aParts.length > 1 && bParts.length > 1) {
-        return aParts[1][0] === bParts[1][0];
-    }
-    return true;
+    const aParts = a.split(' ').filter(Boolean);
+    const bParts = b.split(' ').filter(Boolean);
+    if (!aParts.length || !bParts.length) return false;
+
+    const aSurname = aParts[aParts.length - 1];
+    const bSurname = bParts[bParts.length - 1];
+    if (aSurname !== bSurname) return false;
+
+    if (aParts.length === 1 || bParts.length === 1) return true;
+
+    const aFirst = aParts[0][0], bFirst = bParts[0][0];
+    return aFirst === bFirst;
 }
 
 function findPlayerByNorm(normName) {
-    return players.find(p => {
-        const full = normalizeStr(`${p.Last} ${p.First}`);
-        const rev  = normalizeStr(`${p.First} ${p.Last}`);
-        return namesMatch(normName, full) || namesMatch(normName, rev);
-    }) || null;
+    return players.find(p => normalizeStr(`${p.First} ${p.Last}`) === normName) || null;
 }
 
 // ═══════════════════════════════════════════════════════
@@ -630,28 +640,37 @@ function parseInnings(s) {
     return full + frac / 3;
 }
 
-function findPlayer(dmName, teamName) {
+function findPlayer(dmName, teamName, age) {
     const normalized = normalizeStr(dmName);
-    // Try full name match both ways
-    let match = players.find(p => {
-        const full = normalizeStr(`${p.Last} ${p.First}`);
-        const rev  = normalizeStr(`${p.First} ${p.Last}`);
-        return full === normalized || rev === normalized;
-    });
-    if (match) return match;
 
-    // Try namesMatch (last name + first initial)
-    match = players.find(p => {
-        const full = normalizeStr(`${p.Last} ${p.First}`);
-        return namesMatch(normalized, full);
-    });
-    if (match) return match;
+    // Exact full-name match (most common case)
+    let exactMatches = players.filter(p => normalizeStr(`${p.First} ${p.Last}`) === normalized);
+    if (exactMatches.length === 1) return exactMatches[0];
+    if (exactMatches.length > 1) {
+        // Multiple players with identical normalized full names — disambiguate by age
+        if (age != null) {
+            const ageMatch = exactMatches.find(p => Math.abs((parseFloat(p.Age) || -999) - age) <= 1);
+            if (ageMatch) return ageMatch;
+        }
+        return exactMatches[0]; // fallback: first match
+    }
 
-    // Last name only if unique
-    const parts = normalized.split(' ');
-    const lastName = parts[0];
-    const candidates = players.filter(p => normalizeStr(p.Last) === lastName);
-    if (candidates.length === 1) return candidates[0];
+    // Fallback: surname-only match (handles accent/format mismatches)
+    const parts = normalized.split(' ').filter(Boolean);
+    const surname = parts[parts.length - 1];
+    const surnameMatches = players.filter(p => normalizeStr(p.Last) === surname);
+    if (surnameMatches.length === 1) return surnameMatches[0];
+    if (surnameMatches.length > 1) {
+        // Multiple same-surname players — disambiguate by age first, then first-initial
+        if (age != null) {
+            const ageMatch = surnameMatches.find(p => Math.abs((parseFloat(p.Age) || -999) - age) <= 1);
+            if (ageMatch) return ageMatch;
+        }
+        const firstInitial = parts[0] ? parts[0][0] : '';
+        const initialMatch = surnameMatches.find(p => normalizeStr(p.First)[0] === firstInitial);
+        if (initialMatch) return initialMatch;
+        return surnameMatches[0]; // last-resort fallback
+    }
 
     return null;
 }
