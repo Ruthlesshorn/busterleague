@@ -344,8 +344,23 @@ async function discoverTeams(folder) {
                 const m = href.match(/tmindex(\d+)\.htm/i);
                 if (m) {
                     const n = m[1];
+                    // Override abbreviations for teams where first 3 letters are wrong
+                    const abbrevOverrides = {
+                        'New York Mets':       'NYM',
+                        'New York Yankees':    'NYY',
+                        'Chicago White Sox':   'CWS',
+                        'Chicago Cubs':        'CHC',
+                        'Los Angeles Dodgers': 'LAD',
+                        'Los Angeles Angels':  'LAA',
+                        'San Francisco Giants':'SF',
+                        'San Diego Padres':    'SD',
+                        'Tampa Bay Rays':      'TB',
+                        'Toronto Blue Jays':   'TOR',
+                        'Kansas City Royals':  'KC',
+                    };
+                    const abbrev = abbrevOverrides[name] || name.replace(/\s+/g, '').toUpperCase().substring(0, 3);
                     teams.push({
-                        abbrev: name.replace(/\s+/g, '').toUpperCase().substring(0, 3),
+                        abbrev,
                         name,
                         tmNum: n,
                         batFile: `tm${n}_tmbat.htm`,
