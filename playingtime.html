@@ -1,1023 +1,953 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Buster League — Playing Time Tracker</title>
-    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;700&display=swap" rel="stylesheet">
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: 'DM Sans', sans-serif;
-            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
-            min-height: 100vh;
-            color: #333;
-        }
-        .container { max-width: 1600px; margin: 0 auto; padding: 20px; }
-
-        /* Header */
-        .header {
-            background: linear-gradient(135deg, #c41e3a 0%, #d94e59 100%);
-            color: white; padding: 24px 30px; border-radius: 12px;
-            margin-bottom: 20px; box-shadow: 0 8px 32px rgba(0,0,0,0.3);
-            display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;
-        }
-        .header-left h1 { font-family: 'Bebas Neue', sans-serif; font-size: 2em; letter-spacing: 2px; }
-        .header-left p { opacity: 0.85; font-size: 0.9em; margin-top: 2px; }
-        .btn { padding: 10px 20px; border-radius: 8px; font-family: 'DM Sans', sans-serif; font-weight: 700; font-size: 0.9em; cursor: pointer; border: none; text-decoration: none; display: inline-block; transition: all 0.2s; }
-        .btn-ghost { background: rgba(255,255,255,0.2); color: white; }
-        .btn-ghost:hover { background: rgba(255,255,255,0.3); }
-
-        /* Controls bar */
-        .controls-bar {
-            background: white; border-radius: 12px; padding: 16px 20px;
-            margin-bottom: 20px; box-shadow: 0 4px 16px rgba(0,0,0,0.15);
-            display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
-        }
-        .controls-bar label { font-weight: 800; font-size: 0.8em; text-transform: uppercase; letter-spacing: 1.5px; color: #1e3c72; }
-        .controls-bar select {
-            padding: 9px 14px; border: 2px solid #dee2e6; border-radius: 8px;
-            font-family: 'DM Sans', sans-serif; font-size: 0.95em; font-weight: 600;
-            color: #1e3c72; cursor: pointer; transition: border-color 0.2s; background: white;
-        }
-        .controls-bar select:focus { outline: none; border-color: #c41e3a; }
-        .controls-bar select:hover { border-color: #c41e3a; }
-
-        .divider { width: 1px; height: 32px; background: #dee2e6; }
-
-        .filter-chips { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
-        .filter-chip {
-            padding: 5px 14px; border-radius: 20px; border: 2px solid #dee2e6;
-            background: white; font-size: 0.8em; font-weight: 700; cursor: pointer;
-            color: #495057; transition: all 0.12s; user-select: none;
-        }
-        .filter-chip:hover { border-color: #1e3c72; color: #1e3c72; }
-        .filter-chip.active { background: #1e3c72; color: white; border-color: #1e3c72; }
-        .filter-chip.active-alert { background: #c41e3a; color: white; border-color: #c41e3a; }
-
-        .loading-indicator {
-            display: none; font-size: 0.85em; color: #c41e3a; font-weight: 700;
-            align-items: center; gap: 6px; margin-left: auto;
-        }
-        .loading-indicator.show { display: flex; }
-        .spinner { width: 14px; height: 14px; border: 2px solid #f0f0f0; border-top-color: #c41e3a; border-radius: 50%; animation: spin 0.7s linear infinite; }
-        @keyframes spin { to { transform: rotate(360deg); } }
-
-        /* Summary cards */
-        .summary-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-            gap: 14px;
-            margin-bottom: 20px;
-        }
-        .summary-card {
-            background: white; border-radius: 10px; padding: 16px 18px;
-            box-shadow: 0 4px 16px rgba(0,0,0,0.12);
-        }
-        .summary-card .label { font-size: 0.72em; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; color: #6c757d; margin-bottom: 6px; }
-        .summary-card .value { font-size: 1.8em; font-weight: 800; color: #1e3c72; line-height: 1; }
-        .summary-card .sub { font-size: 0.8em; color: #6c757d; margin-top: 4px; }
-        .summary-card.alert .value { color: #c41e3a; }
-        .summary-card.good .value { color: #28a745; }
-
-        /* Section tabs */
-        .section-tabs { display: flex; gap: 6px; margin-bottom: 16px; }
-        .section-tab {
-            padding: 10px 20px; border-radius: 8px; border: 2px solid rgba(255,255,255,0.25);
-            background: rgba(255,255,255,0.12); color: white; font-family: 'DM Sans', sans-serif;
-            font-weight: 700; font-size: 0.88em; cursor: pointer; transition: all 0.15s;
-        }
-        .section-tab:hover { background: rgba(255,255,255,0.22); }
-        .section-tab.active { background: white; color: #1e3c72; border-color: white; }
-
-        /* Tables */
-        .card { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 4px 16px rgba(0,0,0,0.15); }
-        .card-title {
-            font-size: 0.82em; font-weight: 800; letter-spacing: 2px; text-transform: uppercase;
-            color: #1e3c72; margin-bottom: 16px; padding-bottom: 10px; border-bottom: 2px solid #c41e3a;
-            display: flex; justify-content: space-between; align-items: center;
-        }
-        .card-title span { font-size: 1.1em; font-weight: 500; color: #6c757d; letter-spacing: 0; text-transform: none; }
-
-        .table-wrap { overflow-x: auto; border-radius: 8px; border: 1px solid #dee2e6; }
-        table { width: 100%; border-collapse: collapse; font-size: 0.87em; }
-        thead { background: #1e3c72; color: white; position: sticky; top: 0; z-index: 5; }
-        th { padding: 10px 12px; text-align: left; font-weight: 600; white-space: nowrap; font-size: 0.85em; }
-        th.right { text-align: right; }
-        th.center { text-align: center; }
-        td { padding: 9px 12px; border-bottom: 1px solid #f0f0f0; white-space: nowrap; }
-        td.right { text-align: right; }
-        td.center { text-align: center; }
-        tbody tr:hover { background: #f8f9fa; }
-        tbody tr:nth-child(even) { background: #fafafa; }
-        tbody tr:nth-child(even):hover { background: #f0f0f0; }
-
-        /* Team header rows */
-        tr.team-row td {
-            background: #e8eef8; color: #1e3c72; font-weight: 800;
-            font-size: 0.82em; letter-spacing: 1px; text-transform: uppercase;
-            padding: 7px 12px;
-        }
-
-        /* Status badges */
-        .badge {
-            display: inline-block; padding: 2px 8px; border-radius: 4px;
-            font-weight: 700; font-size: 0.78em; white-space: nowrap;
-        }
-        .badge-ok      { background: #d1e7dd; color: #0a3622; }
-        .badge-warning { background: #fff3cd; color: #664d03; }
-        .badge-danger  { background: #f8d7da; color: #58151c; }
-        .badge-done    { background: #cff4fc; color: #055160; }
-        .badge-maxed   { background: #f8d7da; color: #58151c; }
-
-        /* Progress bar */
-        .prog-wrap { display: flex; align-items: center; gap: 8px; min-width: 120px; }
-        .prog-bar { flex: 1; height: 6px; background: #e9ecef; border-radius: 3px; overflow: hidden; min-width: 60px; }
-        .prog-fill { height: 100%; border-radius: 3px; transition: width 0.3s; }
-        .prog-pct { font-size: 0.8em; font-weight: 700; min-width: 36px; text-align: right; }
-
-        /* Empty / error states */
-        .empty-state { text-align: center; padding: 60px 20px; color: #6c757d; }
-        .empty-state .icon { font-size: 3em; margin-bottom: 12px; }
-        .empty-state h3 { font-size: 1.1em; margin-bottom: 6px; color: #495057; }
-        .error-state { background: #fff5f5; border: 1px solid #f8d7da; border-radius: 8px; padding: 16px 20px; color: #842029; font-weight: 600; margin: 10px 0; }
-
-        /* Sortable */
-        th.sortable { cursor: pointer; user-select: none; }
-        th.sortable:after { content: ' ⇅'; opacity: 0.35; font-size: 0.78em; }
-        th.sort-asc:after { content: ' ↑'; opacity: 1; }
-        th.sort-desc:after { content: ' ↓'; opacity: 1; }
-
-        @media (max-width: 768px) {
-            .header { flex-direction: column; gap: 12px; }
-            .summary-grid { grid-template-columns: 1fr 1fr; }
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Buster League — Playing Time Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+font-family: 'DM Sans', sans-serif;
+background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+min-height: 100vh;
+color: #333;
+}
+.container { max-width: 1600px; margin: 0 auto; padding: 20px; }
+/* Header */
+.header {
+background: linear-gradient(135deg, #c41e3a 0%, #d94e59 100%);
+color: white; padding: 24px 30px; border-radius: 12px;
+margin-bottom: 20px; box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;
+}
+.header-left h1 { font-family: 'Bebas Neue', sans-serif; font-size: 2em; letter-spacing: 2px; }
+.header-left p { opacity: 0.85; font-size: 0.9em; margin-top: 2px; }
+.btn { padding: 10px 20px; border-radius: 8px; font-family: 'DM Sans', sans-serif; font-weight: 700; font-size: 0.9em; cursor: pointer; border: none; text-decoration: none; display: inline-block; transition: all 0.2s; }
+.btn-ghost { background: rgba(255,255,255,0.2); color: white; }
+.btn-ghost:hover { background: rgba(255,255,255,0.3); }
+/* Controls bar */
+.controls-bar {
+background: white; border-radius: 12px; padding: 16px 20px;
+margin-bottom: 20px; box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+}
+.controls-bar label { font-weight: 800; font-size: 0.8em; text-transform: uppercase; letter-spacing: 1.5px; color: #1e3c72; }
+.controls-bar select {
+padding: 9px 14px; border: 2px solid #dee2e6; border-radius: 8px;
+font-family: 'DM Sans', sans-serif; font-size: 0.95em; font-weight: 600;
+color: #1e3c72; cursor: pointer; transition: border-color 0.2s; background: white;
+}
+.controls-bar select:focus { outline: none; border-color: #c41e3a; }
+.controls-bar select:hover { border-color: #c41e3a; }
+.divider { width: 1px; height: 32px; background: #dee2e6; }
+.filter-chips { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.filter-chip {
+padding: 5px 14px; border-radius: 20px; border: 2px solid #dee2e6;
+background: white; font-size: 0.8em; font-weight: 700; cursor: pointer;
+color: #495057; transition: all 0.12s; user-select: none;
+}
+.filter-chip:hover { border-color: #1e3c72; color: #1e3c72; }
+.filter-chip.active { background: #1e3c72; color: white; border-color: #1e3c72; }
+.filter-chip.active-alert { background: #c41e3a; color: white; border-color: #c41e3a; }
+.loading-indicator {
+display: none; font-size: 0.85em; color: #c41e3a; font-weight: 700;
+align-items: center; gap: 6px; margin-left: auto;
+}
+.loading-indicator.show { display: flex; }
+.spinner { width: 14px; height: 14px; border: 2px solid #f0f0f0; border-top-color: #c41e3a; border-radius: 50%; animation: spin 0.7s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+/* Summary cards */
+.summary-grid {
+display: grid;
+grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+gap: 14px;
+margin-bottom: 20px;
+}
+.summary-card {
+background: white; border-radius: 10px; padding: 16px 18px;
+box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+}
+.summary-card .label { font-size: 0.72em; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; color: #6c757d; margin-bottom: 6px; }
+.summary-card .value { font-size: 1.8em; font-weight: 800; color: #1e3c72; line-height: 1; }
+.summary-card .sub { font-size: 0.8em; color: #6c757d; margin-top: 4px; }
+.summary-card.alert .value { color: #c41e3a; }
+.summary-card.good .value { color: #28a745; }
+/* Section tabs */
+.section-tabs { display: flex; gap: 6px; margin-bottom: 16px; }
+.section-tab {
+padding: 10px 20px; border-radius: 8px; border: 2px solid rgba(255,255,255,0.25);
+background: rgba(255,255,255,0.12); color: white; font-family: 'DM Sans', sans-serif;
+font-weight: 700; font-size: 0.88em; cursor: pointer; transition: all 0.15s;
+}
+.section-tab:hover { background: rgba(255,255,255,0.22); }
+.section-tab.active { background: white; color: #1e3c72; border-color: white; }
+/* Tables */
+.card { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 4px 16px rgba(0,0,0,0.15); }
+.card-title {
+font-size: 0.82em; font-weight: 800; letter-spacing: 2px; text-transform: uppercase;
+color: #1e3c72; margin-bottom: 16px; padding-bottom: 10px; border-bottom: 2px solid #c41e3a;
+display: flex; justify-content: space-between; align-items: center;
+}
+.card-title span { font-size: 1.1em; font-weight: 500; color: #6c757d; letter-spacing: 0; text-transform: none; }
+.table-wrap { overflow-x: auto; border-radius: 8px; border: 1px solid #dee2e6; }
+table { width: 100%; border-collapse: collapse; font-size: 0.87em; }
+thead { background: #1e3c72; color: white; position: sticky; top: 0; z-index: 5; }
+th { padding: 10px 12px; text-align: left; font-weight: 600; white-space: nowrap; font-size: 0.85em; }
+th.right { text-align: right; }
+th.center { text-align: center; }
+td { padding: 9px 12px; border-bottom: 1px solid #f0f0f0; white-space: nowrap; }
+td.right { text-align: right; }
+td.center { text-align: center; }
+tbody tr:hover { background: #f8f9fa; }
+tbody tr:nth-child(even) { background: #fafafa; }
+tbody tr:nth-child(even):hover { background: #f0f0f0; }
+/* Team header rows */
+tr.team-row td {
+background: #e8eef8; color: #1e3c72; font-weight: 800;
+font-size: 0.82em; letter-spacing: 1px; text-transform: uppercase;
+padding: 7px 12px;
+}
+/* Status badges */
+.badge {
+display: inline-block; padding: 2px 8px; border-radius: 4px;
+font-weight: 700; font-size: 0.78em; white-space: nowrap;
+}
+.badge-ok { background: #d1e7dd; color: #0a3622; }
+.badge-warning { background: #fff3cd; color: #664d03; }
+.badge-danger { background: #f8d7da; color: #58151c; }
+.badge-done { background: #cff4fc; color: #055160; }
+.badge-maxed { background: #f8d7da; color: #58151c; }
+/* Progress bar */
+.prog-wrap { display: flex; align-items: center; gap: 8px; min-width: 120px; }
+.prog-bar { flex: 1; height: 6px; background: #e9ecef; border-radius: 3px; overflow: hidden; min-width: 60px; }
+.prog-fill { height: 100%; border-radius: 3px; transition: width 0.3s; }
+.prog-pct { font-size: 0.8em; font-weight: 700; min-width: 36px; text-align: right; }
+/* Empty / error states */
+.empty-state { text-align: center; padding: 60px 20px; color: #6c757d; }
+.empty-state .icon { font-size: 3em; margin-bottom: 12px; }
+.empty-state h3 { font-size: 1.1em; margin-bottom: 6px; color: #495057; }
+.error-state { background: #fff5f5; border: 1px solid #f8d7da; border-radius: 8px; padding: 16px 20px; color: #842029; font-weight: 600; margin: 10px 0; }
+/* Sortable */
+th.sortable { cursor: pointer; user-select: none; }
+th.sortable:after { content: ' ⇅'; opacity: 0.35; font-size: 0.78em; }
+th.sort-asc:after { content: ' ↑'; opacity: 1; }
+th.sort-desc:after { content: ' ↓'; opacity: 1; }
+@media (max-width: 768px) {
+.header { flex-direction: column; gap: 12px; }
+.summary-grid { grid-template-columns: 1fr 1fr; }
+}
+</style>
 </head>
 <body>
 <div class="container">
+<!-- Header -->
+<div class="header">
+  <div class="header-left">
+    <h1>⏱ Playing Time Tracker</h1>
+    <p>Keeper eligibility & start limits — Buster League 2025</p>
+  </div>
+  <div style="display:flex;gap:10px;align-items:center;">
+    <a href="results.html" class="btn btn-ghost">Results →</a>
+    <a href="index.html" class="btn btn-ghost">Dashboard →</a>
+  </div>
+</div>
 
-    <!-- Header -->
-    <div class="header">
-        <div class="header-left">
-            <h1>⏱ Playing Time Tracker</h1>
-            <p>Keeper eligibility & start limits — Buster League 2025</p>
-        </div>
-        <div style="display:flex;gap:10px;align-items:center;">
-            <a href="results.html" class="btn btn-ghost">Results →</a>
-            <a href="index.html" class="btn btn-ghost">Dashboard →</a>
-        </div>
-    </div>
+<!-- Controls -->
+<div class="controls-bar">
+  <label>Week</label>
+  <select id="week-select" onchange="loadWeek(this.value)">
+    <option value="">— Discovering weeks… —</option>
+  </select>
+  <div class="divider"></div>
+  <label>Team</label>
+  <select id="team-filter" onchange="render()">
+    <option value="all">All Teams</option>
+  </select>
+  <div class="divider"></div>
+  <label>Show</label>
+  <div class="filter-chips">
+    <span class="filter-chip active" data-filter="all" onclick="setFilter('all',this)">All</span>
+    <span class="filter-chip" data-filter="limited" onclick="setFilter('limited',this)">Start-Limited</span>
+    <span class="filter-chip" data-filter="maxed" onclick="setFilter('maxed',this)">Starts Maxed</span>
+    <span class="filter-chip" data-filter="not-qualified" onclick="setFilter('not-qualified',this)">Not Yet Qualified</span>
+    <span class="filter-chip" data-filter="qualified" onclick="setFilter('qualified',this)">Qualified ✓</span>
+  </div>
+  <div class="loading-indicator" id="loading">
+    <div class="spinner"></div> Loading…
+  </div>
+</div>
 
-    <!-- Controls -->
-    <div class="controls-bar">
-        <label>Week</label>
-        <select id="week-select" onchange="loadWeek(this.value)">
-            <option value="">— Select week —</option>
-        </select>
+<!-- Summary cards -->
+<div class="summary-grid" id="summary-grid" style="display:none;"></div>
 
-        <div class="divider"></div>
+<!-- Section tabs -->
+<div class="section-tabs">
+  <button class="section-tab active" onclick="showSection('batters',this)">🏏 Batters</button>
+  <button class="section-tab" onclick="showSection('pitchers',this)">⚾ Pitchers</button>
+</div>
 
-        <label>Team</label>
-        <select id="team-filter" onchange="render()">
-            <option value="all">All Teams</option>
-        </select>
-
-        <div class="divider"></div>
-
-        <label>Show</label>
-        <div class="filter-chips">
-            <span class="filter-chip active" data-filter="all" onclick="setFilter('all',this)">All</span>
-            <span class="filter-chip" data-filter="limited" onclick="setFilter('limited',this)">Start-Limited</span>
-            <span class="filter-chip" data-filter="maxed" onclick="setFilter('maxed',this)">Starts Maxed</span>
-            <span class="filter-chip" data-filter="not-qualified" onclick="setFilter('not-qualified',this)">Not Yet Qualified</span>
-            <span class="filter-chip" data-filter="qualified" onclick="setFilter('qualified',this)">Qualified ✓</span>
-        </div>
-
-        <div class="loading-indicator" id="loading">
-            <div class="spinner"></div> Loading…
-        </div>
-    </div>
-
-    <!-- Summary cards -->
-    <div class="summary-grid" id="summary-grid" style="display:none;"></div>
-
-    <!-- Section tabs -->
-    <div class="section-tabs">
-        <button class="section-tab active" onclick="showSection('batters',this)">🏏 Batters</button>
-        <button class="section-tab" onclick="showSection('pitchers',this)">⚾ Pitchers</button>
-    </div>
-
-    <!-- Content -->
-    <div id="content-area">
-        <div class="empty-state">
-            <div class="icon">⏱</div>
-            <h3>Select a week to load playing time data</h3>
-            <p>Stats will be pulled automatically from the DMB sim files.</p>
-        </div>
-    </div>
-
+<!-- Content -->
+<div id="content-area">
+  <div class="empty-state">
+    <div class="icon">⏱</div>
+    <h3>Discovering available weeks…</h3>
+    <p>Checking for DMB sim files in the dmb/ folder.</p>
+  </div>
+</div>
 </div>
 
 <script>
 // ═══════════════════════════════════════════════════════
-// CONFIG — same as results.html
+// CONFIG
 // ═══════════════════════════════════════════════════════
-const WEEKS = [
-    'week-1',
-    'week-2',
-    'week-3',
-    'week-4',
-    'week-5',
-];
-const DMB_BASE = 'dmb';
 
-// Team abbrev → {batFile, pchFile, tmIndex}
-// We discover teams dynamically from the league index files
+// Auto-discovery: probes dmb/week-1 through dmb/week-N for lgindex1.htm.
+// Add new weeks by simply uploading a new dmb/week-N folder — no code changes needed.
+const DMB_BASE = 'dmb';
+const MAX_WEEKS_TO_PROBE = 30; // increase if your season goes longer
 const TOTAL_GAMES = 162;
 
 // ═══════════════════════════════════════════════════════
 // State
 // ═══════════════════════════════════════════════════════
-let players      = [];       // from players.json
-let currentWeek  = null;
+let players = [];
+let currentWeek = null;
 let currentSection = 'batters';
 let activeFilter = 'all';
-let weekCache    = {};
-let teamData     = [];       // [{ abbrev, name, batFile, pchFile, gamesPlayed, batters:[], pitchers:[] }]
-let sortCol      = null;
-let sortDir      = 'asc';
+let weekCache = {};
+let teamData = [];
+let sortCol = null;
+let sortDir = 'asc';
+let discoveredWeeks = []; // filled by discoverWeeks()
+
+// ═══════════════════════════════════════════════════════
+// Week auto-discovery
+// ═══════════════════════════════════════════════════════
+
+// Probe each candidate folder by attempting to fetch lgindex1.htm.
+// A 200 response means the week folder exists; anything else means stop.
+async function discoverWeeks() {
+  const found = [];
+  for (let i = 1; i <= MAX_WEEKS_TO_PROBE; i++) {
+    const folder = `week-${i}`;
+    try {
+      const res = await fetch(`${DMB_BASE}/${folder}/lgindex1.htm`, { method: 'HEAD' });
+      if (res.ok) {
+        found.push(folder);
+      } else {
+        // First missing week — stop probing (assumes sequential numbering)
+        break;
+      }
+    } catch(e) {
+      break;
+    }
+  }
+  return found;
+}
 
 // ═══════════════════════════════════════════════════════
 // Init
 // ═══════════════════════════════════════════════════════
 window.addEventListener('DOMContentLoaded', async () => {
-    // Populate week dropdown
-    const sel = document.getElementById('week-select');
-    WEEKS.forEach((w, i) => {
-        const opt = document.createElement('option');
-        opt.value = w;
-        opt.textContent = `Week ${i + 1}`;
-        sel.appendChild(opt);
-    });
+  setLoading(true);
 
-    // Load players.json
-    try {
-        players = await fetch('players.json').then(r => r.json());
-    } catch(e) {
-        players = [];
-    }
+  // Load players.json in parallel with week discovery
+  const [foundWeeks] = await Promise.all([
+    discoverWeeks(),
+    fetch('players.json').then(r => r.json()).then(data => { players = data; }).catch(() => { players = []; })
+  ]);
 
-    // Default to latest week
-    const latest = WEEKS[WEEKS.length - 1];
-    if (latest) { sel.value = latest; loadWeek(latest); }
+  discoveredWeeks = foundWeeks;
+
+  const sel = document.getElementById('week-select');
+  sel.innerHTML = ''; // clear placeholder
+
+  if (!discoveredWeeks.length) {
+    sel.innerHTML = '<option value="">— No weeks found —</option>';
+    setLoading(false);
+    document.getElementById('content-area').innerHTML =
+      '<div class="error-state">⚠️ No week folders found in dmb/. Upload your DMB sim output to dmb/week-1/, dmb/week-2/, etc.</div>';
+    return;
+  }
+
+  // Populate dropdown with discovered weeks
+  discoveredWeeks.forEach((w, i) => {
+    const opt = document.createElement('option');
+    opt.value = w;
+    opt.textContent = `Week ${i + 1}`;
+    sel.appendChild(opt);
+  });
+
+  // Default to latest discovered week
+  const latest = discoveredWeeks[discoveredWeeks.length - 1];
+  sel.value = latest;
+  setLoading(false);
+  loadWeek(latest);
 });
 
 // ═══════════════════════════════════════════════════════
 // File fetching
 // ═══════════════════════════════════════════════════════
 async function fetchFile(folder, filename) {
-    const key = `${folder}/${filename}`;
-    if (weekCache[key]) return weekCache[key];
-    try {
-        const res = await fetch(`${DMB_BASE}/${folder}/${filename}`);
-        if (!res.ok) return null;
-        const text = await res.text();
-        weekCache[key] = text;
-        return text;
-    } catch(e) { return null; }
+  const key = `${folder}/${filename}`;
+  if (weekCache[key]) return weekCache[key];
+  try {
+    const res = await fetch(`${DMB_BASE}/${folder}/${filename}`);
+    if (!res.ok) return null;
+    const text = await res.text();
+    weekCache[key] = text;
+    return text;
+  } catch(e) { return null; }
 }
 
 function parseHTML(text) {
-    return new DOMParser().parseFromString(text, 'text/html');
+  return new DOMParser().parseFromString(text, 'text/html');
 }
 
 // ═══════════════════════════════════════════════════════
 // Main loader
 // ═══════════════════════════════════════════════════════
 async function loadWeek(folder) {
-    if (!folder) return;
-    currentWeek = folder;
-    setLoading(true);
-    teamData = [];
+  if (!folder) return;
+  currentWeek = folder;
+  setLoading(true);
+  teamData = [];
 
-    // Discover teams from league index files
-    const teamList = await discoverTeams(folder);
-    if (!teamList.length) {
-        setLoading(false);
-        document.getElementById('content-area').innerHTML =
-            '<div class="error-state">⚠️ Could not load team list. Make sure the DMB files are uploaded correctly.</div>';
-        return;
-    }
-
-    // Populate team filter
-    const tf = document.getElementById('team-filter');
-    tf.innerHTML = '<option value="all">All Teams</option>';
-    teamList.forEach(t => {
-        const opt = document.createElement('option');
-        opt.value = t.abbrev;
-        opt.textContent = t.abbrev + ' — ' + t.name;
-        tf.appendChild(opt);
-    });
-
-    // Load each team's batting + pitching files
-    await Promise.all(teamList.map(t => loadTeamData(folder, t)));
-
+  const teamList = await discoverTeams(folder);
+  if (!teamList.length) {
     setLoading(false);
-    document.getElementById('summary-grid').style.display = 'grid';
-    render();
+    document.getElementById('content-area').innerHTML =
+      '<div class="error-state">⚠️ Could not load team list. Make sure the DMB files are uploaded correctly.</div>';
+    return;
+  }
+
+  // Populate team filter
+  const tf = document.getElementById('team-filter');
+  tf.innerHTML = '<option value="all">All Teams</option>';
+  teamList.forEach(t => {
+    const opt = document.createElement('option');
+    opt.value = t.abbrev;
+    opt.textContent = t.abbrev + ' — ' + t.name;
+    tf.appendChild(opt);
+  });
+
+  await Promise.all(teamList.map(t => loadTeamData(folder, t)));
+  setLoading(false);
+  document.getElementById('summary-grid').style.display = 'grid';
+  render();
 }
 
 async function discoverTeams(folder) {
-    const teams = [];
-    const seen = new Set();
-    for (const lgFile of ['lgindex1.htm', 'lgindex2.htm']) {
-        const text = await fetchFile(folder, lgFile);
-        if (!text) continue;
-        const doc = parseHTML(text);
-        doc.querySelectorAll('a[href*="tmindex"]').forEach(a => {
-            const href = a.getAttribute('href');
-            const name = a.textContent.trim();
-            if (href && name && !seen.has(href)) {
-                seen.add(href);
-                // Derive team number from tmindexN.htm
-                const m = href.match(/tmindex(\d+)\.htm/i);
-                if (m) {
-                    const n = m[1];
-                    // Override abbreviations for teams where first 3 letters are wrong
-                    const abbrevOverrides = {
-                        'New York Mets':       'NYM',
-                        'New York Yankees':    'NYY',
-                        'Chicago White Sox':   'CWS',
-                        'Chicago Cubs':        'CHC',
-                        'Los Angeles Dodgers': 'LAD',
-                        'Los Angeles Angels':  'LAA',
-                        'San Francisco Giants':'SF',
-                        'San Diego Padres':    'SD',
-                        'Tampa Bay Rays':      'TB',
-                        'Toronto Blue Jays':   'TOR',
-                        'Kansas City Royals':  'KC',
-                    };
-                    const abbrev = abbrevOverrides[name] || name.replace(/\s+/g, '').toUpperCase().substring(0, 3);
-                    teams.push({
-                        abbrev,
-                        name,
-                        tmNum: n,
-                        batFile: `tm${n}_tmbat.htm`,
-                        pchFile: `tm${n}_tmpch.htm`,
-                    });
-                }
-            }
-        });
-    }
-    return teams;
+  const teams = [];
+  const seen = new Set();
+  for (const lgFile of ['lgindex1.htm', 'lgindex2.htm']) {
+    const text = await fetchFile(folder, lgFile);
+    if (!text) continue;
+    const doc = parseHTML(text);
+    doc.querySelectorAll('a[href*="tmindex"]').forEach(a => {
+      const href = a.getAttribute('href');
+      const name = a.textContent.trim();
+      if (href && name && !seen.has(href)) {
+        seen.add(href);
+        const m = href.match(/tmindex(\d+)\.htm/i);
+        if (m) {
+          const n = m[1];
+          const abbrevOverrides = {
+            'New York Mets': 'NYM',
+            'New York Yankees': 'NYY',
+            'Chicago White Sox': 'CWS',
+            'Chicago Cubs': 'CHC',
+            'Los Angeles Dodgers': 'LAD',
+            'Los Angeles Angels': 'LAA',
+            'San Francisco Giants':'SF',
+            'San Diego Padres': 'SD',
+            'Tampa Bay Rays': 'TB',
+            'Toronto Blue Jays': 'TOR',
+            'Kansas City Royals': 'KC',
+          };
+          const abbrev = abbrevOverrides[name] || name.replace(/\s+/g, '').toUpperCase().substring(0, 3);
+          teams.push({
+            abbrev,
+            name,
+            tmNum: n,
+            batFile: `tm${n}_tmbat.htm`,
+            pchFile: `tm${n}_tmpch.htm`,
+          });
+        }
+      }
+    });
+  }
+  return teams;
 }
 
 async function loadTeamData(folder, team) {
-    const [batText, pchText, rosterText] = await Promise.all([
-        fetchFile(folder, team.batFile),
-        fetchFile(folder, team.pchFile),
-        fetchFile(folder, `tm${team.tmNum}_tmroster.htm`),
-    ]);
-
-    const entry = {
-        abbrev: team.abbrev,
-        name: team.name,
-        gamesPlayed: 0,
-        batters: [],
-        pitchers: [],
-    };
-
-    if (batText) parseBatFile(batText, entry, rosterText);
-    if (pchText) parsePchFile(pchText, entry, rosterText);
-
-    teamData.push(entry);
+  const [batText, pchText, rosterText] = await Promise.all([
+    fetchFile(folder, team.batFile),
+    fetchFile(folder, team.pchFile),
+    fetchFile(folder, `tm${team.tmNum}_tmroster.htm`),
+  ]);
+  const entry = {
+    abbrev: team.abbrev,
+    name: team.name,
+    gamesPlayed: 0,
+    batters: [],
+    pitchers: [],
+  };
+  if (batText) parseBatFile(batText, entry, rosterText);
+  if (pchText) parsePchFile(pchText, entry, rosterText);
+  teamData.push(entry);
 }
 
-// Normalize accented characters and special chars for fuzzy matching
 function normalizeStr(s) {
-    return (s || '').toLowerCase()
-        .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // remove accents
-        .replace(/[^a-z0-9 ]/g, '')                       // remove punctuation
-        .replace(/\s+/g, ' ').trim();
+  return (s || '').toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9 ]/g, '')
+    .replace(/\s+/g, ' ').trim();
 }
 
 // ═══════════════════════════════════════════════════════
 // Parsers
 // ═══════════════════════════════════════════════════════
 function parseBatFile(text, entry, rosterText) {
-    const doc = parseHTML(text);
+  const doc = parseHTML(text);
+  const ageByName = parseBatterAgesFromRoster(rosterText);
+  const tables = doc.querySelectorAll('table');
+  let primaryCols = [], secondaryCols = [];
+  const primaryData = {};
+  const secondaryData = {};
 
-    // Build name → age lookup from roster "Batter Ratings" section
-    const ageByName = parseBatterAgesFromRoster(rosterText);
+  tables.forEach(table => {
+    const titleCell = table.querySelector('tr.dmrptsecttitle td');
+    const sectionName = titleCell ? titleCell.textContent.trim() : '';
+    const hdrRow = table.querySelector('tr.dmrptsecthdr');
+    if (!hdrRow) return;
+    const hdrs = Array.from(hdrRow.querySelectorAll('td')).map(td => td.textContent.trim());
 
-    const tables = doc.querySelectorAll('table');
-    let primaryCols = [], secondaryCols = [];
-    const primaryData  = {}; // name → {G, AB}
-    const secondaryData = {}; // name → {GS}
+    if (sectionName === 'Primary') {
+      primaryCols = hdrs;
+      const rows = table.querySelectorAll('tr.dmrptbody, tr.dmrptbody2');
+      rows.forEach(row => {
+        const cells = row.querySelectorAll('td');
+        const name = cells[1] ? cells[1].textContent.trim() : '';
+        if (!name || name === 'Total') return;
+        const G = parseInt(getCellByHeader(hdrs, cells, 'G') || '0') || 0;
+        const AB = parseInt(getCellByHeader(hdrs, cells, 'AB') || '0') || 0;
+        primaryData[name] = { G, AB };
+        if (G > entry.gamesPlayed) entry.gamesPlayed = G;
+      });
+      const totalRow = Array.from(table.querySelectorAll('tr')).find(r => {
+        const c = r.querySelectorAll('td');
+        return c[1] && c[1].textContent.trim() === 'Total';
+      });
+      if (totalRow) {
+        const cells = totalRow.querySelectorAll('td');
+        const gVal = parseInt(getCellByHeader(hdrs, cells, 'G') || '0') || 0;
+        if (gVal > entry.gamesPlayed) entry.gamesPlayed = gVal;
+      }
+    }
 
-    tables.forEach(table => {
-        const titleCell = table.querySelector('tr.dmrptsecttitle td');
-        const sectionName = titleCell ? titleCell.textContent.trim() : '';
+    if (sectionName === 'Secondary') {
+      secondaryCols = hdrs;
+      const rows = table.querySelectorAll('tr.dmrptbody, tr.dmrptbody2');
+      rows.forEach(row => {
+        const cells = row.querySelectorAll('td');
+        const name = cells[1] ? cells[1].textContent.trim() : '';
+        if (!name || name === 'Total') return;
+        const GS = parseInt(getCellByHeader(hdrs, cells, 'GS') || '0') || 0;
+        secondaryData[name] = { GS };
+      });
+    }
+  });
 
-        const hdrRow = table.querySelector('tr.dmrptsecthdr');
-        if (!hdrRow) return;
-        const hdrs = Array.from(hdrRow.querySelectorAll('td')).map(td => td.textContent.trim());
-
-        if (sectionName === 'Primary') {
-            primaryCols = hdrs;
-            const rows = table.querySelectorAll('tr.dmrptbody, tr.dmrptbody2');
-            rows.forEach(row => {
-                const cells = row.querySelectorAll('td');
-                const name = cells[1] ? cells[1].textContent.trim() : '';
-                if (!name || name === 'Total') return;
-                const G  = parseInt(getCellByHeader(hdrs, cells, 'G')  || '0') || 0;
-                const AB = parseInt(getCellByHeader(hdrs, cells, 'AB') || '0') || 0;
-                primaryData[name] = { G, AB };
-                if (G > entry.gamesPlayed) entry.gamesPlayed = G;
-            });
-            // Also grab from Total row
-            const totalRow = Array.from(table.querySelectorAll('tr')).find(r => {
-                const c = r.querySelectorAll('td');
-                return c[1] && c[1].textContent.trim() === 'Total';
-            });
-            if (totalRow) {
-                const cells = totalRow.querySelectorAll('td');
-                const gVal = parseInt(getCellByHeader(hdrs, cells, 'G') || '0') || 0;
-                if (gVal > entry.gamesPlayed) entry.gamesPlayed = gVal;
-            }
-        }
-
-        if (sectionName === 'Secondary') {
-            secondaryCols = hdrs;
-            const rows = table.querySelectorAll('tr.dmrptbody, tr.dmrptbody2');
-            rows.forEach(row => {
-                const cells = row.querySelectorAll('td');
-                const name = cells[1] ? cells[1].textContent.trim() : '';
-                if (!name || name === 'Total') return;
-                const GS = parseInt(getCellByHeader(hdrs, cells, 'GS') || '0') || 0;
-                secondaryData[name] = { GS };
-            });
-        }
+  const allNames = new Set([...Object.keys(primaryData), ...Object.keys(secondaryData)]);
+  allNames.forEach(dmName => {
+    if (dmName === 'Total') return;
+    const pData = primaryData[dmName] || { G: 0, AB: 0 };
+    const sData = secondaryData[dmName] || { GS: 0 };
+    const age = ageByName[normalizeStr(dmName)];
+    const player = findPlayer(dmName, entry.name, age);
+    const actualAB = player ? (parseFloat(player.AB) || 0) : 0;
+    if (!actualAB && !pData.AB && !sData.GS) return;
+    const pctAllowed = actualAB >= 400 ? null : (actualAB / 400);
+    const startsAllowed = pctAllowed !== null ? pctAllowed * TOTAL_GAMES : null;
+    const dmStarts = sData.GS;
+    const dmAB = pData.AB;
+    const gp = entry.gamesPlayed;
+    const pctStarted = gp > 0 ? dmStarts / gp : 0;
+    const startsRemaining = startsAllowed !== null ? startsAllowed - dmStarts : null;
+    const abNeeded = actualAB > 0 ? actualAB / 2 : null;
+    const qualified = abNeeded !== null ? dmAB >= abNeeded : (actualAB === 0 ? null : true);
+    entry.batters.push({
+      name: dmName,
+      actualAB,
+      pctAllowed,
+      startsAllowed,
+      dmStarts,
+      dmAB,
+      pctStarted,
+      startsRemaining,
+      abNeeded,
+      qualified,
+      unlimited: pctAllowed === null,
     });
-
-    // Merge and match with players.json
-    const allNames = new Set([...Object.keys(primaryData), ...Object.keys(secondaryData)]);
-    allNames.forEach(dmName => {
-        if (dmName === 'Total') return;
-        const pData = primaryData[dmName]  || { G: 0, AB: 0 };
-        const sData = secondaryData[dmName] || { GS: 0 };
-
-        // Find matching player in players.json
-        const age = ageByName[normalizeStr(dmName)];
-        const player = findPlayer(dmName, entry.name, age);
-        const actualAB = player ? (parseFloat(player.AB) || 0) : 0;
-
-        // Skip players with no actual AB data and no DMB appearances
-        if (!actualAB && !pData.AB && !sData.GS) return;
-
-        const pctAllowed     = actualAB >= 400 ? null : (actualAB / 400);  // null = unlimited
-        const startsAllowed  = pctAllowed !== null ? pctAllowed * TOTAL_GAMES : null;
-        const dmStarts       = sData.GS;
-        const dmAB           = pData.AB;
-        const gp             = entry.gamesPlayed;
-        const pctStarted     = gp > 0 ? dmStarts / gp : 0;
-        const startsRemaining = startsAllowed !== null ? startsAllowed - dmStarts : null;
-        const abNeeded       = actualAB > 0 ? actualAB / 2 : null;
-        const qualified      = abNeeded !== null ? dmAB >= abNeeded : (actualAB === 0 ? null : true);
-
-        entry.batters.push({
-            name: dmName,
-            actualAB,
-            pctAllowed,
-            startsAllowed,
-            dmStarts,
-            dmAB,
-            pctStarted,
-            startsRemaining,
-            abNeeded,
-            qualified,
-            unlimited: pctAllowed === null,
-        });
-    });
+  });
 }
 
 function parsePchFile(text, entry, rosterText) {
-    // Step 1: Get all pitchers + ages from roster file (source of truth for names)
-    const rosterPitchers = rosterText ? parsePitchersFromRoster(rosterText) : [];
+  const rosterPitchers = rosterText ? parsePitchersFromRoster(rosterText) : [];
+  const dmIPByName = {};
+  if (text) {
+    const doc = parseHTML(text);
+    doc.querySelectorAll('table').forEach(table => {
+      const titleCell = table.querySelector('tr.dmrptsecttitle td');
+      if (!titleCell || titleCell.textContent.trim() !== 'Primary') return;
+      const hdrRow = table.querySelector('tr.dmrptsecthdr');
+      if (!hdrRow) return;
+      const hdrs = Array.from(hdrRow.querySelectorAll('td')).map(td => td.textContent.trim());
+      table.querySelectorAll('tr.dmrptbody, tr.dmrptbody2').forEach(row => {
+        const cells = row.querySelectorAll('td');
+        const name = cells[1] ? cells[1].textContent.trim() : '';
+        if (!name || name === 'Total') return;
+        const innStr = getCellByHeader(hdrs, cells, 'INN') || '0';
+        dmIPByName[normalizeStr(name)] = parseInnings(innStr);
+      });
+    });
+  }
 
-    // Step 2: Get DMB IP from pitching stats file (full names, exact match expected)
-    const dmIPByName = {};
-    if (text) {
-        const doc = parseHTML(text);
-        doc.querySelectorAll('table').forEach(table => {
-            const titleCell = table.querySelector('tr.dmrptsecttitle td');
-            if (!titleCell || titleCell.textContent.trim() !== 'Primary') return;
-            const hdrRow = table.querySelector('tr.dmrptsecthdr');
-            if (!hdrRow) return;
-            const hdrs = Array.from(hdrRow.querySelectorAll('td')).map(td => td.textContent.trim());
-            table.querySelectorAll('tr.dmrptbody, tr.dmrptbody2').forEach(row => {
-                const cells = row.querySelectorAll('td');
-                const name = cells[1] ? cells[1].textContent.trim() : '';
-                if (!name || name === 'Total') return;
-                const innStr = getCellByHeader(hdrs, cells, 'INN') || '0';
-                dmIPByName[normalizeStr(name)] = parseInnings(innStr);
-            });
-        });
+  rosterPitchers.forEach(rp => {
+    const normRoster = normalizeStr(rp.name);
+    const dmIP = dmIPByName[normRoster] || 0;
+    const player = findPlayer(rp.name, entry.name, rp.age);
+    const actualIP = player ? (parseFloat(player.IP) || 0) : 0;
+    const ipNeeded = actualIP / 2;
+    const qualified = ipNeeded > 0 ? dmIP >= ipNeeded : false;
+    entry.pitchers.push({
+      name: rp.name,
+      actualIP,
+      ipNeeded,
+      dmIP,
+      qualified,
+      pctComplete: ipNeeded > 0 ? Math.min(dmIP / ipNeeded, 1) : (dmIP > 0 ? 1 : 0),
+    });
+  });
+
+  const rosterNorms = new Set(rosterPitchers.map(rp => normalizeStr(rp.name)));
+  Object.entries(dmIPByName).forEach(([normStat, dmIP]) => {
+    if (rosterNorms.has(normStat)) return;
+    const player = findPlayerByNorm(normStat);
+    const actualIP = player ? (parseFloat(player.IP) || 0) : 0;
+    const ipNeeded = actualIP / 2;
+    entry.pitchers.push({
+      name: player ? `${player.First} ${player.Last}` : normStat,
+      actualIP,
+      ipNeeded,
+      dmIP,
+      qualified: ipNeeded > 0 ? dmIP >= ipNeeded : false,
+      pctComplete: ipNeeded > 0 ? Math.min(dmIP / ipNeeded, 1) : 0,
+    });
+  });
+
+  const merged = {};
+  entry.pitchers.forEach(p => {
+    const norm = normalizeStr(p.name);
+    const parts = norm.split(' ').filter(Boolean);
+    const surname = parts[parts.length - 1];
+    const key = p.actualIP > 0 ? `${surname}|ip${p.actualIP}` : norm;
+    if (!merged[key]) {
+      merged[key] = p;
+    } else {
+      const existing = merged[key];
+      const better = (norm.length > normalizeStr(existing.name).length) ? p : existing;
+      const worse = (better === p) ? existing : p;
+      merged[key] = {
+        ...better,
+        actualIP: better.actualIP || worse.actualIP,
+        ipNeeded: better.ipNeeded || worse.ipNeeded,
+        dmIP: Math.max(better.dmIP, worse.dmIP),
+      };
+      merged[key].qualified = merged[key].ipNeeded > 0 ? merged[key].dmIP >= merged[key].ipNeeded : false;
+      merged[key].pctComplete = merged[key].ipNeeded > 0
+        ? Math.min(merged[key].dmIP / merged[key].ipNeeded, 1)
+        : (merged[key].dmIP > 0 ? 1 : 0);
     }
-
-    // Step 3: Build pitcher rows — one per rostered pitcher, exact name match to stats
-    rosterPitchers.forEach(rp => {
-        const normRoster = normalizeStr(rp.name);
-        const dmIP = dmIPByName[normRoster] || 0;
-
-        // Find in players.json — disambiguate same-surname using Age
-        const player = findPlayer(rp.name, entry.name, rp.age);
-        const actualIP = player ? (parseFloat(player.IP) || 0) : 0;
-        const ipNeeded = actualIP / 2;
-        const qualified = ipNeeded > 0 ? dmIP >= ipNeeded : false;
-
-        entry.pitchers.push({
-            name: rp.name,
-            actualIP,
-            ipNeeded,
-            dmIP,
-            qualified,
-            pctComplete: ipNeeded > 0 ? Math.min(dmIP / ipNeeded, 1) : (dmIP > 0 ? 1 : 0),
-        });
-    });
-
-    // Step 4: Add any pitchers in stats file whose exact normalized name isn't on the roster
-    // (e.g. mid-season trades/additions not yet reflected in roster file)
-    const rosterNorms = new Set(rosterPitchers.map(rp => normalizeStr(rp.name)));
-    Object.entries(dmIPByName).forEach(([normStat, dmIP]) => {
-        if (rosterNorms.has(normStat)) return;
-        const player = findPlayerByNorm(normStat);
-        const actualIP = player ? (parseFloat(player.IP) || 0) : 0;
-        const ipNeeded = actualIP / 2;
-        entry.pitchers.push({
-            name: player ? `${player.First} ${player.Last}` : normStat,
-            actualIP,
-            ipNeeded,
-            dmIP,
-            qualified: ipNeeded > 0 ? dmIP >= ipNeeded : false,
-            pctComplete: ipNeeded > 0 ? Math.min(dmIP / ipNeeded, 1) : 0,
-        });
-    });
-
-    // Step 5: Dedup — merge entries that refer to the same pitcher.
-    // Two entries with the same surname AND the same actualIP (i.e. they both
-    // resolved to the same players.json record) are the same person —
-    // this handles cases where the roster file produced a stray duplicate row
-    // with just a surname and zero DMB stats.
-    const merged = {};
-    entry.pitchers.forEach(p => {
-        const norm = normalizeStr(p.name);
-        const parts = norm.split(' ').filter(Boolean);
-        const surname = parts[parts.length - 1];
-        // Primary key: surname + matched actualIP (same player = same real-life IP)
-        // Fallback distinguishes by full normalized name if actualIP is 0/unmatched for both
-        const key = p.actualIP > 0 ? `${surname}|ip${p.actualIP}` : norm;
-
-        if (!merged[key]) {
-            merged[key] = p;
-        } else {
-            // Merge: prefer the entry with the longer (fuller) name,
-            // and combine non-zero stats from both
-            const existing = merged[key];
-            const better = (norm.length > normalizeStr(existing.name).length) ? p : existing;
-            const worse  = (better === p) ? existing : p;
-            merged[key] = {
-                ...better,
-                actualIP: better.actualIP || worse.actualIP,
-                ipNeeded: better.ipNeeded || worse.ipNeeded,
-                dmIP: Math.max(better.dmIP, worse.dmIP),
-            };
-            // Recompute derived fields after merge
-            merged[key].qualified = merged[key].ipNeeded > 0 ? merged[key].dmIP >= merged[key].ipNeeded : false;
-            merged[key].pctComplete = merged[key].ipNeeded > 0
-                ? Math.min(merged[key].dmIP / merged[key].ipNeeded, 1)
-                : (merged[key].dmIP > 0 ? 1 : 0);
-        }
-    });
-    entry.pitchers = Object.values(merged);
+  });
+  entry.pitchers = Object.values(merged);
 }
 
 function parseBatterAgesFromRoster(rosterText) {
-    const ages = {};
-    if (!rosterText) return ages;
-    const doc = parseHTML(rosterText);
-    let inBatterSection = false;
-
-    doc.querySelectorAll('table').forEach(table => {
-        const titleCell = table.querySelector('tr.dmrptsecttitle td');
-        const sectionName = titleCell ? titleCell.textContent.trim() : '';
-        if (sectionName === 'Batter Ratings') inBatterSection = true;
-        else if (sectionName === 'Pitcher Ratings') inBatterSection = false;
-        if (!inBatterSection) return;
-
-        table.querySelectorAll('tr.dmrptbody, tr.dmrptbody2').forEach(row => {
-            const cells = row.querySelectorAll('td');
-            const name = cells[1] ? cells[1].textContent.trim() : '';
-            const age  = cells[4] ? parseFloat(cells[4].textContent.trim()) : null;
-            if (name && name !== 'Total' && !isNaN(age)) {
-                ages[normalizeStr(name)] = age;
-            }
-        });
+  const ages = {};
+  if (!rosterText) return ages;
+  const doc = parseHTML(rosterText);
+  let inBatterSection = false;
+  doc.querySelectorAll('table').forEach(table => {
+    const titleCell = table.querySelector('tr.dmrptsecttitle td');
+    const sectionName = titleCell ? titleCell.textContent.trim() : '';
+    if (sectionName === 'Batter Ratings') inBatterSection = true;
+    else if (sectionName === 'Pitcher Ratings') inBatterSection = false;
+    if (!inBatterSection) return;
+    table.querySelectorAll('tr.dmrptbody, tr.dmrptbody2').forEach(row => {
+      const cells = row.querySelectorAll('td');
+      const name = cells[1] ? cells[1].textContent.trim() : '';
+      const age = cells[4] ? parseFloat(cells[4].textContent.trim()) : null;
+      if (name && name !== 'Total' && !isNaN(age)) {
+        ages[normalizeStr(name)] = age;
+      }
     });
-
-    return ages;
+  });
+  return ages;
 }
 
 function parsePitchersFromRoster(text) {
-    const doc = parseHTML(text);
-    const pitchers = [];
-    let inPitcherSection = false;
-
-    doc.querySelectorAll('table').forEach(table => {
-        const titleCell = table.querySelector('tr.dmrptsecttitle td');
-        const sectionName = titleCell ? titleCell.textContent.trim() : '';
-        if (sectionName === 'Pitcher Ratings') inPitcherSection = true;
-        else if (sectionName === 'Fielding Ratings') inPitcherSection = false;
-        if (!inPitcherSection) return;
-
-        table.querySelectorAll('tr.dmrptbody, tr.dmrptbody2').forEach(row => {
-            const cells = row.querySelectorAll('td');
-            const name = cells[1] ? cells[1].textContent.trim() : '';
-            const age  = cells[4] ? parseFloat(cells[4].textContent.trim()) : null;
-            if (name && name !== 'Total' && name !== 'Player') {
-                pitchers.push({ name, age: isNaN(age) ? null : age });
-            }
-        });
+  const doc = parseHTML(text);
+  const pitchers = [];
+  let inPitcherSection = false;
+  doc.querySelectorAll('table').forEach(table => {
+    const titleCell = table.querySelector('tr.dmrptsecttitle td');
+    const sectionName = titleCell ? titleCell.textContent.trim() : '';
+    if (sectionName === 'Pitcher Ratings') inPitcherSection = true;
+    else if (sectionName === 'Fielding Ratings') inPitcherSection = false;
+    if (!inPitcherSection) return;
+    table.querySelectorAll('tr.dmrptbody, tr.dmrptbody2').forEach(row => {
+      const cells = row.querySelectorAll('td');
+      const name = cells[1] ? cells[1].textContent.trim() : '';
+      const age = cells[4] ? parseFloat(cells[4].textContent.trim()) : null;
+      if (name && name !== 'Total' && name !== 'Player') {
+        pitchers.push({ name, age: isNaN(age) ? null : age });
+      }
     });
-
-    return pitchers;
-}
-
-function namesMatch(a, b) {
-    if (a === b) return true;
-    const aParts = a.split(' ').filter(Boolean);
-    const bParts = b.split(' ').filter(Boolean);
-    if (!aParts.length || !bParts.length) return false;
-
-    const aSurname = aParts[aParts.length - 1];
-    const bSurname = bParts[bParts.length - 1];
-    if (aSurname !== bSurname) return false;
-
-    if (aParts.length === 1 || bParts.length === 1) return true;
-
-    const aFirst = aParts[0][0], bFirst = bParts[0][0];
-    return aFirst === bFirst;
+  });
+  return pitchers;
 }
 
 function findPlayerByNorm(normName) {
-    return players.find(p => normalizeStr(`${p.First} ${p.Last}`) === normName) || null;
+  return players.find(p => normalizeStr(`${p.First} ${p.Last}`) === normName) || null;
 }
 
 // ═══════════════════════════════════════════════════════
 // Helpers
 // ═══════════════════════════════════════════════════════
 function getCellByHeader(hdrs, cells, colName) {
-    const idx = hdrs.indexOf(colName);
-    if (idx < 0 || idx >= cells.length) return null;
-    return cells[idx] ? cells[idx].textContent.trim() : null;
+  const idx = hdrs.indexOf(colName);
+  if (idx < 0 || idx >= cells.length) return null;
+  return cells[idx] ? cells[idx].textContent.trim() : null;
 }
 
 function parseInnings(s) {
-    // "61.1" = 61 full innings + 1/3 = 61.333...
-    if (!s || s === '&nbsp' || s.trim() === '') return 0;
-    const parts = String(s).trim().split('.');
-    const full = parseInt(parts[0]) || 0;
-    const frac = parts[1] ? parseInt(parts[1]) : 0;
-    return full + frac / 3;
+  if (!s || s === '&nbsp' || s.trim() === '') return 0;
+  const parts = String(s).trim().split('.');
+  const full = parseInt(parts[0]) || 0;
+  const frac = parts[1] ? parseInt(parts[1]) : 0;
+  return full + frac / 3;
 }
 
 function findPlayer(dmName, teamName, age) {
-    const normalized = normalizeStr(dmName);
-
-    // Exact full-name match (most common case)
-    let exactMatches = players.filter(p => normalizeStr(`${p.First} ${p.Last}`) === normalized);
-    if (exactMatches.length === 1) return exactMatches[0];
-    if (exactMatches.length > 1) {
-        // Multiple players with identical normalized full names — disambiguate by age
-        if (age != null) {
-            const ageMatch = exactMatches.find(p => Math.abs((parseFloat(p.Age) || -999) - age) <= 1);
-            if (ageMatch) return ageMatch;
-        }
-        return exactMatches[0]; // fallback: first match
+  const normalized = normalizeStr(dmName);
+  let exactMatches = players.filter(p => normalizeStr(`${p.First} ${p.Last}`) === normalized);
+  if (exactMatches.length === 1) return exactMatches[0];
+  if (exactMatches.length > 1) {
+    if (age != null) {
+      const ageMatch = exactMatches.find(p => Math.abs((parseFloat(p.Age) || -999) - age) <= 1);
+      if (ageMatch) return ageMatch;
     }
-
-    // Fallback: surname-only match (handles accent/format mismatches)
-    const parts = normalized.split(' ').filter(Boolean);
-    const surname = parts[parts.length - 1];
-    const surnameMatches = players.filter(p => normalizeStr(p.Last) === surname);
-    if (surnameMatches.length === 1) return surnameMatches[0];
-    if (surnameMatches.length > 1) {
-        // Multiple same-surname players — disambiguate by age first, then first-initial
-        if (age != null) {
-            const ageMatch = surnameMatches.find(p => Math.abs((parseFloat(p.Age) || -999) - age) <= 1);
-            if (ageMatch) return ageMatch;
-        }
-        const firstInitial = parts[0] ? parts[0][0] : '';
-        const initialMatch = surnameMatches.find(p => normalizeStr(p.First)[0] === firstInitial);
-        if (initialMatch) return initialMatch;
-        return surnameMatches[0]; // last-resort fallback
+    return exactMatches[0];
+  }
+  const parts = normalized.split(' ').filter(Boolean);
+  const surname = parts[parts.length - 1];
+  const surnameMatches = players.filter(p => normalizeStr(p.Last) === surname);
+  if (surnameMatches.length === 1) return surnameMatches[0];
+  if (surnameMatches.length > 1) {
+    if (age != null) {
+      const ageMatch = surnameMatches.find(p => Math.abs((parseFloat(p.Age) || -999) - age) <= 1);
+      if (ageMatch) return ageMatch;
     }
-
-    return null;
+    const firstInitial = parts[0] ? parts[0][0] : '';
+    const initialMatch = surnameMatches.find(p => normalizeStr(p.First)[0] === firstInitial);
+    if (initialMatch) return initialMatch;
+    return surnameMatches[0];
+  }
+  return null;
 }
 
 function fmt1(n) { return n == null ? '—' : n.toFixed(1); }
 function fmt3(n) { return n == null ? '—' : n.toFixed(3); }
 function fmtPct(n) { return n == null ? '—' : (n * 100).toFixed(1) + '%'; }
-function fmtIP(n)  {
-    if (!n) return '0.0';
-    const full = Math.floor(n);
-    const frac = Math.round((n - full) * 3);
-    return `${full}.${frac}`;
+function fmtIP(n) {
+  if (!n) return '0.0';
+  const full = Math.floor(n);
+  const frac = Math.round((n - full) * 3);
+  return `${full}.${frac}`;
 }
 
 function setFilter(f, el) {
-    activeFilter = f;
-    document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active','active-alert'));
-    el.classList.add(f === 'maxed' || f === 'not-qualified' ? 'active-alert' : 'active');
-    render();
+  activeFilter = f;
+  document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active','active-alert'));
+  el.classList.add(f === 'maxed' || f === 'not-qualified' ? 'active-alert' : 'active');
+  render();
 }
 
 function showSection(section, el) {
-    currentSection = section;
-    document.querySelectorAll('.section-tab').forEach(t => t.classList.remove('active'));
-    el.classList.add('active');
-    sortCol = null; sortDir = 'asc';
-    render();
+  currentSection = section;
+  document.querySelectorAll('.section-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  sortCol = null; sortDir = 'asc';
+  render();
 }
 
 function setLoading(show) {
-    document.getElementById('loading').classList.toggle('show', show);
+  document.getElementById('loading').classList.toggle('show', show);
 }
 
 // ═══════════════════════════════════════════════════════
 // Render
 // ═══════════════════════════════════════════════════════
 function render() {
-    if (!teamData.length) return;
-    renderSummary();
-    if (currentSection === 'batters') renderBatters();
-    else renderPitchers();
+  if (!teamData.length) return;
+  renderSummary();
+  if (currentSection === 'batters') renderBatters();
+  else renderPitchers();
 }
 
 function getFilteredTeams() {
-    const tf = document.getElementById('team-filter').value;
-    return tf === 'all' ? teamData : teamData.filter(t => t.abbrev === tf);
+  const tf = document.getElementById('team-filter').value;
+  return tf === 'all' ? teamData : teamData.filter(t => t.abbrev === tf);
 }
 
 function renderSummary() {
-    const teams = getFilteredTeams();
-    let totalBatters = 0, limitedBatters = 0, maxedBatters = 0, qualifiedBatters = 0;
-    let totalPitchers = 0, qualifiedPitchers = 0;
-
-    teams.forEach(t => {
-        t.batters.forEach(b => {
-            if (!b.actualAB) return;
-            totalBatters++;
-            if (!b.unlimited) limitedBatters++;
-            if (b.startsRemaining !== null && b.startsRemaining <= 0) maxedBatters++;
-            if (b.qualified) qualifiedBatters++;
-        });
-        t.pitchers.forEach(p => {
-            if (!p.actualIP) return;
-            totalPitchers++;
-            if (p.qualified) qualifiedPitchers++;
-        });
+  const teams = getFilteredTeams();
+  let totalBatters = 0, limitedBatters = 0, maxedBatters = 0, qualifiedBatters = 0;
+  let totalPitchers = 0, qualifiedPitchers = 0;
+  teams.forEach(t => {
+    t.batters.forEach(b => {
+      if (!b.actualAB) return;
+      totalBatters++;
+      if (!b.unlimited) limitedBatters++;
+      if (b.startsRemaining !== null && b.startsRemaining <= 0) maxedBatters++;
+      if (b.qualified) qualifiedBatters++;
     });
-
-    const grid = document.getElementById('summary-grid');
-    grid.innerHTML = [
-        { label: 'Start-Limited Batters', value: limitedBatters, sub: 'of ' + totalBatters + ' total', cls: limitedBatters > 0 ? 'alert' : '' },
-        { label: 'Starts Maxed Out', value: maxedBatters, sub: 'cannot start further', cls: maxedBatters > 0 ? 'alert' : 'good' },
-        { label: 'Batters Qualified', value: qualifiedBatters, sub: 'of ' + totalBatters + ' tracked', cls: 'good' },
-        { label: 'Pitchers Qualified', value: qualifiedPitchers, sub: 'of ' + totalPitchers + ' tracked', cls: 'good' },
-        { label: 'Games Played', value: teams[0] ? teams[0].gamesPlayed : '—', sub: 'of 162 this season', cls: '' },
-    ].map(s => `
-        <div class="summary-card ${s.cls}">
-            <div class="label">${s.label}</div>
-            <div class="value">${s.value}</div>
-            <div class="sub">${s.sub}</div>
-        </div>
-    `).join('');
+    t.pitchers.forEach(p => {
+      if (!p.actualIP) return;
+      totalPitchers++;
+      if (p.qualified) qualifiedPitchers++;
+    });
+  });
+  const grid = document.getElementById('summary-grid');
+  grid.innerHTML = [
+    { label: 'Start-Limited Batters', value: limitedBatters, sub: 'of ' + totalBatters + ' total', cls: limitedBatters > 0 ? 'alert' : '' },
+    { label: 'Starts Maxed Out', value: maxedBatters, sub: 'cannot start further', cls: maxedBatters > 0 ? 'alert' : 'good' },
+    { label: 'Batters Qualified', value: qualifiedBatters, sub: 'of ' + totalBatters + ' tracked', cls: 'good' },
+    { label: 'Pitchers Qualified', value: qualifiedPitchers, sub: 'of ' + totalPitchers + ' tracked', cls: 'good' },
+    { label: 'Games Played', value: teams[0] ? teams[0].gamesPlayed : '—', sub: 'of 162 this season', cls: '' },
+  ].map(s => `
+    <div class="summary-card ${s.cls}">
+      <div class="label">${s.label}</div>
+      <div class="value">${s.value}</div>
+      <div class="sub">${s.sub}</div>
+    </div>
+  `).join('');
 }
 
 function renderBatters() {
-    const teams = getFilteredTeams();
-
-    // Flatten all batters with team info
-    let rows = [];
-    teams.forEach(t => {
-        t.batters.forEach(b => {
-            if (!b.actualAB) return; // skip players with no real-life data
-            // Apply filter
-            if (activeFilter === 'limited'       && b.unlimited) return;
-            if (activeFilter === 'maxed'          && (b.startsRemaining === null || b.startsRemaining > 0)) return;
-            if (activeFilter === 'not-qualified'  && b.qualified !== false) return;
-            if (activeFilter === 'qualified'      && !b.qualified) return;
-            rows.push({ ...b, team: t.abbrev, gamesPlayed: t.gamesPlayed });
-        });
+  const teams = getFilteredTeams();
+  let rows = [];
+  teams.forEach(t => {
+    t.batters.forEach(b => {
+      if (!b.actualAB) return;
+      if (activeFilter === 'limited' && b.unlimited) return;
+      if (activeFilter === 'maxed' && (b.startsRemaining === null || b.startsRemaining > 0)) return;
+      if (activeFilter === 'not-qualified' && b.qualified !== false) return;
+      if (activeFilter === 'qualified' && !b.qualified) return;
+      rows.push({ ...b, team: t.abbrev, gamesPlayed: t.gamesPlayed });
     });
+  });
 
-    // Sort
-    if (sortCol) {
-        rows.sort((a, b) => {
-            let av = a[sortCol], bv = b[sortCol];
-            if (av == null) av = sortDir === 'asc' ? Infinity : -Infinity;
-            if (bv == null) bv = sortDir === 'asc' ? Infinity : -Infinity;
-            if (typeof av === 'string') return sortDir === 'asc' ? av.localeCompare(bv) : bv.localeCompare(av);
-            return sortDir === 'asc' ? av - bv : bv - av;
-        });
+  if (sortCol) {
+    rows.sort((a, b) => {
+      let av = a[sortCol], bv = b[sortCol];
+      if (av == null) av = sortDir === 'asc' ? Infinity : -Infinity;
+      if (bv == null) bv = sortDir === 'asc' ? Infinity : -Infinity;
+      if (typeof av === 'string') return sortDir === 'asc' ? av.localeCompare(bv) : bv.localeCompare(av);
+      return sortDir === 'asc' ? av - bv : bv - av;
+    });
+  }
+
+  if (!rows.length) {
+    document.getElementById('content-area').innerHTML = `
+      <div class="card"><div class="empty-state">
+        <div class="icon">🏏</div>
+        <h3>No batters match the current filter</h3>
+      </div></div>`;
+    return;
+  }
+
+  const thSort = (col, label, align='right') => {
+    const cls = sortCol === col ? (sortDir === 'asc' ? 'sort-asc' : 'sort-desc') : '';
+    return `<th class="sortable ${cls} ${align}" onclick="doSort('${col}')">${label}</th>`;
+  };
+
+  let html = `<div class="card">
+    <div class="card-title">Batter Start Limits & Keeper Eligibility <span>${rows.length} players</span></div>
+    <div class="table-wrap"><table>
+    <thead><tr>
+      ${thSort('team','Team','left')}
+      ${thSort('name','Player','left')}
+      ${thSort('actualAB','Real AB','right')}
+      ${thSort('pctAllowed','Start % Allowed','center')}
+      ${thSort('startsAllowed','Starts Allowed','right')}
+      ${thSort('dmStarts','DMB Starts','right')}
+      ${thSort('pctStarted','% Started','center')}
+      ${thSort('startsRemaining','Starts Remaining','right')}
+      <th class="center">Start Status</th>
+      ${thSort('abNeeded','AB to Qualify','right')}
+      ${thSort('dmAB','DMB AB','right')}
+      <th class="center">Keeper Status</th>
+    </tr></thead><tbody>`;
+
+  rows.forEach(b => {
+    let startStatus = '';
+    if (b.unlimited) {
+      startStatus = '<span class="badge badge-ok">Unlimited</span>';
+    } else if (b.startsRemaining !== null && b.startsRemaining <= 0) {
+      startStatus = '<span class="badge badge-maxed">⛔ Maxed</span>';
+    } else if (b.startsRemaining !== null && b.startsRemaining <= 5) {
+      startStatus = '<span class="badge badge-warning">⚠️ Low</span>';
+    } else {
+      startStatus = '<span class="badge badge-ok">OK</span>';
     }
 
-    if (!rows.length) {
-        document.getElementById('content-area').innerHTML = `
-            <div class="card"><div class="empty-state">
-                <div class="icon">🏏</div>
-                <h3>No batters match the current filter</h3>
-            </div></div>`;
-        return;
+    let keeperStatus = '';
+    if (b.abNeeded === null) {
+      keeperStatus = '<span class="badge badge-ok">N/A</span>';
+    } else if (b.qualified) {
+      keeperStatus = '<span class="badge badge-done">✓ Qualified</span>';
+    } else {
+      const remaining = b.abNeeded - b.dmAB;
+      keeperStatus = `<span class="badge badge-danger">${Math.ceil(remaining)} AB needed</span>`;
     }
 
-    const thSort = (col, label, align='right') => {
-        const cls = sortCol === col ? (sortDir === 'asc' ? 'sort-asc' : 'sort-desc') : '';
-        return `<th class="sortable ${cls} ${align}" onclick="doSort('${col}')">${label}</th>`;
-    };
+    const startsPct = b.startsAllowed ? Math.min(b.dmStarts / b.startsAllowed, 1) : 0;
+    const startsColor = startsPct >= 1 ? '#dc3545' : startsPct >= 0.85 ? '#ffc107' : '#28a745';
+    const startsBar = b.unlimited ? '<span style="color:#6c757d;font-size:0.82em;">No limit</span>' :
+      `<div class="prog-wrap">
+        <div class="prog-bar"><div class="prog-fill" style="width:${(startsPct*100).toFixed(0)}%;background:${startsColor};"></div></div>
+        <span class="prog-pct" style="color:${startsColor};">${(startsPct*100).toFixed(0)}%</span>
+      </div>`;
 
-    let html = `<div class="card">
-        <div class="card-title">Batter Start Limits & Keeper Eligibility <span>${rows.length} players</span></div>
-        <div class="table-wrap"><table>
-        <thead><tr>
-            ${thSort('team','Team','left')}
-            ${thSort('name','Player','left')}
-            ${thSort('actualAB','Real AB','right')}
-            ${thSort('pctAllowed','Start % Allowed','center')}
-            ${thSort('startsAllowed','Starts Allowed','right')}
-            ${thSort('dmStarts','DMB Starts','right')}
-            ${thSort('pctStarted','% Started','center')}
-            ${thSort('startsRemaining','Starts Remaining','right')}
-            <th class="center">Start Status</th>
-            ${thSort('abNeeded','AB to Qualify','right')}
-            ${thSort('dmAB','DMB AB','right')}
-            <th class="center">Keeper Status</th>
-        </tr></thead><tbody>`;
+    const abPct = b.abNeeded ? Math.min(b.dmAB / b.abNeeded, 1) : 1;
+    const abColor = abPct >= 1 ? '#28a745' : abPct >= 0.7 ? '#ffc107' : '#c41e3a';
 
-    rows.forEach(b => {
-        // Start status
-        let startStatus = '';
-        if (b.unlimited) {
-            startStatus = '<span class="badge badge-ok">Unlimited</span>';
-        } else if (b.startsRemaining !== null && b.startsRemaining <= 0) {
-            startStatus = '<span class="badge badge-maxed">⛔ Maxed</span>';
-        } else if (b.startsRemaining !== null && b.startsRemaining <= 5) {
-            startStatus = '<span class="badge badge-warning">⚠️ Low</span>';
-        } else {
-            startStatus = '<span class="badge badge-ok">OK</span>';
-        }
+    const srDisplay = b.startsRemaining === null ? '—' :
+      `<span style="color:${b.startsRemaining <= 0 ? '#dc3545' : b.startsRemaining <= 5 ? '#e6a800' : '#333'};font-weight:${b.startsRemaining <= 5 ? '800' : '400'}">
+        ${b.startsRemaining.toFixed(1)}
+      </span>`;
 
-        // Keeper status
-        let keeperStatus = '';
-        if (b.abNeeded === null) {
-            keeperStatus = '<span class="badge badge-ok">N/A</span>';
-        } else if (b.qualified) {
-            keeperStatus = '<span class="badge badge-done">✓ Qualified</span>';
-        } else {
-            const remaining = b.abNeeded - b.dmAB;
-            keeperStatus = `<span class="badge badge-danger">${Math.ceil(remaining)} AB needed</span>`;
-        }
+    html += `<tr>
+      <td style="font-weight:700;color:#1e3c72;">${b.team}</td>
+      <td style="font-weight:600;">${b.name}</td>
+      <td class="right">${b.actualAB || '—'}</td>
+      <td class="center">${b.unlimited ? '<span style="color:#6c757d;">N/A</span>' : fmtPct(b.pctAllowed)}</td>
+      <td class="right">${b.startsAllowed !== null ? b.startsAllowed.toFixed(1) : '—'}</td>
+      <td class="right"><strong>${b.dmStarts}</strong></td>
+      <td class="center">${startsBar}</td>
+      <td class="right">${srDisplay}</td>
+      <td class="center">${startStatus}</td>
+      <td class="right">${b.abNeeded !== null ? b.abNeeded.toFixed(1) : '—'}</td>
+      <td class="right"><strong>${b.dmAB}</strong></td>
+      <td class="center">${keeperStatus}</td>
+    </tr>`;
+  });
 
-        // Progress bar for starts
-        const startsPct = b.startsAllowed ? Math.min(b.dmStarts / b.startsAllowed, 1) : 0;
-        const startsColor = startsPct >= 1 ? '#dc3545' : startsPct >= 0.85 ? '#ffc107' : '#28a745';
-        const startsBar = b.unlimited ? '<span style="color:#6c757d;font-size:0.82em;">No limit</span>' :
-            `<div class="prog-wrap">
-                <div class="prog-bar"><div class="prog-fill" style="width:${(startsPct*100).toFixed(0)}%;background:${startsColor};"></div></div>
-                <span class="prog-pct" style="color:${startsColor};">${(startsPct*100).toFixed(0)}%</span>
-            </div>`;
-
-        // Progress bar for AB
-        const abPct = b.abNeeded ? Math.min(b.dmAB / b.abNeeded, 1) : 1;
-        const abColor = abPct >= 1 ? '#28a745' : abPct >= 0.7 ? '#ffc107' : '#c41e3a';
-        const abBar = b.abNeeded == null ? '<span style="color:#6c757d;font-size:0.82em;">No limit</span>' :
-            `<div class="prog-wrap">
-                <div class="prog-bar"><div class="prog-fill" style="width:${(abPct*100).toFixed(0)}%;background:${abColor};"></div></div>
-                <span class="prog-pct" style="color:${abColor};">${(abPct*100).toFixed(0)}%</span>
-            </div>`;
-
-        const srDisplay = b.startsRemaining === null ? '—' :
-            `<span style="color:${b.startsRemaining <= 0 ? '#dc3545' : b.startsRemaining <= 5 ? '#e6a800' : '#333'};font-weight:${b.startsRemaining <= 5 ? '800' : '400'}">
-                ${b.startsRemaining.toFixed(1)}
-            </span>`;
-
-        html += `<tr>
-            <td style="font-weight:700;color:#1e3c72;">${b.team}</td>
-            <td style="font-weight:600;">${b.name}</td>
-            <td class="right">${b.actualAB || '—'}</td>
-            <td class="center">${b.unlimited ? '<span style="color:#6c757d;">N/A</span>' : fmtPct(b.pctAllowed)}</td>
-            <td class="right">${b.startsAllowed !== null ? b.startsAllowed.toFixed(1) : '—'}</td>
-            <td class="right"><strong>${b.dmStarts}</strong></td>
-            <td class="center">${startsBar}</td>
-            <td class="right">${srDisplay}</td>
-            <td class="center">${startStatus}</td>
-            <td class="right">${b.abNeeded !== null ? b.abNeeded.toFixed(1) : '—'}</td>
-            <td class="right"><strong>${b.dmAB}</strong></td>
-            <td class="center">${keeperStatus}</td>
-        </tr>`;
-    });
-
-    html += '</tbody></table></div></div>';
-    document.getElementById('content-area').innerHTML = html;
+  html += '</tbody></table></div></div>';
+  document.getElementById('content-area').innerHTML = html;
 }
 
 function renderPitchers() {
-    const teams = getFilteredTeams();
-
-    let rows = [];
-    teams.forEach(t => {
-        t.pitchers.forEach(p => {
-            if (!p.actualIP) return;
-            if (activeFilter === 'limited' || activeFilter === 'maxed') return; // pitchers don't have limits
-            if (activeFilter === 'not-qualified' && p.qualified) return;
-            if (activeFilter === 'qualified'     && !p.qualified) return;
-            rows.push({ ...p, team: t.abbrev });
-        });
+  const teams = getFilteredTeams();
+  let rows = [];
+  teams.forEach(t => {
+    t.pitchers.forEach(p => {
+      if (!p.actualIP) return;
+      if (activeFilter === 'limited' || activeFilter === 'maxed') return;
+      if (activeFilter === 'not-qualified' && p.qualified) return;
+      if (activeFilter === 'qualified' && !p.qualified) return;
+      rows.push({ ...p, team: t.abbrev });
     });
+  });
 
-    if (sortCol) {
-        rows.sort((a, b) => {
-            let av = a[sortCol], bv = b[sortCol];
-            if (av == null) av = sortDir === 'asc' ? Infinity : -Infinity;
-            if (bv == null) bv = sortDir === 'asc' ? Infinity : -Infinity;
-            if (typeof av === 'string') return sortDir === 'asc' ? av.localeCompare(bv) : bv.localeCompare(av);
-            return sortDir === 'asc' ? av - bv : bv - av;
-        });
-    }
-
-    if (!rows.length) {
-        document.getElementById('content-area').innerHTML = `
-            <div class="card"><div class="empty-state">
-                <div class="icon">⚾</div>
-                <h3>No pitchers match the current filter</h3>
-            </div></div>`;
-        return;
-    }
-
-    const thSort = (col, label, align='right') => {
-        const cls = sortCol === col ? (sortDir === 'asc' ? 'sort-asc' : 'sort-desc') : '';
-        return `<th class="sortable ${cls} ${align}" onclick="doSort('${col}')">${label}</th>`;
-    };
-
-    let html = `<div class="card">
-        <div class="card-title">Pitcher Keeper Eligibility <span>${rows.length} pitchers</span></div>
-        <div class="table-wrap"><table>
-        <thead><tr>
-            ${thSort('team','Team','left')}
-            ${thSort('name','Pitcher','left')}
-            ${thSort('actualIP','2025 Real IP','right')}
-            ${thSort('ipNeeded','IP Needed to Qualify','right')}
-            ${thSort('dmIP','DMB IP','right')}
-            <th class="center">Progress</th>
-            <th class="center">Keeper Status</th>
-        </tr></thead><tbody>`;
-
-    rows.forEach(p => {
-        const pct = p.ipNeeded > 0 ? Math.min(p.dmIP / p.ipNeeded, 1) : 1;
-        const barColor = pct >= 1 ? '#28a745' : pct >= 0.6 ? '#ffc107' : '#c41e3a';
-        const progBar = `<div class="prog-wrap" style="min-width:140px;">
-            <div class="prog-bar" style="flex:1;">
-                <div class="prog-fill" style="width:${(pct*100).toFixed(0)}%;background:${barColor};"></div>
-            </div>
-            <span class="prog-pct" style="color:${barColor};">${(pct*100).toFixed(0)}%</span>
-        </div>`;
-
-        const keeperBadge = p.qualified
-            ? '<span class="badge badge-done">✓ Qualified</span>'
-            : `<span class="badge badge-danger">${fmtIP(p.ipNeeded - p.dmIP)} IP needed</span>`;
-
-        html += `<tr>
-            <td style="font-weight:700;color:#1e3c72;">${p.team}</td>
-            <td style="font-weight:600;">${p.name}</td>
-            <td class="right">${fmtIP(p.actualIP)}</td>
-            <td class="right">${fmtIP(p.ipNeeded)}</td>
-            <td class="right"><strong>${fmtIP(p.dmIP)}</strong></td>
-            <td class="center">${progBar}</td>
-            <td class="center">${keeperBadge}</td>
-        </tr>`;
+  if (sortCol) {
+    rows.sort((a, b) => {
+      let av = a[sortCol], bv = b[sortCol];
+      if (av == null) av = sortDir === 'asc' ? Infinity : -Infinity;
+      if (bv == null) bv = sortDir === 'asc' ? Infinity : -Infinity;
+      if (typeof av === 'string') return sortDir === 'asc' ? av.localeCompare(bv) : bv.localeCompare(av);
+      return sortDir === 'asc' ? av - bv : bv - av;
     });
+  }
 
-    html += '</tbody></table></div>';
-    document.getElementById('content-area').innerHTML = html;
+  if (!rows.length) {
+    document.getElementById('content-area').innerHTML = `
+      <div class="card"><div class="empty-state">
+        <div class="icon">⚾</div>
+        <h3>No pitchers match the current filter</h3>
+      </div></div>`;
+    return;
+  }
+
+  const thSort = (col, label, align='right') => {
+    const cls = sortCol === col ? (sortDir === 'asc' ? 'sort-asc' : 'sort-desc') : '';
+    return `<th class="sortable ${cls} ${align}" onclick="doSort('${col}')">${label}</th>`;
+  };
+
+  let html = `<div class="card">
+    <div class="card-title">Pitcher Keeper Eligibility <span>${rows.length} pitchers</span></div>
+    <div class="table-wrap"><table>
+    <thead><tr>
+      ${thSort('team','Team','left')}
+      ${thSort('name','Pitcher','left')}
+      ${thSort('actualIP','2025 Real IP','right')}
+      ${thSort('ipNeeded','IP Needed to Qualify','right')}
+      ${thSort('dmIP','DMB IP','right')}
+      <th class="center">Progress</th>
+      <th class="center">Keeper Status</th>
+    </tr></thead><tbody>`;
+
+  rows.forEach(p => {
+    const pct = p.ipNeeded > 0 ? Math.min(p.dmIP / p.ipNeeded, 1) : 1;
+    const barColor = pct >= 1 ? '#28a745' : pct >= 0.6 ? '#ffc107' : '#c41e3a';
+    const progBar = `<div class="prog-wrap" style="min-width:140px;">
+      <div class="prog-bar" style="flex:1;">
+        <div class="prog-fill" style="width:${(pct*100).toFixed(0)}%;background:${barColor};"></div>
+      </div>
+      <span class="prog-pct" style="color:${barColor};">${(pct*100).toFixed(0)}%</span>
+    </div>`;
+
+    const keeperBadge = p.qualified
+      ? '<span class="badge badge-done">✓ Qualified</span>'
+      : `<span class="badge badge-danger">${fmtIP(p.ipNeeded - p.dmIP)} IP needed</span>`;
+
+    html += `<tr>
+      <td style="font-weight:700;color:#1e3c72;">${p.team}</td>
+      <td style="font-weight:600;">${p.name}</td>
+      <td class="right">${fmtIP(p.actualIP)}</td>
+      <td class="right">${fmtIP(p.ipNeeded)}</td>
+      <td class="right"><strong>${fmtIP(p.dmIP)}</strong></td>
+      <td class="center">${progBar}</td>
+      <td class="center">${keeperBadge}</td>
+    </tr>`;
+  });
+
+  html += '</tbody></table></div></div>';
+  document.getElementById('content-area').innerHTML = html;
 }
 
 function doSort(col) {
-    if (sortCol === col) sortDir = sortDir === 'asc' ? 'desc' : 'asc';
-    else { sortCol = col; sortDir = col === 'name' || col === 'team' ? 'asc' : 'desc'; }
-    render();
+  if (sortCol === col) {
+    sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+  } else {
+    sortCol = col;
+    sortDir = 'asc';
+  }
+  render();
 }
 </script>
 </body>
