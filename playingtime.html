@@ -232,7 +232,8 @@ async function discoverWeeks() {
   for (let i = 1; i <= MAX_WEEKS_TO_PROBE; i++) {
     const folder = `week-${i}`;
     try {
-      const res = await fetch(`${DMB_BASE}/${folder}/lgindex1.htm`, { method: 'HEAD' });
+      // Use GET (not HEAD) — GitHub Pages doesn't support HEAD requests
+      const res = await fetch(`${DMB_BASE}/${folder}/lgindex1.htm`);
       if (res.ok) {
         found.push(folder);
       } else {
