@@ -432,16 +432,19 @@ const WEEKS = [
     'week-7',
 ];
 
-// Folder inside your repo where the week subfolders live.
-// Each week: dmb/week-1/index.htm, dmb/week-2/index.htm, etc.
+// Folder inside your repo where DMB files live.
+// Org/team files always served from dmb/current/
+// Game box score files always served from dmb/games/
 const DMB_BASE = 'dmb';
+const DMB_CURRENT = `${DMB_BASE}/current`;
+const DMB_GAMES   = `${DMB_BASE}/games`;
 
 // ═══════════════════════════════════════════════════════════════
 // State
 // ═══════════════════════════════════════════════════════════════
 let currentWeek   = null;
 let currentSection = 'standings';
-let weekCache     = {};   // { folderPath: { filename: htmlText } }
+let fileCache     = {};   // { path: htmlText }
 let teamList      = [];   // populated from lgindex files
 
 // ═══════════════════════════════════════════════════════════════
@@ -450,14 +453,13 @@ let teamList      = [];   // populated from lgindex files
 (function init() {
     const sel = document.getElementById('week-select');
     WEEKS.forEach((folder, i) => {
-        const weekNum = i + 1;
         const opt = document.createElement('option');
         opt.value = folder;
         opt.textContent = weekLabel(folder);
         sel.appendChild(opt);
     });
 
-    // Default to most recent (last in array = newest week = highest number)
+    // Default to most recent week
     const latest = WEEKS[WEEKS.length - 1];
     if (latest) {
         sel.value = latest;
@@ -466,24 +468,31 @@ let teamList      = [];   // populated from lgindex files
 })();
 
 function weekLabel(folder) {
-    // Converts 'week-1' → 'Week 1', 'week-12' → 'Week 12', etc.
-    // Falls back to the raw folder name if it doesn't match the pattern.
     return folder.replace(/^week-(\d+)$/i, (_, n) => `Week ${n}`);
 }
 
 // ═══════════════════════════════════════════════════════════════
 // File fetching
 // ═══════════════════════════════════════════════════════════════
-async function fetchFile(folder, filename) {
-    const cacheKey = `${folder}/${filename}`;
-    if (weekCache[cacheKey]) return weekCache[cacheKey];
 
-    const url = `${DMB_BASE}/${folder}/${filename}`;
+// Game box score filenames are 13-digit timestamps: e.g. 2025040500000.htm
+function isGameFile(filename) {
+    return /^\d{13}\.htm$/i.test(filename);
+}
+
+async function fetchFile(folder, filename) {
+    // Route: game files → dmb/games/, everything else → dmb/current/
+    const url = isGameFile(filename)
+        ? `${DMB_GAMES}/${filename}`
+        : `${DMB_CURRENT}/${filename}`;
+
+    if (fileCache[url]) return fileCache[url];
+
     try {
         const res = await fetch(url);
         if (!res.ok) return null;
         const text = await res.text();
-        weekCache[cacheKey] = text;
+        fileCache[url] = text;
         return text;
     } catch(e) {
         return null;
@@ -505,11 +514,11 @@ async function loadWeek(folder) {
     setLoading(true);
     document.getElementById('week-status').textContent = '';
 
-    // Load the index to discover team links
+    // Load the index to confirm current/ is populated
     const indexText = await fetchFile(folder, 'index.htm');
     if (!indexText) {
         setLoading(false);
-        showError(`Could not load week data from dmb/${folder}/. Make sure the files are uploaded to that folder.`);
+        showError(`Could not load week data from ${DMB_CURRENT}/. Make sure the org/team files are uploaded to dmb/current/.`);
         return;
     }
 
@@ -553,10 +562,8 @@ function showSection(section) {
     currentSection = section;
 
     // Update tab styles
-    document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
-    event && event.target && event.target.classList && event.target.classList.add('active');
-    // Find the right tab by matching its onclick
     document.querySelectorAll('.nav-tab').forEach(t => {
+        t.classList.remove('active');
         if (t.getAttribute('onclick') && t.getAttribute('onclick').includes(`'${section}'`)) {
             t.classList.add('active');
         }
@@ -587,7 +594,6 @@ function showSection(section) {
     };
 
     if (section === 'teams') {
-        // Show team list overview
         renderTeamList();
         return;
     }
@@ -598,7 +604,7 @@ function showSection(section) {
     setLoading(true);
     fetchFile(currentWeek, file).then(text => {
         setLoading(false);
-        if (!text) { showError(`Could not load ${file}`); return; }
+        if (!text) { showError(`Could not load ${file} from dmb/current/.`); return; }
         renderSection(section, text);
     });
 }
@@ -619,12 +625,10 @@ function buildTeamNav() {
         });
         nav.appendChild(btn);
     });
-    // Load first team by default
     if (teamList.length) loadTeamPage(teamList[0].href, nav.querySelectorAll('.team-chip')[0]);
 }
 
 async function loadTeamPage(tmIndexFile, chipEl) {
-    // Update chip styling
     document.querySelectorAll('.team-chip').forEach(c => c.classList.remove('active'));
     if (chipEl) chipEl.classList.add('active');
 
@@ -634,7 +638,6 @@ async function loadTeamPage(tmIndexFile, chipEl) {
     if (!text) { showError('Could not load team page.'); return; }
 
     const doc = parseHTML(text);
-    // Get team name and links
     const h2 = doc.querySelector('h2');
     const teamName = h2 ? h2.textContent.trim() : 'Team';
     const links = doc.querySelectorAll('a[href]');
@@ -660,7 +663,6 @@ async function renderTeamHub(teamName, pages, tmIndexFile) {
     `;
     document.getElementById('content-area').innerHTML = html;
 
-    // Add buttons via JS to avoid apostrophe issues in inline onclick
     const btnContainer = document.getElementById('team-page-btns');
     pages.forEach((p, i) => {
         const btn = document.createElement('button');
@@ -673,7 +675,6 @@ async function renderTeamHub(teamName, pages, tmIndexFile) {
         btnContainer.appendChild(btn);
     });
 
-    // Auto-load first page
     if (pages.length) loadTeamSubPage(pages[0].href, teamName);
 }
 
@@ -728,7 +729,6 @@ function renderStandings(doc) {
             const cells = row.querySelectorAll('td');
             if (!cells.length) return;
 
-            // Header row
             if (row.classList.contains('dmrptsecthdr')) {
                 html += '<thead><tr>';
                 cells.forEach(td => {
@@ -738,7 +738,6 @@ function renderStandings(doc) {
                 return;
             }
 
-            // Data rows
             const isBlank = Array.from(cells).every(td => !td.textContent.trim() || td.textContent.trim() === '\u00a0');
             if (isBlank) return;
 
@@ -756,14 +755,12 @@ function renderStandings(doc) {
                 let val = td.textContent.trim().replace(/\u00a0/g, '');
                 if (!val) { html += '<td></td>'; return; }
 
-                // Color-code win pct
                 if (ci === 4 && val.startsWith('.')) {
                     const pct = parseFloat(val);
                     const cls = pct >= 0.550 ? 'pct-high' : pct <= 0.450 ? 'pct-low' : 'pct-mid';
                     html += `<td><span class="${cls}">${escHtml(val)}</span></td>`;
                     return;
                 }
-                // Recent record (10 chars of w/l)
                 if (ci === 9 && /^[wlWL]+$/.test(val)) {
                     const colored = val.split('').map(c =>
                         c.toLowerCase() === 'w'
@@ -827,7 +824,6 @@ function renderGameResults(doc) {
                            cursor:pointer;text-decoration:underline;padding:0;font-family:inherit;"
                     >${escHtml(val)}</button></td>`;
             } else if (ci === 4) {
-                // W/L result
                 const cls = val === 'W' ? 'badge-w' : val === 'L' ? 'badge-l' : 'badge-t';
                 html += `<td><span class="${cls}">${escHtml(val || '—')}</span></td>`;
             } else {
@@ -839,7 +835,6 @@ function renderGameResults(doc) {
 
     html += '</tbody></table></div></div>';
 
-    // Inject modal scaffold if not present
     if (!document.getElementById('boxscore-modal')) {
         document.body.insertAdjacentHTML('beforeend', `
             <div id="boxscore-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);
@@ -854,9 +849,9 @@ function renderGameResults(doc) {
     document.getElementById('content-area').innerHTML = html;
 }
 
-// ── Box Score Modal ──
+// ── Box Score — opens game file from dmb/games/ ──
 async function openBoxScore(gameFile) {
-    window.open(`${DMB_BASE}/${currentWeek}/${gameFile}`, '_blank');
+    window.open(`${DMB_GAMES}/${gameFile}`, '_blank');
 }
 
 function closeBoxScore(e) {
@@ -866,7 +861,6 @@ function closeBoxScore(e) {
 }
 
 function renderBoxScore(rawText) {
-    // The file contains one <pre> block; split on form feed (\f) into box score + play-by-play
     const preMatch = rawText.match(/<pre>([\s\S]*?)<\/pre>/i);
     if (!preMatch) return `<div style="padding:20px;">Could not parse box score.</div>`;
 
@@ -875,59 +869,39 @@ function renderBoxScore(rawText) {
     const boxRaw = parts[0].trim();
     const pbpRaw = parts[1] ? parts[1].trim() : '';
 
-    // ── Parse header line ──
     const lines = boxRaw.split('\n');
-    const headerLine = lines[0].trim(); // e.g. "4/5/2025, Cle25-Bal25, Oriole Park at Camden Yards"
+    const headerLine = lines[0].trim();
     const headerParts = headerLine.split(',').map(s => s.trim());
     const dateStr   = headerParts[0] || '';
     const matchup   = headerParts[1] || '';
     const venue     = headerParts.slice(2).join(',').trim();
 
-    // ── Parse line score ──
-    // Lines 2-4 are the linescore header + 2 team rows
     const lsHeader = lines[2] || '';
     const lsAway   = lines[3] || '';
     const lsHome   = lines[4] || '';
 
-    // ── Split remaining into sections ──
-    // Sections separated by blank lines; batter lines, pitcher lines, notes
-    // ── Parse sections line by line ──
-    // Look for specific header markers to identify each section
     let batterSection = '', awayPitchers = '', homePitchers = '', notes = '';
-
-    let mode = 'scan'; // scan | batting | away_pitch | home_pitch | notes
+    let mode = 'scan';
     const bodyLines = lines.slice(5);
 
     bodyLines.forEach(line => {
         const t = line.trimEnd();
-
-        // Detect section starts
-        if (t.includes('AB  R  H BI')) {
-            mode = 'batting';
-            batterSection += t + '\n';
-            return;
-        }
+        if (t.includes('AB  R  H BI')) { mode = 'batting'; batterSection += t + '\n'; return; }
         if (t.includes('INN  H  R ER')) {
             if (!awayPitchers) { mode = 'away_pitch'; awayPitchers += t + '\n'; }
             else               { mode = 'home_pitch'; homePitchers += t + '\n'; }
             return;
         }
-        // Notes start with team abbrev (e.g. "Cle:") or stat abbreviations
         if (mode !== 'notes' && t.match(/^[A-Z][a-z]{1,2}:|^E-|^2B-|^HR-|^RBI-|^SB-|^CS-|^WP-|^BALK|^GWRBI|^HBP|^Temp/)) {
             mode = 'notes';
         }
-
-        if (mode === 'batting')     batterSection  += t + '\n';
-        else if (mode === 'away_pitch') awayPitchers += t + '\n';
-        else if (mode === 'home_pitch') homePitchers += t + '\n';
-        else if (mode === 'notes')  notes          += t + '\n';
+        if (mode === 'batting')         batterSection  += t + '\n';
+        else if (mode === 'away_pitch') awayPitchers   += t + '\n';
+        else if (mode === 'home_pitch') homePitchers   += t + '\n';
+        else if (mode === 'notes')      notes          += t + '\n';
     });
 
-    // ── Build linescore table ──
     function buildLineScore() {
-        // Parse inning columns from header
-        const hCols = lsHeader.trim().split(/\s+/);
-        // Team rows: team name (up to col 22), then inning nums, then R H E LOB DP
         const parseTeamRow = (row) => {
             if (!row.trim()) return null;
             const name = row.substring(0, 22).trim();
@@ -939,7 +913,6 @@ function renderBoxScore(rawText) {
         if (!away || !home) return '';
 
         const numInnings = away.cols.length;
-        // Last 4 are R H E LOB (and maybe DP)
         const statCount = 4;
         const inningCount = numInnings - statCount;
 
@@ -965,7 +938,7 @@ function renderBoxScore(rawText) {
             }
             for (let i = inningCount; i < inningCount + 4; i++) {
                 const v = team.cols[i] || '';
-                const isBold = i === inningCount; // R column
+                const isBold = i === inningCount;
                 t += `<td style="padding:8px 10px;text-align:center;${isBold ? 'font-weight:800;font-size:1.05em;border-left:2px solid #dee2e6;' : ''}">${escHtml(v)}</td>`;
             }
             t += '</tr>';
@@ -974,24 +947,15 @@ function renderBoxScore(rawText) {
         return t;
     }
 
-    // ── Build batter tables ──
     function buildBatterTables() {
         if (!batterSection) return '';
         const bLines = batterSection.split('\n');
-        // Header line has both team names + "AB  R  H BI   AVG"
         const headerIdx = bLines.findIndex(l => l.includes('AB  R  H BI'));
         if (headerIdx < 0) return '';
 
         const headerRow = bLines[headerIdx];
-        // The header row looks like:
-        // "Indians              AB  R  H BI   AVG    Orioles              AB  R  H BI   AVG"
-        // Find the split point: second team name starts after the first "AVG"
-        const firstAvg = headerRow.indexOf('AVG');
-        // Find where the second team name starts (non-space after the first AVG block)
-        let splitCol = firstAvg + 3;
-        while (splitCol < headerRow.length && headerRow[splitCol] === ' ') splitCol++;
-        // Back up to find where the second team header really starts (at least 3 spaces gap)
         const splitMatch = headerRow.match(/AVG\s{2,}(\S)/);
+        let splitCol = headerRow.indexOf('AVG') + 3;
         if (splitMatch) splitCol = headerRow.indexOf(splitMatch[0]) + splitMatch[0].length - 1;
 
         const awayTeam = headerRow.substring(0, splitCol).split(/\s{2,}/)[0].trim();
@@ -1000,8 +964,6 @@ function renderBoxScore(rawText) {
         const awayBatters = [], homeBatters = [];
         bLines.slice(headerIdx + 1).forEach(line => {
             if (!line.trim()) return;
-            // Totals line: starts with spaces then numbers only (no name)
-            // e.g. "                     33  0  6  0"
             const isTotalsLine = line.match(/^\s{10,}\d+\s+\d+\s+\d+\s+\d+\s*$/);
             if (isTotalsLine) {
                 const left  = line.substring(0, splitCol).trim();
@@ -1018,14 +980,10 @@ function renderBoxScore(rawText) {
 
         function parseBatterLine(raw) {
             raw = raw.trimEnd();
-            // Totals: just numbers
             if (raw.match(/^\s*\d+\s+\d+\s+\d+\s+\d+\s*$/)) {
                 const t = raw.trim().split(/\s+/);
                 return { totals: true, ab: t[0], r: t[1], h: t[2], bi: t[3] };
             }
-            // Player line format (fixed columns):
-            // "McKinstry         rf  4  1  1  0  .167"
-            // Name+pos = first 22 chars, then AB R H BI AVG
             const namePos = raw.substring(0, 22).trim();
             const stats   = raw.substring(22).trim().split(/\s+/);
             if (stats.length >= 5) {
@@ -1080,12 +1038,9 @@ function renderBoxScore(rawText) {
         </div>`;
     }
 
-    // ── Build pitcher table ──
     function buildPitcherTable(raw) {
         if (!raw) return '';
         const pLines = raw.split('\n').filter(l => l.trim());
-        // Header line: "Indians                          INN  H  R ER BB  K PCH STR   ERA"
-        // Team name is first chunk before lots of spaces
         const teamName = pLines[0].split(/\s{3,}/)[0].trim();
 
         let t = `<div style="flex:1;min-width:260px;">
@@ -1104,9 +1059,6 @@ function renderBoxScore(rawText) {
 
         pLines.slice(1).forEach(line => {
             if (!line.trim()) return;
-
-            // Totals line: starts with lots of spaces then IP H R ER BB K PCH STR (no ERA)
-            // e.g. "                                 9.0  7  2  2  2  7 124  78 "
             if (line.match(/^\s{20,}[\d.]+\s+\d+\s+\d+\s+\d+\s+\d+\s+\d+/)) {
                 const nums = line.trim().split(/\s+/);
                 t += `<tr style="background:#f0f4fb;font-weight:800;border-top:2px solid #dee2e6;">
@@ -1121,14 +1073,8 @@ function renderBoxScore(rawText) {
                 </tr>`;
                 return;
             }
-
-            // Pitcher line: name (up to col 33) + decision (optional) + stats
-            // "Abbott           W 1-0           7.0  6  2  2  2  6  99  63  2.57"
-            // Name field is first 17 chars, decision next ~16, then stats
             const namePart = line.substring(0, 17).trim();
             const rest     = line.substring(17).trim();
-
-            // Check for W/L/S decision
             const decMatch = rest.match(/^(W|L|S)\s+([\d]+-[\d]+)\s+(.*)/);
             let decision = '', statsStr = '';
             if (decMatch) {
@@ -1140,9 +1086,7 @@ function renderBoxScore(rawText) {
             } else {
                 statsStr = rest;
             }
-
             const stats = statsStr.trim().split(/\s+/);
-            // stats: IP H R ER BB K PCH STR ERA
             if (stats.length >= 7 && namePart) {
                 t += `<tr style="border-bottom:1px solid #f0f0f0;">
                     <td style="padding:5px 10px;font-weight:600;white-space:nowrap;">${escHtml(namePart)} ${decision}</td>
@@ -1160,7 +1104,6 @@ function renderBoxScore(rawText) {
         return t;
     }
 
-    // ── Build play-by-play ──
     function buildPBP() {
         if (!pbpRaw) return '';
         const pbpLines = pbpRaw.split('\n');
@@ -1169,13 +1112,11 @@ function renderBoxScore(rawText) {
             const trimmed = line.trim();
             if (!trimmed) return;
             if (trimmed.startsWith('**')) {
-                // Inning header
                 const inning = trimmed.replace(/\*/g, '').trim();
                 html += `<div style="background:#1e3c72;color:white;padding:6px 14px;font-weight:800;
                           font-size:0.78em;letter-spacing:1px;text-transform:uppercase;margin-top:8px;">
                           ${escHtml(inning)}</div>`;
             } else if (trimmed.match(/^\d+-\d+\s+\d+/)) {
-                // Play line: score | outs | bases | pitch count | description
                 const m = trimmed.match(/^(\d+-\d+)\s+(\d+)\s+(\S+)\s+(\d+)\s+(.*)$/);
                 if (m) {
                     const [_, score, outs, bases, count, desc] = m;
@@ -1190,7 +1131,6 @@ function renderBoxScore(rawText) {
                     html += `<div style="padding:3px 14px;font-size:0.82em;color:#495057;padding-left:126px;">${escHtml(trimmed)}</div>`;
                 }
             } else if (trimmed.match(/^\s/) || trimmed.includes('now pitching') || trimmed.includes('pinch hitting')) {
-                // Continuation / sub lines
                 html += `<div style="padding:2px 14px 2px 126px;font-size:0.8em;color:#6c757d;font-style:italic;">${escHtml(trimmed)}</div>`;
             } else {
                 html += `<div style="padding:3px 14px;font-size:0.82em;color:#495057;">${escHtml(trimmed)}</div>`;
@@ -1199,9 +1139,7 @@ function renderBoxScore(rawText) {
         return html;
     }
 
-    // ── Assemble modal ──
     return `
-        <!-- Modal header -->
         <div style="background:linear-gradient(135deg,#c41e3a,#d94e59);color:white;padding:20px 24px;
                     display:flex;justify-content:space-between;align-items:flex-start;">
             <div>
@@ -1216,39 +1154,25 @@ function renderBoxScore(rawText) {
                 style="background:rgba(255,255,255,0.2);border:none;color:white;font-size:1.2em;
                        padding:6px 12px;border-radius:6px;cursor:pointer;font-weight:700;">✕</button>
         </div>
-
-        <!-- Line score -->
         <div style="padding:16px 20px 12px;border-bottom:2px solid #f0f0f0;">
-            <div style="font-size:0.75em;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;
-                        color:#1e3c72;margin-bottom:8px;">Line Score</div>
+            <div style="font-size:0.75em;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:#1e3c72;margin-bottom:8px;">Line Score</div>
             <div style="overflow-x:auto;">${buildLineScore()}</div>
         </div>
-
-        <!-- Batting -->
         <div style="padding:16px 20px 12px;border-bottom:2px solid #f0f0f0;">
-            <div style="font-size:0.75em;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;
-                        color:#1e3c72;margin-bottom:10px;">Batting</div>
+            <div style="font-size:0.75em;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:#1e3c72;margin-bottom:10px;">Batting</div>
             ${buildBatterTables()}
         </div>
-
-        <!-- Pitching -->
         <div style="padding:16px 20px 12px;border-bottom:2px solid #f0f0f0;">
-            <div style="font-size:0.75em;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;
-                        color:#1e3c72;margin-bottom:10px;">Pitching</div>
+            <div style="font-size:0.75em;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:#1e3c72;margin-bottom:10px;">Pitching</div>
             <div style="display:flex;gap:16px;flex-wrap:wrap;">
                 ${buildPitcherTable(awayPitchers)}
                 ${buildPitcherTable(homePitchers)}
             </div>
         </div>
-
-        <!-- Notes -->
         ${notes ? `<div style="padding:16px 20px 12px;border-bottom:2px solid #f0f0f0;">
-            <div style="font-size:0.75em;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;
-                        color:#1e3c72;margin-bottom:8px;">Game Notes</div>
+            <div style="font-size:0.75em;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:#1e3c72;margin-bottom:8px;">Game Notes</div>
             <div style="font-size:0.84em;color:#495057;line-height:1.7;white-space:pre-wrap;">${escHtml(notes.trim())}</div>
         </div>` : ''}
-
-        <!-- Play by Play -->
         ${pbpRaw ? `<div style="padding:16px 20px 0;">
             <div style="font-size:0.75em;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;
                         color:#1e3c72;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;">
@@ -1266,46 +1190,26 @@ function renderBoxScore(rawText) {
 
 // ── Leaders ──
 function renderLeaders(doc, title) {
-    // The leaders page uses multi-column layouts per table row
-    // We extract each leader group (every <td colspan=3> header)
-    const body = doc.querySelector('body');
-    if (!body) { showError('Could not parse leaders.'); return; }
-
-    // Find all leader groups
     const groups = [];
     const allTables = doc.querySelectorAll('table');
 
     allTables.forEach(table => {
-        // Each group has a header cell with colspan=3 and class=dmrptbodyhdr
         const headerCells = table.querySelectorAll('td[colspan="3"]');
         if (!headerCells.length) return;
 
-        // Get all rows
         const rows = Array.from(table.querySelectorAll('tr'));
-
-        // Split into groups by header cells
-        let currentGroup = null;
         rows.forEach(row => {
             const hdr = row.querySelector('td[colspan="3"]');
             if (hdr && hdr.textContent.trim()) {
-                // Could be multiple groups per row (3-column layout)
                 const allHdrs = row.querySelectorAll('td[colspan="3"]');
                 allHdrs.forEach(h => {
-                    if (h.textContent.trim()) {
-                        groups.push({ name: h.textContent.trim(), rows: [] });
-                    }
+                    if (h.textContent.trim()) groups.push({ name: h.textContent.trim(), rows: [] });
                 });
             } else {
-                // Data row — add to all open groups in this row
                 const tds = row.querySelectorAll('td');
                 if (tds.length === 0) return;
-
-                // 3-column layout: groups of 4 tds (name, team, val, spacer)
-                // Find active groups by counting how many exist
-                const activeGroups = groups.slice(-3); // last 3 groups
+                const activeGroups = groups.slice(-3);
                 if (activeGroups.length === 0) return;
-
-                // Each "column" is 4 tds: name | team | val | &nbsp;
                 const colSize = Math.ceil(tds.length / activeGroups.length);
                 activeGroups.forEach((grp, gi) => {
                     const base = gi * colSize;
@@ -1322,10 +1226,7 @@ function renderLeaders(doc, title) {
         });
     });
 
-    if (!groups.length) {
-        renderGenericTable(doc, title);
-        return;
-    }
+    if (!groups.length) { renderGenericTable(doc, title); return; }
 
     let html = `<div class="card">
         <div class="card-title">${escHtml(title)} <span>${weekLabel(currentWeek)}</span></div>
@@ -1411,17 +1312,16 @@ function renderTeamSubPage(filename, teamName, text) {
     const h3 = doc.querySelector('h3');
     const subTitle = h3 ? h3.textContent.trim() : filename;
 
-    // Make any game file links (numbered .htm files) open as box scores in new tab
+    // Game file links open from dmb/games/
     doc.querySelectorAll('a[href]').forEach(a => {
         const href = a.getAttribute('href');
         if (href && href.match(/^\d+\.htm$/)) {
-            a.setAttribute('href', `${DMB_BASE}/${currentWeek}/${href}`);
+            a.setAttribute('href', `${DMB_GAMES}/${href}`);
             a.setAttribute('target', '_blank');
             a.style.cssText = 'color:#1e3c72;font-weight:700;text-decoration:underline;';
         }
     });
 
-    // Use generic table renderer but inject into team-sub-content
     const tables = doc.querySelectorAll('table');
     let html = `<div class="card" style="margin-top:0;">
         <div class="card-title">${escHtml(subTitle)}</div>`;
@@ -1445,36 +1345,25 @@ function renderTeamSubPage(filename, teamName, text) {
             const cells = row.querySelectorAll('td');
             if (!cells.length) return;
             const isBlank = Array.from(cells).every(td => !td.textContent.trim() || td.textContent.trim() === '\u00a0');
-            // Skip blank rows only for data rows, not header rows
             if (isBlank && !row.classList.contains('dmrptsecthdr')) return;
 
             if (row.classList.contains('dmrptsecthdr')) {
-                if (headerOpen !== 'collecting') {
-                    headerOpen = 'collecting';
-                    headerRows = [];
-                }
+                if (headerOpen !== 'collecting') { headerOpen = 'collecting'; headerRows = []; }
                 headerRows.push(row);
                 return;
             }
 
-            // First data row — flush collected header rows
             if (headerOpen === 'collecting') {
                 html += '<thead>';
                 headerRows.forEach((hr, hri) => {
-                    // Is this a group-label row? (has any colspan > 1)
                     const isGroupRow = Array.from(hr.querySelectorAll('td')).some(td => parseInt(td.getAttribute('colspan')||'1') > 1);
-                    const isLastHdr  = hri === headerRows.length - 1;
                     html += '<tr>';
                     hr.querySelectorAll('td').forEach(td => {
                         const colspan = parseInt(td.getAttribute('colspan') || '1');
                         const val     = td.textContent.trim().replace(/\u00a0/g, '');
                         const cs      = colspan > 1 ? ` colspan="${colspan}"` : '';
-                        // Group row: center all; last header row: use source alignment
-                        let align = 'center';
-                        if (!isGroupRow) {
-                            align = td.getAttribute('align') || 'left';
-                        }
-                        const border = isGroupRow && val ? ' border-bottom:2px solid rgba(255,255,255,0.4);' : '';
+                        const align   = isGroupRow ? 'center' : (td.getAttribute('align') || 'left');
+                        const border  = isGroupRow && val ? ' border-bottom:2px solid rgba(255,255,255,0.4);' : '';
                         html += `<th${cs} style="text-align:${align};${border}">${escHtml(val)}</th>`;
                     });
                     html += '</tr>';
@@ -1490,7 +1379,7 @@ function renderTeamSubPage(filename, teamName, text) {
                 if (link) {
                     const href  = link.getAttribute('href');
                     const label = escHtml(td.textContent.trim());
-                    html += '<td><a href="' + href + '" target="_blank" style="color:#1e3c72;font-weight:700;text-decoration:underline;">' + label + '</a></td>';
+                    html += `<td><a href="${href}" target="_blank" style="color:#1e3c72;font-weight:700;text-decoration:underline;">${label}</a></td>`;
                 } else {
                     const val = td.textContent.trim().replace(/\u00a0/g, '');
                     html += `<td>${escHtml(val)}</td>`;
@@ -1500,7 +1389,7 @@ function renderTeamSubPage(filename, teamName, text) {
         });
         if (headerOpen === 'collecting') {
             html += '<thead>';
-            headerRows.forEach((hr, hri) => {
+            headerRows.forEach(hr => {
                 const isGroupRow = Array.from(hr.querySelectorAll('td')).some(td => parseInt(td.getAttribute('colspan')||'1') > 1);
                 html += '<tr>';
                 hr.querySelectorAll('td').forEach(td => {
@@ -1528,7 +1417,6 @@ function renderTeamList() {
         document.getElementById('content-area').innerHTML = '<div class="empty-state"><div class="icon">🏟</div><h3>No teams found</h3></div>';
         return;
     }
-    // Team nav handles loading; show placeholder until a team chip is clicked
     document.getElementById('content-area').innerHTML =
         `<div id="team-sub-content"><div class="empty-state"><div class="icon">🏟</div><h3>Select a team above</h3></div></div>`;
 }

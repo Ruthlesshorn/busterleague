@@ -157,7 +157,7 @@ th.sort-desc:after { content: ' ↓'; opacity: 1; }
 <div class="controls-bar">
   <label>Week</label>
   <select id="week-select" onchange="loadWeek(this.value)">
-    <option value="">— Discovering weeks… —</option>
+    <option value="">— Select a week —</option>
   </select>
   <div class="divider"></div>
   <label>Team</label>
@@ -191,21 +191,30 @@ th.sort-desc:after { content: ' ↓'; opacity: 1; }
 <div id="content-area">
   <div class="empty-state">
     <div class="icon">⏱</div>
-    <h3>Discovering available weeks…</h3>
-    <p>Checking for DMB sim files in the dmb/ folder.</p>
+    <h3>Select a week to view playing time</h3>
+    <p>Choose a week from the dropdown above.</p>
   </div>
 </div>
 </div>
 
 <script>
 // ═══════════════════════════════════════════════════════
-// CONFIG
+// CONFIGURATION — add new weeks here each week.
+// Add new weeks to the END of this array.
 // ═══════════════════════════════════════════════════════
+const WEEKS = [
+    'week-1',
+    'week-2',
+    'week-3',
+    'week-4',
+    'week-5',
+    'week-6',
+    'week-7',
+];
 
-// Auto-discovery: probes dmb/week-1 through dmb/week-N for lgindex1.htm.
-// Add new weeks by simply uploading a new dmb/week-N folder — no code changes needed.
-const DMB_BASE = 'dmb';
-const MAX_WEEKS_TO_PROBE = 30; // increase if your season goes longer
+// All org/team files are served from dmb/current/ (no per-week folders needed).
+const DMB_BASE    = 'dmb';
+const DMB_CURRENT = `${DMB_BASE}/current`;
 const TOTAL_GAMES = 162;
 
 // ═══════════════════════════════════════════════════════
@@ -215,37 +224,10 @@ let players = [];
 let currentWeek = null;
 let currentSection = 'batters';
 let activeFilter = 'all';
-let weekCache = {};
+let fileCache = {};
 let teamData = [];
 let sortCol = null;
 let sortDir = 'asc';
-let discoveredWeeks = []; // filled by discoverWeeks()
-
-// ═══════════════════════════════════════════════════════
-// Week auto-discovery
-// ═══════════════════════════════════════════════════════
-
-// Probe each candidate folder by attempting to fetch lgindex1.htm.
-// A 200 response means the week folder exists; anything else means stop.
-async function discoverWeeks() {
-  const found = [];
-  for (let i = 1; i <= MAX_WEEKS_TO_PROBE; i++) {
-    const folder = `week-${i}`;
-    try {
-      // Use GET (not HEAD) — GitHub Pages doesn't support HEAD requests
-      const res = await fetch(`${DMB_BASE}/${folder}/lgindex1.htm`);
-      if (res.ok) {
-        found.push(folder);
-      } else {
-        // First missing week — stop probing (assumes sequential numbering)
-        break;
-      }
-    } catch(e) {
-      break;
-    }
-  }
-  return found;
-}
 
 // ═══════════════════════════════════════════════════════
 // Init
@@ -253,51 +235,43 @@ async function discoverWeeks() {
 window.addEventListener('DOMContentLoaded', async () => {
   setLoading(true);
 
-  // Load players.json in parallel with week discovery
-  const [foundWeeks] = await Promise.all([
-    discoverWeeks(),
-    fetch('players.json').then(r => r.json()).then(data => { players = data; }).catch(() => { players = []; })
-  ]);
-
-  discoveredWeeks = foundWeeks;
-
+  // Populate week dropdown from hardcoded array
   const sel = document.getElementById('week-select');
-  sel.innerHTML = ''; // clear placeholder
-
-  if (!discoveredWeeks.length) {
-    sel.innerHTML = '<option value="">— No weeks found —</option>';
-    setLoading(false);
-    document.getElementById('content-area').innerHTML =
-      '<div class="error-state">⚠️ No week folders found in dmb/. Upload your DMB sim output to dmb/week-1/, dmb/week-2/, etc.</div>';
-    return;
-  }
-
-  // Populate dropdown with discovered weeks
-  discoveredWeeks.forEach((w, i) => {
+  WEEKS.forEach((w, i) => {
     const opt = document.createElement('option');
     opt.value = w;
     opt.textContent = `Week ${i + 1}`;
     sel.appendChild(opt);
   });
 
-  // Default to latest discovered week
-  const latest = discoveredWeeks[discoveredWeeks.length - 1];
+  // Load players.json
+  try {
+    const r = await fetch('players.json');
+    players = await r.json();
+  } catch(e) {
+    players = [];
+  }
+
+  // Default to latest week
+  const latest = WEEKS[WEEKS.length - 1];
   sel.value = latest;
   setLoading(false);
   loadWeek(latest);
 });
 
 // ═══════════════════════════════════════════════════════
-// File fetching
+// File fetching — all files come from dmb/current/
 // ═══════════════════════════════════════════════════════
 async function fetchFile(folder, filename) {
-  const key = `${folder}/${filename}`;
-  if (weekCache[key]) return weekCache[key];
+  // 'folder' param is kept for API compatibility but ignored —
+  // all files are in dmb/current/ regardless of selected week.
+  const url = `${DMB_CURRENT}/${filename}`;
+  if (fileCache[url]) return fileCache[url];
   try {
-    const res = await fetch(`${DMB_BASE}/${folder}/${filename}`);
+    const res = await fetch(url);
     if (!res.ok) return null;
     const text = await res.text();
-    weekCache[key] = text;
+    fileCache[url] = text;
     return text;
   } catch(e) { return null; }
 }
@@ -315,11 +289,14 @@ async function loadWeek(folder) {
   setLoading(true);
   teamData = [];
 
+  // Clear cache on week change so fresh files are fetched
+  fileCache = {};
+
   const teamList = await discoverTeams(folder);
   if (!teamList.length) {
     setLoading(false);
     document.getElementById('content-area').innerHTML =
-      '<div class="error-state">⚠️ Could not load team list. Make sure the DMB files are uploaded correctly.</div>';
+      '<div class="error-state">⚠️ Could not load team list. Make sure the DMB files are uploaded to dmb/current/.</div>';
     return;
   }
 
@@ -671,14 +648,13 @@ function findPlayer(dmName, teamName, age) {
 }
 
 function fmt1(n) { return n == null ? '—' : n.toFixed(1); }
-function fmt3(n) { return n == null ? '—' : n.toFixed(3); }
-function fmtPct(n) { return n == null ? '—' : (n * 100).toFixed(1) + '%'; }
 function fmtIP(n) {
   if (!n) return '0.0';
   const full = Math.floor(n);
   const frac = Math.round((n - full) * 3);
   return `${full}.${frac}`;
 }
+function fmtPct(n) { return n == null ? '—' : (n * 100).toFixed(1) + '%'; }
 
 function setFilter(f, el) {
   activeFilter = f;
