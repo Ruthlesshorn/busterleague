@@ -7,385 +7,86 @@
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;700&display=swap" rel="stylesheet">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-
-        body {
-            font-family: 'DM Sans', sans-serif;
-            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
-            min-height: 100vh;
-            color: #333;
-        }
-
+        body { font-family: 'DM Sans', sans-serif; background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); min-height: 100vh; color: #333; }
         .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
-
-        /* ── Header ── */
-        .header {
-            background: linear-gradient(135deg, #c41e3a 0%, #d94e59 100%);
-            color: white;
-            padding: 24px 30px;
-            border-radius: 12px;
-            margin-bottom: 20px;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 12px;
-        }
-        .header-left h1 {
-            font-family: 'Bebas Neue', sans-serif;
-            font-size: 2em;
-            letter-spacing: 2px;
-        }
+        .header { background: linear-gradient(135deg, #c41e3a 0%, #d94e59 100%); color: white; padding: 24px 30px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 8px 32px rgba(0,0,0,0.3); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
+        .header-left h1 { font-family: 'Bebas Neue', sans-serif; font-size: 2em; letter-spacing: 2px; }
         .header-left p { opacity: 0.85; font-size: 0.9em; margin-top: 2px; }
         .header-right { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
-        .btn {
-            padding: 10px 20px;
-            border-radius: 8px;
-            font-family: 'DM Sans', sans-serif;
-            font-weight: 700;
-            font-size: 0.9em;
-            cursor: pointer;
-            border: none;
-            text-decoration: none;
-            display: inline-block;
-            transition: all 0.2s;
-        }
+        .btn { padding: 10px 20px; border-radius: 8px; font-family: 'DM Sans', sans-serif; font-weight: 700; font-size: 0.9em; cursor: pointer; border: none; text-decoration: none; display: inline-block; transition: all 0.2s; }
         .btn-ghost { background: rgba(255,255,255,0.2); color: white; }
         .btn-ghost:hover { background: rgba(255,255,255,0.3); transform: translateY(-1px); }
-
-        /* ── Week selector ── */
-        .week-bar {
-            background: white;
-            border-radius: 12px;
-            padding: 16px 20px;
-            margin-bottom: 20px;
-            box-shadow: 0 4px 16px rgba(0,0,0,0.15);
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            flex-wrap: wrap;
-        }
-        .week-bar label {
-            font-weight: 800;
-            font-size: 0.8em;
-            text-transform: uppercase;
-            letter-spacing: 1.5px;
-            color: #1e3c72;
-        }
-        .week-select {
-            padding: 9px 14px;
-            border: 2px solid #dee2e6;
-            border-radius: 8px;
-            font-family: 'DM Sans', sans-serif;
-            font-size: 0.95em;
-            font-weight: 600;
-            color: #1e3c72;
-            cursor: pointer;
-            transition: border-color 0.2s;
-            background: white;
-        }
-        .week-select:focus { outline: none; border-color: #c41e3a; }
-        .week-select:hover { border-color: #c41e3a; }
-        .week-status {
-            font-size: 0.82em;
-            color: #6c757d;
-            margin-left: auto;
-        }
-        .loading-indicator {
-            display: none;
-            font-size: 0.85em;
-            color: #c41e3a;
-            font-weight: 700;
-            align-items: center;
-            gap: 6px;
-        }
+        .loading-bar { background: white; border-radius: 12px; padding: 12px 20px; margin-bottom: 20px; box-shadow: 0 4px 16px rgba(0,0,0,0.15); display: flex; align-items: center; gap: 10px; }
+        .loading-indicator { display: none; font-size: 0.85em; color: #c41e3a; font-weight: 700; align-items: center; gap: 6px; }
         .loading-indicator.show { display: flex; }
-        .spinner {
-            width: 14px; height: 14px;
-            border: 2px solid #f0f0f0;
-            border-top-color: #c41e3a;
-            border-radius: 50%;
-            animation: spin 0.7s linear infinite;
-        }
+        .spinner { width: 14px; height: 14px; border: 2px solid #f0f0f0; border-top-color: #c41e3a; border-radius: 50%; animation: spin 0.7s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
-
-        /* ── Nav tabs ── */
-        .nav-tabs {
-            display: flex;
-            gap: 6px;
-            flex-wrap: wrap;
-            margin-bottom: 20px;
-        }
-        .nav-tab {
-            padding: 9px 18px;
-            border-radius: 8px;
-            border: 2px solid rgba(255,255,255,0.25);
-            background: rgba(255,255,255,0.12);
-            color: white;
-            font-family: 'DM Sans', sans-serif;
-            font-weight: 700;
-            font-size: 0.85em;
-            cursor: pointer;
-            transition: all 0.15s;
-            white-space: nowrap;
-        }
+        .nav-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 20px; }
+        .nav-tab { padding: 9px 18px; border-radius: 8px; border: 2px solid rgba(255,255,255,0.25); background: rgba(255,255,255,0.12); color: white; font-family: 'DM Sans', sans-serif; font-weight: 700; font-size: 0.85em; cursor: pointer; transition: all 0.15s; white-space: nowrap; }
         .nav-tab:hover { background: rgba(255,255,255,0.22); border-color: rgba(255,255,255,0.5); }
-        .nav-tab.active {
-            background: white;
-            color: #1e3c72;
-            border-color: white;
-        }
-
-        /* ── Team sub-nav ── */
-        .team-nav {
-            background: white;
-            border-radius: 12px;
-            padding: 14px 18px;
-            margin-bottom: 20px;
-            box-shadow: 0 4px 16px rgba(0,0,0,0.15);
-            display: none;
-            flex-wrap: wrap;
-            gap: 6px;
-            align-items: center;
-        }
+        .nav-tab.active { background: white; color: #1e3c72; border-color: white; }
+        .team-nav { background: white; border-radius: 12px; padding: 14px 18px; margin-bottom: 20px; box-shadow: 0 4px 16px rgba(0,0,0,0.15); display: none; flex-wrap: wrap; gap: 6px; align-items: center; }
         .team-nav.show { display: flex; }
-        .team-nav-label {
-            font-size: 0.75em;
-            font-weight: 800;
-            text-transform: uppercase;
-            letter-spacing: 1.5px;
-            color: #6c757d;
-            margin-right: 4px;
-        }
-        .team-chip {
-            padding: 5px 12px;
-            border-radius: 20px;
-            border: 2px solid #dee2e6;
-            background: white;
-            font-size: 0.8em;
-            font-weight: 700;
-            cursor: pointer;
-            color: #495057;
-            transition: all 0.12s;
-        }
+        .team-nav-label { font-size: 0.75em; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; color: #6c757d; margin-right: 4px; }
+        .team-chip { padding: 5px 12px; border-radius: 20px; border: 2px solid #dee2e6; background: white; font-size: 0.8em; font-weight: 700; cursor: pointer; color: #495057; transition: all 0.12s; }
         .team-chip:hover { border-color: #1e3c72; color: #1e3c72; }
         .team-chip.active { background: #1e3c72; color: white; border-color: #1e3c72; }
-
-        /* ── Cards ── */
-        .card {
-            background: white;
-            border-radius: 12px;
-            padding: 22px;
-            box-shadow: 0 4px 16px rgba(0,0,0,0.15);
-            margin-bottom: 20px;
-        }
-        .card-title {
-            font-size: 0.82em;
-            font-weight: 800;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-            color: #1e3c72;
-            margin-bottom: 16px;
-            padding-bottom: 10px;
-            border-bottom: 2px solid #c41e3a;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .card-title span {
-            font-size: 1.1em;
-            font-weight: 500;
-            color: #6c757d;
-            letter-spacing: 0;
-            text-transform: none;
-        }
-
-        /* ── DMB table styling ── */
+        .card { background: white; border-radius: 12px; padding: 22px; box-shadow: 0 4px 16px rgba(0,0,0,0.15); margin-bottom: 20px; }
+        .card-title { font-size: 0.82em; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: #1e3c72; margin-bottom: 16px; padding-bottom: 10px; border-bottom: 2px solid #c41e3a; display: flex; justify-content: space-between; align-items: center; }
+        .card-title span { font-size: 1.1em; font-weight: 500; color: #6c757d; letter-spacing: 0; text-transform: none; }
         .dmb-wrap { overflow-x: auto; border-radius: 8px; border: 1px solid #dee2e6; }
         .dmb-table { width: 100%; border-collapse: collapse; font-size: 0.87em; }
         .dmb-table thead { background: #1e3c72; color: white; position: sticky; top: 0; z-index: 5; }
-        .dmb-table th {
-            padding: 10px 12px;
-            text-align: left;
-            font-weight: 600;
-            white-space: nowrap;
-            font-size: 0.85em;
-            letter-spacing: 0.5px;
-        }
-        .dmb-table td {
-            padding: 9px 12px;
-            border-bottom: 1px solid #f0f0f0;
-            white-space: nowrap;
-        }
+        .dmb-table th { padding: 10px 12px; text-align: left; font-weight: 600; white-space: nowrap; font-size: 0.85em; letter-spacing: 0.5px; }
+        .dmb-table td { padding: 9px 12px; border-bottom: 1px solid #f0f0f0; white-space: nowrap; }
         .dmb-table tbody tr:hover { background: #f8f9fa; }
         .dmb-table tbody tr:nth-child(even) { background: #fafafa; }
         .dmb-table tbody tr:nth-child(even):hover { background: #f0f0f0; }
-
-        /* Section headers in org tables */
-        .dmb-section-header td {
-            background: #e8eef8;
-            color: #1e3c72;
-            font-weight: 800;
-            font-size: 0.85em;
-            letter-spacing: 1px;
-            text-transform: uppercase;
-            padding: 8px 12px;
-        }
-        .dmb-section-subheader td {
-            background: #f0f4fb;
-            color: #495057;
-            font-weight: 700;
-            font-size: 0.82em;
-            padding: 6px 12px;
-        }
-
-        /* W/L badges */
         .badge-w { color: #155724; background: #d1e7dd; padding: 2px 8px; border-radius: 4px; font-weight: 700; font-size: 0.82em; }
         .badge-l { color: #842029; background: #f8d7da; padding: 2px 8px; border-radius: 4px; font-weight: 700; font-size: 0.82em; }
         .badge-t { color: #664d03; background: #fff3cd; padding: 2px 8px; border-radius: 4px; font-weight: 700; font-size: 0.82em; }
-        .home-badge { color: #0c5460; background: #d1ecf1; padding: 1px 6px; border-radius: 3px; font-size: 0.75em; font-weight: 700; }
-        .away-badge { color: #6c757d; background: #e9ecef; padding: 1px 6px; border-radius: 3px; font-size: 0.75em; font-weight: 700; }
-
-        /* Standings color coding */
         .pct-high { color: #155724; font-weight: 700; }
         .pct-mid  { color: #664d03; font-weight: 600; }
         .pct-low  { color: #842029; font-weight: 600; }
-
-        /* Leaders layout */
-        .leaders-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 16px;
-        }
-        .leader-block {
-            background: #f8f9fa;
-            border-radius: 8px;
-            overflow: hidden;
-            border: 1px solid #e9ecef;
-        }
-        .leader-block-title {
-            background: #1e3c72;
-            color: white;
-            padding: 8px 14px;
-            font-size: 0.78em;
-            font-weight: 800;
-            letter-spacing: 1px;
-            text-transform: uppercase;
-        }
-        .leader-row {
-            display: flex;
-            align-items: center;
-            padding: 7px 14px;
-            border-bottom: 1px solid #f0f0f0;
-            gap: 10px;
-        }
+        .leaders-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+        .leader-block { background: #f8f9fa; border-radius: 8px; overflow: hidden; border: 1px solid #e9ecef; }
+        .leader-block-title { background: #1e3c72; color: white; padding: 8px 14px; font-size: 0.78em; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; }
+        .leader-row { display: flex; align-items: center; padding: 7px 14px; border-bottom: 1px solid #f0f0f0; gap: 10px; }
         .leader-row:last-child { border-bottom: none; }
-        .leader-rank {
-            font-size: 0.72em;
-            font-weight: 800;
-            color: #adb5bd;
-            width: 18px;
-            flex-shrink: 0;
-        }
+        .leader-rank { font-size: 0.72em; font-weight: 800; color: #adb5bd; width: 18px; flex-shrink: 0; }
         .leader-rank.gold   { color: #c9a227; }
         .leader-rank.silver { color: #9e9e9e; }
         .leader-rank.bronze { color: #b87333; }
         .leader-name { font-weight: 700; flex: 1; font-size: 0.88em; }
-        .leader-team {
-            font-size: 0.75em;
-            color: #6c757d;
-            background: #e9ecef;
-            padding: 2px 7px;
-            border-radius: 4px;
-            font-weight: 700;
-        }
-        .leader-val {
-            font-weight: 800;
-            color: #c41e3a;
-            font-size: 0.9em;
-            min-width: 50px;
-            text-align: right;
-        }
-
-        /* Roster page */
-        .roster-sections { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-        @media (max-width: 768px) { .roster-sections { grid-template-columns: 1fr; } }
-
-        /* Game log link style */
-        .game-link {
-            color: #1e3c72;
-            font-weight: 700;
-            text-decoration: none;
-            border-bottom: 1px dashed #adb5bd;
-        }
-        .game-link:hover { color: #c41e3a; border-bottom-color: #c41e3a; }
-
-        /* Error / empty states */
-        .empty-state {
-            text-align: center;
-            padding: 60px 20px;
-            color: #6c757d;
-        }
+        .leader-team { font-size: 0.75em; color: #6c757d; background: #e9ecef; padding: 2px 7px; border-radius: 4px; font-weight: 700; }
+        .leader-val { font-weight: 800; color: #c41e3a; font-size: 0.9em; min-width: 50px; text-align: right; }
+        .empty-state { text-align: center; padding: 60px 20px; color: #6c757d; }
         .empty-state .icon { font-size: 3em; margin-bottom: 12px; }
         .empty-state h3 { font-size: 1.1em; margin-bottom: 6px; color: #495057; }
-        .error-state {
-            background: #fff5f5;
-            border: 1px solid #f8d7da;
-            border-radius: 8px;
-            padding: 20px;
-            color: #842029;
-            font-weight: 600;
-            margin: 20px 0;
-        }
-
-        /* Collapsible sections */
-        .section-toggle {
-            background: none;
-            border: none;
-            cursor: pointer;
-            color: #6c757d;
-            font-size: 1em;
-            padding: 0 4px;
-            transition: transform 0.2s;
-            flex-shrink: 0;
-        }
-        .section-toggle.collapsed { transform: rotate(-90deg); }
-        .section-toggle:hover { color: #1e3c72; }
-
-        /* Responsive */
-        @media (max-width: 768px) {
-            .header { flex-direction: column; gap: 12px; }
-            .nav-tab { font-size: 0.78em; padding: 7px 12px; }
-        }
+        .error-state { background: #fff5f5; border: 1px solid #f8d7da; border-radius: 8px; padding: 20px; color: #842029; font-weight: 600; margin: 20px 0; }
+        @media (max-width: 768px) { .header { flex-direction: column; gap: 12px; } .nav-tab { font-size: 0.78em; padding: 7px 12px; } }
     </style>
 </head>
 <body>
 <div class="container">
 
-    <!-- Header -->
     <div class="header">
         <div class="header-left">
             <h1>⚾ Buster League Results</h1>
-            <p id="header-sub">Diamond Mind Baseball — Season Reports</p>
+            <p id="header-sub">Diamond Mind Baseball — Current Week</p>
         </div>
         <div class="header-right">
             <a href="myteam.html" class="btn btn-ghost">My Team →</a>
         </div>
     </div>
 
-    <!-- Week selector -->
-    <div class="week-bar">
-        <label>Season Week</label>
-        <select class="week-select" id="week-select" onchange="loadWeek(this.value)">
-            <option value="">— Select a week —</option>
-        </select>
+    <div class="loading-bar">
         <div class="loading-indicator" id="loading">
             <div class="spinner"></div> Loading…
         </div>
-        <span class="week-status" id="week-status"></span>
+        <span id="load-status" style="font-size:0.85em;color:#6c757d;font-weight:600;"></span>
     </div>
 
-    <!-- Section nav tabs -->
     <div class="nav-tabs" id="nav-tabs" style="display:none;">
         <button class="nav-tab active" onclick="showSection('standings')">📊 Standings</button>
         <button class="nav-tab" onclick="showSection('results')">🎯 Game Results</button>
@@ -400,15 +101,13 @@
         <button class="nav-tab" onclick="showSection('teams')">🏟 Teams</button>
     </div>
 
-    <!-- Team sub-nav (shown when Teams tab is active) -->
     <div class="team-nav" id="team-nav"></div>
 
-    <!-- Content area -->
     <div id="content-area">
         <div class="empty-state">
             <div class="icon">⚾</div>
-            <h3>Select a week to view results</h3>
-            <p>Choose a week from the dropdown above to load standings, game results, and stats.</p>
+            <h3>Loading current week data…</h3>
+            <p>Reading from dmb/current/</p>
         </div>
     </div>
 
@@ -416,138 +115,71 @@
 
 <script>
 // ═══════════════════════════════════════════════════════════════
-// CONFIGURATION — add new weeks here each week.
-// Folder names match exactly what you create in your repo.
-// The dropdown label IS the folder name, so name them however
-// you like: 'week-1', 'week-2', etc.
-// Add new weeks to the END of this array.
+// CONFIG — update these paths if your folder structure changes
 // ═══════════════════════════════════════════════════════════════
-const WEEKS = [
-    'week-1',
-    'week-2',
-    'week-3',
-    'week-4',
-    'week-5',
-    'week-6',
-    'week-7',
-];
-
-// Folder inside your repo where DMB files live.
-// Org/team files always served from dmb/current/
-// Game box score files always served from dmb/games/
-const DMB_BASE = 'dmb';
-const DMB_CURRENT = `${DMB_BASE}/current`;
-const DMB_GAMES   = `${DMB_BASE}/games`;
+const DMB_CURRENT = 'dmb/current';
+const DMB_GAMES   = 'dmb/games';
 
 // ═══════════════════════════════════════════════════════════════
 // State
 // ═══════════════════════════════════════════════════════════════
-let currentWeek   = null;
 let currentSection = 'standings';
-let fileCache     = {};   // { path: htmlText }
-let teamList      = [];   // populated from lgindex files
+let fileCache      = {};
+let teamList       = [];
 
 // ═══════════════════════════════════════════════════════════════
-// Init
+// Init — load on page open
 // ═══════════════════════════════════════════════════════════════
-(function init() {
-    const sel = document.getElementById('week-select');
-    WEEKS.forEach((folder, i) => {
-        const opt = document.createElement('option');
-        opt.value = folder;
-        opt.textContent = weekLabel(folder);
-        sel.appendChild(opt);
-    });
+window.addEventListener('DOMContentLoaded', () => loadCurrent());
 
-    // Default to most recent week
-    const latest = WEEKS[WEEKS.length - 1];
-    if (latest) {
-        sel.value = latest;
-        loadWeek(latest);
+async function loadCurrent() {
+    setLoading(true);
+    setStatus('');
+
+    const indexText = await fetchFile('index.htm');
+    if (!indexText) {
+        setLoading(false);
+        showError(`Could not load data from ${DMB_CURRENT}/. Make sure your DMB files are uploaded to dmb/current/.`);
+        return;
     }
-})();
 
-function weekLabel(folder) {
-    return folder.replace(/^week-(\d+)$/i, (_, n) => `Week ${n}`);
+    await buildTeamList();
+    document.getElementById('nav-tabs').style.display = 'flex';
+    setLoading(false);
+    setStatus('Current week loaded');
+    showSection('standings');
 }
 
 // ═══════════════════════════════════════════════════════════════
-// File fetching
+// File fetching — org files from dmb/current/, game files from dmb/games/
 // ═══════════════════════════════════════════════════════════════
-
-// Game box score filenames are 13-digit timestamps: e.g. 2025040500000.htm
 function isGameFile(filename) {
     return /^\d{13}\.htm$/i.test(filename);
 }
 
-async function fetchFile(folder, filename) {
-    // Route: game files → dmb/games/, everything else → dmb/current/
-    const url = isGameFile(filename)
-        ? `${DMB_GAMES}/${filename}`
-        : `${DMB_CURRENT}/${filename}`;
-
+async function fetchFile(filename) {
+    const url = isGameFile(filename) ? `${DMB_GAMES}/${filename}` : `${DMB_CURRENT}/${filename}`;
     if (fileCache[url]) return fileCache[url];
-
     try {
         const res = await fetch(url);
         if (!res.ok) return null;
         const text = await res.text();
         fileCache[url] = text;
         return text;
-    } catch(e) {
-        return null;
-    }
+    } catch(e) { return null; }
 }
 
 function parseHTML(text) {
-    const parser = new DOMParser();
-    return parser.parseFromString(text, 'text/html');
+    return new DOMParser().parseFromString(text, 'text/html');
 }
 
-// ═══════════════════════════════════════════════════════════════
-// Week loader
-// ═══════════════════════════════════════════════════════════════
-async function loadWeek(folder) {
-    if (!folder) return;
-    currentWeek = folder;
-
-    setLoading(true);
-    document.getElementById('week-status').textContent = '';
-
-    // Load the index to confirm current/ is populated
-    const indexText = await fetchFile(folder, 'index.htm');
-    if (!indexText) {
-        setLoading(false);
-        showError(`Could not load week data from ${DMB_CURRENT}/. Make sure the org/team files are uploaded to dmb/current/.`);
-        return;
-    }
-
-    // Parse teams from league index files
-    await buildTeamList(folder);
-
-    // Update header
-    document.getElementById('header-sub').textContent =
-        `Diamond Mind Baseball — ${weekLabel(folder)}`;
-    document.getElementById('week-status').textContent =
-        `${weekLabel(folder)} loaded`;
-
-    // Show nav
-    document.getElementById('nav-tabs').style.display = 'flex';
-
-    setLoading(false);
-
-    // Show current section (default standings)
-    showSection(currentSection);
-}
-
-async function buildTeamList(folder) {
+async function buildTeamList() {
     teamList = [];
     for (const lgFile of ['lgindex1.htm', 'lgindex2.htm']) {
-        const text = await fetchFile(folder, lgFile);
+        const text = await fetchFile(lgFile);
         if (!text) continue;
         const doc = parseHTML(text);
-        const links = doc.querySelectorAll('a[href*="tmindex"]');
-        links.forEach(a => {
+        doc.querySelectorAll('a[href*="tmindex"]').forEach(a => {
             const href = a.getAttribute('href');
             const name = a.textContent.trim();
             if (href && name) teamList.push({ href, name });
@@ -561,15 +193,11 @@ async function buildTeamList(folder) {
 function showSection(section) {
     currentSection = section;
 
-    // Update tab styles
     document.querySelectorAll('.nav-tab').forEach(t => {
         t.classList.remove('active');
-        if (t.getAttribute('onclick') && t.getAttribute('onclick').includes(`'${section}'`)) {
-            t.classList.add('active');
-        }
+        if (t.getAttribute('onclick') && t.getAttribute('onclick').includes(`'${section}'`)) t.classList.add('active');
     });
 
-    // Show/hide team nav
     const teamNav = document.getElementById('team-nav');
     if (section === 'teams') {
         buildTeamNav();
@@ -577,8 +205,6 @@ function showSection(section) {
     } else {
         teamNav.classList.remove('show');
     }
-
-    if (!currentWeek) return;
 
     const fileMap = {
         'standings':    'orgstand.htm',
@@ -593,16 +219,13 @@ function showSection(section) {
         'transactions': 'orgtxnlog.htm',
     };
 
-    if (section === 'teams') {
-        renderTeamList();
-        return;
-    }
+    if (section === 'teams') { renderTeamList(); return; }
 
     const file = fileMap[section];
     if (!file) return;
 
     setLoading(true);
-    fetchFile(currentWeek, file).then(text => {
+    fetchFile(file).then(text => {
         setLoading(false);
         if (!text) { showError(`Could not load ${file} from dmb/current/.`); return; }
         renderSection(section, text);
@@ -621,47 +244,40 @@ function buildTeamNav() {
         btn.textContent = t.name;
         btn.dataset.href = t.href;
         btn.addEventListener('click', function() {
-            loadTeamPage(this.dataset.href, this);
+            document.querySelectorAll('.team-chip').forEach(c => c.classList.remove('active'));
+            this.classList.add('active');
+            loadTeamPage(this.dataset.href);
         });
         nav.appendChild(btn);
     });
-    if (teamList.length) loadTeamPage(teamList[0].href, nav.querySelectorAll('.team-chip')[0]);
+    if (teamList.length) loadTeamPage(teamList[0].href);
 }
 
-async function loadTeamPage(tmIndexFile, chipEl) {
-    document.querySelectorAll('.team-chip').forEach(c => c.classList.remove('active'));
-    if (chipEl) chipEl.classList.add('active');
-
+async function loadTeamPage(tmIndexFile) {
     setLoading(true);
-    const text = await fetchFile(currentWeek, tmIndexFile);
+    const text = await fetchFile(tmIndexFile);
     setLoading(false);
     if (!text) { showError('Could not load team page.'); return; }
 
     const doc = parseHTML(text);
     const h2 = doc.querySelector('h2');
     const teamName = h2 ? h2.textContent.trim() : 'Team';
-    const links = doc.querySelectorAll('a[href]');
     const pages = [];
-    links.forEach(a => {
+    doc.querySelectorAll('a[href]').forEach(a => {
         const href = a.getAttribute('href');
         const label = a.textContent.trim();
-        if (href && href.startsWith('tm') && !href.startsWith('tmindex') && label) {
-            pages.push({ href, label });
-        }
+        if (href && href.startsWith('tm') && !href.startsWith('tmindex') && label) pages.push({ href, label });
     });
-
-    renderTeamHub(teamName, pages, tmIndexFile);
+    renderTeamHub(teamName, pages);
 }
 
-async function renderTeamHub(teamName, pages, tmIndexFile) {
-    let html = `
+function renderTeamHub(teamName, pages) {
+    document.getElementById('content-area').innerHTML = `
         <div class="card">
             <div class="card-title">${escHtml(teamName)}</div>
             <div id="team-page-btns" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;margin-bottom:20px;"></div>
         </div>
-        <div id="team-sub-content"></div>
-    `;
-    document.getElementById('content-area').innerHTML = html;
+        <div id="team-sub-content"></div>`;
 
     const btnContainer = document.getElementById('team-page-btns');
     pages.forEach((p, i) => {
@@ -674,15 +290,14 @@ async function renderTeamHub(teamName, pages, tmIndexFile) {
         btn.addEventListener('click', function() { loadTeamSubPage(this.dataset.href, teamName); });
         btnContainer.appendChild(btn);
     });
-
     if (pages.length) loadTeamSubPage(pages[0].href, teamName);
 }
 
 async function loadTeamSubPage(filename, teamName) {
     setLoading(true);
-    const text = await fetchFile(currentWeek, filename);
+    const text = await fetchFile(filename);
     setLoading(false);
-    if (!text) { document.getElementById('team-sub-content').innerHTML = '<div class="error-state">Could not load file.</div>'; return; }
+    if (!text) { const sub = document.getElementById('team-sub-content'); if (sub) sub.innerHTML = '<div class="error-state">Could not load file.</div>'; return; }
     renderTeamSubPage(filename, teamName, text);
 }
 
@@ -706,575 +321,20 @@ function renderSection(section, text) {
     }
 }
 
-// ── Standings ──
 function renderStandings(doc) {
     const tables = doc.querySelectorAll('table');
-    let html = `<div class="card"><div class="card-title">Standings <span>${weekLabel(currentWeek)}</span></div>`;
+    let html = `<div class="card"><div class="card-title">Standings <span>Current Week</span></div>`;
 
     tables.forEach(table => {
         const titleRow = table.querySelector('tr.dmrptsecttitle');
         const sectionName = titleRow ? titleRow.textContent.trim() : '';
         if (!sectionName) return;
 
-        html += `<h3 style="font-size:0.85em;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;
-                            color:#1e3c72;margin:20px 0 10px;padding-bottom:6px;border-bottom:1px solid #e9ecef;">
-                    ${escHtml(sectionName)}
-                 </h3>`;
+        html += `<h3 style="font-size:0.85em;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:#1e3c72;margin:20px 0 10px;padding-bottom:6px;border-bottom:1px solid #e9ecef;">${escHtml(sectionName)}</h3>`;
         html += `<div class="dmb-wrap"><table class="dmb-table">`;
 
-        const rows = table.querySelectorAll('tr');
-        rows.forEach((row, ri) => {
-            if (row.classList.contains('dmrptsecttitle')) return;
-
-            const cells = row.querySelectorAll('td');
-            if (!cells.length) return;
-
-            if (row.classList.contains('dmrptsecthdr')) {
-                html += '<thead><tr>';
-                cells.forEach(td => {
-                    html += `<th>${escHtml(td.textContent.trim())}</th>`;
-                });
-                html += '</tr></thead><tbody>';
-                return;
-            }
-
-            const isBlank = Array.from(cells).every(td => !td.textContent.trim() || td.textContent.trim() === '\u00a0');
-            if (isBlank) return;
-
-            const firstText = cells[0] ? cells[0].textContent.trim() : '';
-            const isLeagueHeader = firstText === 'American' || firstText === 'National';
-            const isDivHeader = ['East','West','North','South','Central'].includes(firstText);
-
-            if (isLeagueHeader || isDivHeader) {
-                html += `<tr class="dmb-section-subheader"><td colspan="${cells.length}" style="padding:6px 12px;background:#f0f4fb;font-weight:800;color:#1e3c72;font-size:0.82em;letter-spacing:1px;text-transform:uppercase;">${escHtml(firstText)}</td></tr>`;
-                return;
-            }
-
-            html += '<tr>';
-            cells.forEach((td, ci) => {
-                let val = td.textContent.trim().replace(/\u00a0/g, '');
-                if (!val) { html += '<td></td>'; return; }
-
-                if (ci === 4 && val.startsWith('.')) {
-                    const pct = parseFloat(val);
-                    const cls = pct >= 0.550 ? 'pct-high' : pct <= 0.450 ? 'pct-low' : 'pct-mid';
-                    html += `<td><span class="${cls}">${escHtml(val)}</span></td>`;
-                    return;
-                }
-                if (ci === 9 && /^[wlWL]+$/.test(val)) {
-                    const colored = val.split('').map(c =>
-                        c.toLowerCase() === 'w'
-                            ? `<span style="color:#155724;font-weight:700;">W</span>`
-                            : `<span style="color:#842029;">L</span>`
-                    ).join('');
-                    html += `<td style="font-family:monospace;font-size:0.85em;letter-spacing:1px;">${colored}</td>`;
-                    return;
-                }
-                html += `<td>${escHtml(val)}</td>`;
-            });
-            html += '</tr>';
-        });
-
-        html += '</tbody></table></div>';
-    });
-
-    html += '</div>';
-    document.getElementById('content-area').innerHTML = html;
-}
-
-// ── Game Results ──
-function renderGameResults(doc) {
-    const table = doc.querySelector('table');
-    if (!table) { showError('No game results found.'); return; }
-
-    let html = `<div class="card">
-        <div class="card-title">Game Results <span>${weekLabel(currentWeek)}</span></div>
-        <p style="font-size:0.82em;color:#6c757d;margin-bottom:12px;">Click a date to view the full box score.</p>
-        <div class="dmb-wrap"><table class="dmb-table">`;
-
-    const rows = table.querySelectorAll('tr');
-    let inBody = false;
-    rows.forEach(row => {
-        if (row.classList.contains('dmrptsecttitle')) return;
-        if (row.classList.contains('dmrptsecthdr')) {
-            html += '<thead><tr>';
-            row.querySelectorAll('td').forEach(td => {
-                html += `<th>${escHtml(td.textContent.trim())}</th>`;
-            });
-            html += '</tr></thead><tbody>';
-            inBody = true;
-            return;
-        }
-        if (!inBody) return;
-
-        const cells = row.querySelectorAll('td');
-        if (!cells.length) return;
-        const isBlank = Array.from(cells).every(td => !td.textContent.trim() || td.textContent.trim() === '\u00a0');
-        if (isBlank) return;
-
-        html += '<tr>';
-        cells.forEach((td, ci) => {
-            const val = td.textContent.trim().replace(/\u00a0/g, '');
-            const link = td.querySelector('a');
-
-            if (ci === 0 && link) {
-                const gameFile = link.getAttribute('href');
-                html += `<td><button onclick="openBoxScore('${escHtml(gameFile)}')"
-                    style="background:none;border:none;color:#1e3c72;font-weight:700;font-size:inherit;
-                           cursor:pointer;text-decoration:underline;padding:0;font-family:inherit;"
-                    >${escHtml(val)}</button></td>`;
-            } else if (ci === 4) {
-                const cls = val === 'W' ? 'badge-w' : val === 'L' ? 'badge-l' : 'badge-t';
-                html += `<td><span class="${cls}">${escHtml(val || '—')}</span></td>`;
-            } else {
-                html += `<td>${escHtml(val || '')}</td>`;
-            }
-        });
-        html += '</tr>';
-    });
-
-    html += '</tbody></table></div></div>';
-
-    if (!document.getElementById('boxscore-modal')) {
-        document.body.insertAdjacentHTML('beforeend', `
-            <div id="boxscore-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);
-                 z-index:2000;overflow-y:auto;padding:20px;" onclick="closeBoxScore(event)">
-                <div id="boxscore-inner" style="max-width:900px;margin:0 auto;background:white;
-                     border-radius:16px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.4);">
-                </div>
-            </div>
-        `);
-    }
-
-    document.getElementById('content-area').innerHTML = html;
-}
-
-// ── Box Score — opens game file from dmb/games/ ──
-async function openBoxScore(gameFile) {
-    window.open(`${DMB_GAMES}/${gameFile}`, '_blank');
-}
-
-function closeBoxScore(e) {
-    if (e && e.target !== document.getElementById('boxscore-modal')) return;
-    document.getElementById('boxscore-modal').style.display = 'none';
-    document.body.style.overflow = '';
-}
-
-function renderBoxScore(rawText) {
-    const preMatch = rawText.match(/<pre>([\s\S]*?)<\/pre>/i);
-    if (!preMatch) return `<div style="padding:20px;">Could not parse box score.</div>`;
-
-    const full = preMatch[1].replace(/\r\n/g, '\n');
-    const parts = full.split('\f');
-    const boxRaw = parts[0].trim();
-    const pbpRaw = parts[1] ? parts[1].trim() : '';
-
-    const lines = boxRaw.split('\n');
-    const headerLine = lines[0].trim();
-    const headerParts = headerLine.split(',').map(s => s.trim());
-    const dateStr   = headerParts[0] || '';
-    const matchup   = headerParts[1] || '';
-    const venue     = headerParts.slice(2).join(',').trim();
-
-    const lsHeader = lines[2] || '';
-    const lsAway   = lines[3] || '';
-    const lsHome   = lines[4] || '';
-
-    let batterSection = '', awayPitchers = '', homePitchers = '', notes = '';
-    let mode = 'scan';
-    const bodyLines = lines.slice(5);
-
-    bodyLines.forEach(line => {
-        const t = line.trimEnd();
-        if (t.includes('AB  R  H BI')) { mode = 'batting'; batterSection += t + '\n'; return; }
-        if (t.includes('INN  H  R ER')) {
-            if (!awayPitchers) { mode = 'away_pitch'; awayPitchers += t + '\n'; }
-            else               { mode = 'home_pitch'; homePitchers += t + '\n'; }
-            return;
-        }
-        if (mode !== 'notes' && t.match(/^[A-Z][a-z]{1,2}:|^E-|^2B-|^HR-|^RBI-|^SB-|^CS-|^WP-|^BALK|^GWRBI|^HBP|^Temp/)) {
-            mode = 'notes';
-        }
-        if (mode === 'batting')         batterSection  += t + '\n';
-        else if (mode === 'away_pitch') awayPitchers   += t + '\n';
-        else if (mode === 'home_pitch') homePitchers   += t + '\n';
-        else if (mode === 'notes')      notes          += t + '\n';
-    });
-
-    function buildLineScore() {
-        const parseTeamRow = (row) => {
-            if (!row.trim()) return null;
-            const name = row.substring(0, 22).trim();
-            const rest = row.substring(22).trim().split(/\s+/);
-            return { name, cols: rest };
-        };
-        const away = parseTeamRow(lsAway);
-        const home = parseTeamRow(lsHome);
-        if (!away || !home) return '';
-
-        const numInnings = away.cols.length;
-        const statCount = 4;
-        const inningCount = numInnings - statCount;
-
-        let t = `<table style="width:100%;border-collapse:collapse;font-size:0.88em;font-family:monospace;">
-            <thead><tr style="background:#1e3c72;color:white;">
-                <th style="padding:8px 12px;text-align:left;min-width:140px;">Team</th>`;
-        for (let i = 1; i <= inningCount; i++) {
-            t += `<th style="padding:8px 6px;text-align:center;width:28px;">${i}</th>`;
-        }
-        t += `<th style="padding:8px 10px;text-align:center;border-left:2px solid rgba(255,255,255,0.3);">R</th>
-              <th style="padding:8px 6px;text-align:center;">H</th>
-              <th style="padding:8px 6px;text-align:center;">E</th>
-              <th style="padding:8px 6px;text-align:center;">LOB</th>
-            </tr></thead><tbody>`;
-
-        [away, home].forEach((team, ti) => {
-            const bg = ti === 0 ? '#f8f9fa' : 'white';
-            t += `<tr style="background:${bg};">
-                <td style="padding:8px 12px;font-weight:700;font-family:'DM Sans',sans-serif;">${escHtml(team.name)}</td>`;
-            for (let i = 0; i < inningCount; i++) {
-                const v = team.cols[i] || '';
-                t += `<td style="padding:8px 6px;text-align:center;">${v === 'x' ? '<span style="color:#adb5bd;">x</span>' : escHtml(v)}</td>`;
-            }
-            for (let i = inningCount; i < inningCount + 4; i++) {
-                const v = team.cols[i] || '';
-                const isBold = i === inningCount;
-                t += `<td style="padding:8px 10px;text-align:center;${isBold ? 'font-weight:800;font-size:1.05em;border-left:2px solid #dee2e6;' : ''}">${escHtml(v)}</td>`;
-            }
-            t += '</tr>';
-        });
-        t += '</tbody></table>';
-        return t;
-    }
-
-    function buildBatterTables() {
-        if (!batterSection) return '';
-        const bLines = batterSection.split('\n');
-        const headerIdx = bLines.findIndex(l => l.includes('AB  R  H BI'));
-        if (headerIdx < 0) return '';
-
-        const headerRow = bLines[headerIdx];
-        const splitMatch = headerRow.match(/AVG\s{2,}(\S)/);
-        let splitCol = headerRow.indexOf('AVG') + 3;
-        if (splitMatch) splitCol = headerRow.indexOf(splitMatch[0]) + splitMatch[0].length - 1;
-
-        const awayTeam = headerRow.substring(0, splitCol).split(/\s{2,}/)[0].trim();
-        const homeTeam = headerRow.substring(splitCol).split(/\s{2,}/)[0].trim();
-
-        const awayBatters = [], homeBatters = [];
-        bLines.slice(headerIdx + 1).forEach(line => {
-            if (!line.trim()) return;
-            const isTotalsLine = line.match(/^\s{10,}\d+\s+\d+\s+\d+\s+\d+\s*$/);
-            if (isTotalsLine) {
-                const left  = line.substring(0, splitCol).trim();
-                const right = line.substring(splitCol).trim();
-                if (left)  awayBatters.push({ totals: true, raw: left });
-                if (right) homeBatters.push({ totals: true, raw: right });
-                return;
-            }
-            const left  = line.substring(0, splitCol);
-            const right = line.substring(splitCol);
-            if (left.trim())  awayBatters.push({ totals: false, raw: left });
-            if (right.trim()) homeBatters.push({ totals: false, raw: right });
-        });
-
-        function parseBatterLine(raw) {
-            raw = raw.trimEnd();
-            if (raw.match(/^\s*\d+\s+\d+\s+\d+\s+\d+\s*$/)) {
-                const t = raw.trim().split(/\s+/);
-                return { totals: true, ab: t[0], r: t[1], h: t[2], bi: t[3] };
-            }
-            const namePos = raw.substring(0, 22).trim();
-            const stats   = raw.substring(22).trim().split(/\s+/);
-            if (stats.length >= 5) {
-                return { name: namePos, ab: stats[0], r: stats[1], h: stats[2], bi: stats[3], avg: stats[4] };
-            }
-            return { name: raw.trim() };
-        }
-
-        function renderBatterTable(batters, teamName) {
-            let t = `<div style="flex:1;min-width:280px;">
-                <div style="background:#1e3c72;color:white;padding:8px 12px;font-weight:800;font-size:0.8em;letter-spacing:1px;text-transform:uppercase;">${escHtml(teamName)}</div>
-                <table style="width:100%;border-collapse:collapse;font-size:0.82em;">
-                <thead><tr style="background:#e8eef8;color:#1e3c72;">
-                    <th style="padding:6px 10px;text-align:left;">Batter</th>
-                    <th style="padding:6px 6px;text-align:center;">AB</th>
-                    <th style="padding:6px 6px;text-align:center;">R</th>
-                    <th style="padding:6px 6px;text-align:center;">H</th>
-                    <th style="padding:6px 6px;text-align:center;">BI</th>
-                    <th style="padding:6px 8px;text-align:center;">AVG</th>
-                </tr></thead><tbody>`;
-
-            batters.forEach(b => {
-                const p = parseBatterLine(b.raw);
-                if (b.totals || p.totals) {
-                    t += `<tr style="background:#f0f4fb;font-weight:800;border-top:2px solid #dee2e6;">
-                        <td style="padding:5px 10px;">Totals</td>
-                        <td style="padding:5px 6px;text-align:center;">${p.ab||''}</td>
-                        <td style="padding:5px 6px;text-align:center;">${p.r||''}</td>
-                        <td style="padding:5px 6px;text-align:center;">${p.h||''}</td>
-                        <td style="padding:5px 6px;text-align:center;">${p.bi||''}</td>
-                        <td style="padding:5px 8px;text-align:center;"></td>
-                    </tr>`;
-                } else if (p.name) {
-                    const isPH = b.raw.startsWith(' ');
-                    t += `<tr style="border-bottom:1px solid #f0f0f0;${isPH ? 'color:#6c757d;font-style:italic;' : ''}">
-                        <td style="padding:5px 10px;font-weight:600;white-space:nowrap;">${escHtml(p.name)}</td>
-                        <td style="padding:5px 6px;text-align:center;">${p.ab||'—'}</td>
-                        <td style="padding:5px 6px;text-align:center;">${p.r||'—'}</td>
-                        <td style="padding:5px 6px;text-align:center;">${p.h||'—'}</td>
-                        <td style="padding:5px 6px;text-align:center;">${p.bi||'—'}</td>
-                        <td style="padding:5px 8px;text-align:center;color:#6c757d;">${p.avg||'—'}</td>
-                    </tr>`;
-                }
-            });
-            t += '</tbody></table></div>';
-            return t;
-        }
-
-        return `<div style="display:flex;gap:16px;flex-wrap:wrap;">
-            ${renderBatterTable(awayBatters, awayTeam)}
-            ${renderBatterTable(homeBatters, homeTeam)}
-        </div>`;
-    }
-
-    function buildPitcherTable(raw) {
-        if (!raw) return '';
-        const pLines = raw.split('\n').filter(l => l.trim());
-        const teamName = pLines[0].split(/\s{3,}/)[0].trim();
-
-        let t = `<div style="flex:1;min-width:260px;">
-            <div style="background:#1e3c72;color:white;padding:8px 12px;font-weight:800;font-size:0.8em;letter-spacing:1px;text-transform:uppercase;">${escHtml(teamName)}</div>
-            <table style="width:100%;border-collapse:collapse;font-size:0.82em;">
-            <thead><tr style="background:#e8eef8;color:#1e3c72;">
-                <th style="padding:6px 10px;text-align:left;">Pitcher</th>
-                <th style="padding:6px 6px;text-align:center;">IP</th>
-                <th style="padding:6px 6px;text-align:center;">H</th>
-                <th style="padding:6px 6px;text-align:center;">R</th>
-                <th style="padding:6px 6px;text-align:center;">ER</th>
-                <th style="padding:6px 6px;text-align:center;">BB</th>
-                <th style="padding:6px 6px;text-align:center;">K</th>
-                <th style="padding:6px 8px;text-align:center;">ERA</th>
-            </tr></thead><tbody>`;
-
-        pLines.slice(1).forEach(line => {
-            if (!line.trim()) return;
-            if (line.match(/^\s{20,}[\d.]+\s+\d+\s+\d+\s+\d+\s+\d+\s+\d+/)) {
-                const nums = line.trim().split(/\s+/);
-                t += `<tr style="background:#f0f4fb;font-weight:800;border-top:2px solid #dee2e6;">
-                    <td style="padding:5px 10px;">Totals</td>
-                    <td style="padding:5px 6px;text-align:center;">${nums[0]||''}</td>
-                    <td style="padding:5px 6px;text-align:center;">${nums[1]||''}</td>
-                    <td style="padding:5px 6px;text-align:center;">${nums[2]||''}</td>
-                    <td style="padding:5px 6px;text-align:center;">${nums[3]||''}</td>
-                    <td style="padding:5px 6px;text-align:center;">${nums[4]||''}</td>
-                    <td style="padding:5px 6px;text-align:center;">${nums[5]||''}</td>
-                    <td style="padding:5px 8px;text-align:center;"></td>
-                </tr>`;
-                return;
-            }
-            const namePart = line.substring(0, 17).trim();
-            const rest     = line.substring(17).trim();
-            const decMatch = rest.match(/^(W|L|S)\s+([\d]+-[\d]+)\s+(.*)/);
-            let decision = '', statsStr = '';
-            if (decMatch) {
-                const dec = decMatch[1];
-                statsStr  = decMatch[3];
-                decision  = `<span style="font-size:0.75em;font-weight:800;padding:1px 5px;border-radius:3px;
-                    background:${dec==='W'?'#d1e7dd':dec==='L'?'#f8d7da':'#fff3cd'};
-                    color:${dec==='W'?'#0a3622':dec==='L'?'#58151c':'#664d03'};">${dec}</span>`;
-            } else {
-                statsStr = rest;
-            }
-            const stats = statsStr.trim().split(/\s+/);
-            if (stats.length >= 7 && namePart) {
-                t += `<tr style="border-bottom:1px solid #f0f0f0;">
-                    <td style="padding:5px 10px;font-weight:600;white-space:nowrap;">${escHtml(namePart)} ${decision}</td>
-                    <td style="padding:5px 6px;text-align:center;">${stats[0]||'—'}</td>
-                    <td style="padding:5px 6px;text-align:center;">${stats[1]||'—'}</td>
-                    <td style="padding:5px 6px;text-align:center;">${stats[2]||'—'}</td>
-                    <td style="padding:5px 6px;text-align:center;">${stats[3]||'—'}</td>
-                    <td style="padding:5px 6px;text-align:center;">${stats[4]||'—'}</td>
-                    <td style="padding:5px 6px;text-align:center;">${stats[5]||'—'}</td>
-                    <td style="padding:5px 8px;text-align:center;color:#c41e3a;font-weight:700;">${stats[8]||stats[6]||'—'}</td>
-                </tr>`;
-            }
-        });
-        t += '</tbody></table></div>';
-        return t;
-    }
-
-    function buildPBP() {
-        if (!pbpRaw) return '';
-        const pbpLines = pbpRaw.split('\n');
-        let html = '';
-        pbpLines.forEach(line => {
-            const trimmed = line.trim();
-            if (!trimmed) return;
-            if (trimmed.startsWith('**')) {
-                const inning = trimmed.replace(/\*/g, '').trim();
-                html += `<div style="background:#1e3c72;color:white;padding:6px 14px;font-weight:800;
-                          font-size:0.78em;letter-spacing:1px;text-transform:uppercase;margin-top:8px;">
-                          ${escHtml(inning)}</div>`;
-            } else if (trimmed.match(/^\d+-\d+\s+\d+/)) {
-                const m = trimmed.match(/^(\d+-\d+)\s+(\d+)\s+(\S+)\s+(\d+)\s+(.*)$/);
-                if (m) {
-                    const [_, score, outs, bases, count, desc] = m;
-                    const outDots = '●'.repeat(parseInt(outs)) + '○'.repeat(Math.max(0, 2 - parseInt(outs)));
-                    html += `<div style="display:flex;gap:10px;padding:4px 14px;border-bottom:1px solid #f0f0f0;font-size:0.82em;align-items:baseline;">
-                        <span style="color:#6c757d;font-family:monospace;min-width:45px;">${escHtml(score)}</span>
-                        <span style="color:#c41e3a;font-size:0.85em;min-width:22px;">${outDots}</span>
-                        <span style="color:#1e3c72;font-family:monospace;min-width:35px;font-size:0.85em;">${escHtml(bases)}</span>
-                        <span style="flex:1;">${escHtml(desc)}</span>
-                    </div>`;
-                } else {
-                    html += `<div style="padding:3px 14px;font-size:0.82em;color:#495057;padding-left:126px;">${escHtml(trimmed)}</div>`;
-                }
-            } else if (trimmed.match(/^\s/) || trimmed.includes('now pitching') || trimmed.includes('pinch hitting')) {
-                html += `<div style="padding:2px 14px 2px 126px;font-size:0.8em;color:#6c757d;font-style:italic;">${escHtml(trimmed)}</div>`;
-            } else {
-                html += `<div style="padding:3px 14px;font-size:0.82em;color:#495057;">${escHtml(trimmed)}</div>`;
-            }
-        });
-        return html;
-    }
-
-    return `
-        <div style="background:linear-gradient(135deg,#c41e3a,#d94e59);color:white;padding:20px 24px;
-                    display:flex;justify-content:space-between;align-items:flex-start;">
-            <div>
-                <div style="font-family:'Bebas Neue',sans-serif;font-size:1.5em;letter-spacing:2px;">
-                    ${escHtml(matchup.replace(/\d{4}/g, '').replace(/-/, ' @ '))}
-                </div>
-                <div style="font-size:0.85em;opacity:0.85;margin-top:2px;">
-                    ${escHtml(dateStr)} &nbsp;•&nbsp; ${escHtml(venue)}
-                </div>
-            </div>
-            <button onclick="document.getElementById('boxscore-modal').style.display='none';document.body.style.overflow='';"
-                style="background:rgba(255,255,255,0.2);border:none;color:white;font-size:1.2em;
-                       padding:6px 12px;border-radius:6px;cursor:pointer;font-weight:700;">✕</button>
-        </div>
-        <div style="padding:16px 20px 12px;border-bottom:2px solid #f0f0f0;">
-            <div style="font-size:0.75em;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:#1e3c72;margin-bottom:8px;">Line Score</div>
-            <div style="overflow-x:auto;">${buildLineScore()}</div>
-        </div>
-        <div style="padding:16px 20px 12px;border-bottom:2px solid #f0f0f0;">
-            <div style="font-size:0.75em;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:#1e3c72;margin-bottom:10px;">Batting</div>
-            ${buildBatterTables()}
-        </div>
-        <div style="padding:16px 20px 12px;border-bottom:2px solid #f0f0f0;">
-            <div style="font-size:0.75em;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:#1e3c72;margin-bottom:10px;">Pitching</div>
-            <div style="display:flex;gap:16px;flex-wrap:wrap;">
-                ${buildPitcherTable(awayPitchers)}
-                ${buildPitcherTable(homePitchers)}
-            </div>
-        </div>
-        ${notes ? `<div style="padding:16px 20px 12px;border-bottom:2px solid #f0f0f0;">
-            <div style="font-size:0.75em;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:#1e3c72;margin-bottom:8px;">Game Notes</div>
-            <div style="font-size:0.84em;color:#495057;line-height:1.7;white-space:pre-wrap;">${escHtml(notes.trim())}</div>
-        </div>` : ''}
-        ${pbpRaw ? `<div style="padding:16px 20px 0;">
-            <div style="font-size:0.75em;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;
-                        color:#1e3c72;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;">
-                Play by Play
-                <button onclick="this.closest('div').nextElementSibling.style.display=this.closest('div').nextElementSibling.style.display==='none'?'block':'none';this.textContent=this.textContent==='▾ Hide'?'▸ Show':'▾ Hide';"
-                    style="background:none;border:1px solid #dee2e6;border-radius:4px;padding:2px 10px;
-                           font-size:0.9em;cursor:pointer;color:#495057;">▾ Hide</button>
-            </div>
-            <div style="max-height:400px;overflow-y:auto;border:1px solid #e9ecef;border-radius:8px;margin-bottom:20px;">
-                ${buildPBP()}
-            </div>
-        </div>` : ''}
-    `;
-}
-
-// ── Leaders ──
-function renderLeaders(doc, title) {
-    const groups = [];
-    const allTables = doc.querySelectorAll('table');
-
-    allTables.forEach(table => {
-        const headerCells = table.querySelectorAll('td[colspan="3"]');
-        if (!headerCells.length) return;
-
-        const rows = Array.from(table.querySelectorAll('tr'));
-        rows.forEach(row => {
-            const hdr = row.querySelector('td[colspan="3"]');
-            if (hdr && hdr.textContent.trim()) {
-                const allHdrs = row.querySelectorAll('td[colspan="3"]');
-                allHdrs.forEach(h => {
-                    if (h.textContent.trim()) groups.push({ name: h.textContent.trim(), rows: [] });
-                });
-            } else {
-                const tds = row.querySelectorAll('td');
-                if (tds.length === 0) return;
-                const activeGroups = groups.slice(-3);
-                if (activeGroups.length === 0) return;
-                const colSize = Math.ceil(tds.length / activeGroups.length);
-                activeGroups.forEach((grp, gi) => {
-                    const base = gi * colSize;
-                    const nameTd = tds[base];
-                    const teamTd = tds[base + 1];
-                    const valTd  = tds[base + 2];
-                    if (!nameTd || !teamTd || !valTd) return;
-                    const name = nameTd.textContent.trim().replace(/\u00a0/g, '');
-                    const team = teamTd.textContent.trim().replace(/\u00a0/g, '');
-                    const val  = valTd.textContent.trim().replace(/\u00a0/g, '');
-                    if (name && team && val) grp.rows.push({ name, team, val });
-                });
-            }
-        });
-    });
-
-    if (!groups.length) { renderGenericTable(doc, title); return; }
-
-    let html = `<div class="card">
-        <div class="card-title">${escHtml(title)} <span>${weekLabel(currentWeek)}</span></div>
-        <div class="leaders-grid">`;
-
-    groups.forEach(grp => {
-        if (!grp.rows.length) return;
-        html += `<div class="leader-block">
-            <div class="leader-block-title">${escHtml(grp.name)}</div>`;
-        grp.rows.slice(0, 10).forEach((r, i) => {
-            const rankClass = i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : '';
-            html += `<div class="leader-row">
-                <span class="leader-rank ${rankClass}">${i + 1}</span>
-                <span class="leader-name">${escHtml(r.name)}</span>
-                <span class="leader-team">${escHtml(r.team)}</span>
-                <span class="leader-val">${escHtml(r.val)}</span>
-            </div>`;
-        });
-        html += '</div>';
-    });
-
-    html += '</div></div>';
-    document.getElementById('content-area').innerHTML = html;
-}
-
-// ── Generic table renderer ──
-function renderGenericTable(doc, title) {
-    const tables = doc.querySelectorAll('table');
-    if (!tables.length) { showError('No data found.'); return; }
-
-    let html = `<div class="card">
-        <div class="card-title">${escHtml(title)} <span>${weekLabel(currentWeek)}</span></div>`;
-
-    tables.forEach(table => {
-        const titleRow = table.querySelector('tr.dmrptsecttitle');
-        const subTitle = titleRow ? titleRow.textContent.trim() : '';
-
-        if (subTitle) {
-            html += `<h3 style="font-size:0.82em;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;
-                                color:#1e3c72;margin:18px 0 8px;padding-bottom:5px;border-bottom:1px solid #e9ecef;">
-                        ${escHtml(subTitle)}
-                     </h3>`;
-        }
-
-        html += `<div class="dmb-wrap" style="margin-bottom:16px;"><table class="dmb-table">`;
         let headerDone = false;
-        const rows = table.querySelectorAll('tr');
-        rows.forEach(row => {
+        table.querySelectorAll('tr').forEach(row => {
             if (row.classList.contains('dmrptsecttitle')) return;
             const cells = row.querySelectorAll('td');
             if (!cells.length) return;
@@ -1291,11 +351,29 @@ function renderGenericTable(doc, title) {
                 return;
             }
 
-            if (!headerDone) { html += '<tbody>'; headerDone = true; }
+            const firstText = cells[0] ? cells[0].textContent.trim() : '';
+            const isDivHeader = ['East','West','North','South','Central','American','National'].includes(firstText);
+            if (isDivHeader) {
+                html += `<tr><td colspan="${cells.length}" style="padding:6px 12px;background:#f0f4fb;font-weight:800;color:#1e3c72;font-size:0.82em;letter-spacing:1px;text-transform:uppercase;">${escHtml(firstText)}</td></tr>`;
+                return;
+            }
+
             html += '<tr>';
-            cells.forEach(td => {
-                const val = td.textContent.trim().replace(/\u00a0/g, '');
-                html += `<td>${escHtml(val)}</td>`;
+            cells.forEach((td, ci) => {
+                let val = td.textContent.trim().replace(/\u00a0/g, '');
+                if (!val) { html += '<td></td>'; return; }
+                if (ci === 4 && val.startsWith('.')) {
+                    const pct = parseFloat(val);
+                    const cls = pct >= 0.550 ? 'pct-high' : pct <= 0.450 ? 'pct-low' : 'pct-mid';
+                    html += `<td><span class="${cls}">${escHtml(val)}</span></td>`;
+                } else if (ci === 9 && /^[wlWL]+$/.test(val)) {
+                    const colored = val.split('').map(c => c.toLowerCase() === 'w'
+                        ? `<span style="color:#155724;font-weight:700;">W</span>`
+                        : `<span style="color:#842029;">L</span>`).join('');
+                    html += `<td style="font-family:monospace;font-size:0.85em;letter-spacing:1px;">${colored}</td>`;
+                } else {
+                    html += `<td>${escHtml(val)}</td>`;
+                }
             });
             html += '</tr>';
         });
@@ -1306,40 +384,163 @@ function renderGenericTable(doc, title) {
     document.getElementById('content-area').innerHTML = html;
 }
 
-// ── Team sub-page ──
+function renderGameResults(doc) {
+    const table = doc.querySelector('table');
+    if (!table) { showError('No game results found.'); return; }
+
+    let html = `<div class="card">
+        <div class="card-title">Game Results <span>Current Week</span></div>
+        <p style="font-size:0.82em;color:#6c757d;margin-bottom:12px;">Click a date to view the full box score.</p>
+        <div class="dmb-wrap"><table class="dmb-table">`;
+
+    let inBody = false;
+    table.querySelectorAll('tr').forEach(row => {
+        if (row.classList.contains('dmrptsecttitle')) return;
+        if (row.classList.contains('dmrptsecthdr')) {
+            html += '<thead><tr>';
+            row.querySelectorAll('td').forEach(td => html += `<th>${escHtml(td.textContent.trim())}</th>`);
+            html += '</tr></thead><tbody>';
+            inBody = true;
+            return;
+        }
+        if (!inBody) return;
+        const cells = row.querySelectorAll('td');
+        if (!cells.length) return;
+        const isBlank = Array.from(cells).every(td => !td.textContent.trim() || td.textContent.trim() === '\u00a0');
+        if (isBlank) return;
+
+        html += '<tr>';
+        cells.forEach((td, ci) => {
+            const val = td.textContent.trim().replace(/\u00a0/g, '');
+            const link = td.querySelector('a');
+            if (ci === 0 && link) {
+                const gameFile = link.getAttribute('href');
+                html += `<td><button onclick="openBoxScore('${escHtml(gameFile)}')"
+                    style="background:none;border:none;color:#1e3c72;font-weight:700;font-size:inherit;cursor:pointer;text-decoration:underline;padding:0;font-family:inherit;"
+                    >${escHtml(val)}</button></td>`;
+            } else if (ci === 4) {
+                const cls = val === 'W' ? 'badge-w' : val === 'L' ? 'badge-l' : 'badge-t';
+                html += `<td><span class="${cls}">${escHtml(val || '—')}</span></td>`;
+            } else {
+                html += `<td>${escHtml(val || '')}</td>`;
+            }
+        });
+        html += '</tr>';
+    });
+
+    html += '</tbody></table></div></div>';
+    document.getElementById('content-area').innerHTML = html;
+}
+
+async function openBoxScore(gameFile) {
+    window.open(`${DMB_GAMES}/${gameFile}`, '_blank');
+}
+
+function renderLeaders(doc, title) {
+    const groups = [];
+    doc.querySelectorAll('table').forEach(table => {
+        if (!table.querySelectorAll('td[colspan="3"]').length) return;
+        Array.from(table.querySelectorAll('tr')).forEach(row => {
+            const hdr = row.querySelector('td[colspan="3"]');
+            if (hdr && hdr.textContent.trim()) {
+                row.querySelectorAll('td[colspan="3"]').forEach(h => {
+                    if (h.textContent.trim()) groups.push({ name: h.textContent.trim(), rows: [] });
+                });
+            } else {
+                const tds = row.querySelectorAll('td');
+                if (!tds.length || !groups.length) return;
+                const activeGroups = groups.slice(-3);
+                const colSize = Math.ceil(tds.length / activeGroups.length);
+                activeGroups.forEach((grp, gi) => {
+                    const base = gi * colSize;
+                    const name = tds[base]?.textContent.trim().replace(/\u00a0/g,'');
+                    const team = tds[base+1]?.textContent.trim().replace(/\u00a0/g,'');
+                    const val  = tds[base+2]?.textContent.trim().replace(/\u00a0/g,'');
+                    if (name && team && val) grp.rows.push({ name, team, val });
+                });
+            }
+        });
+    });
+
+    if (!groups.length) { renderGenericTable(doc, title); return; }
+
+    let html = `<div class="card"><div class="card-title">${escHtml(title)} <span>Current Week</span></div><div class="leaders-grid">`;
+    groups.forEach(grp => {
+        if (!grp.rows.length) return;
+        html += `<div class="leader-block"><div class="leader-block-title">${escHtml(grp.name)}</div>`;
+        grp.rows.slice(0, 10).forEach((r, i) => {
+            const rankClass = i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : '';
+            html += `<div class="leader-row">
+                <span class="leader-rank ${rankClass}">${i+1}</span>
+                <span class="leader-name">${escHtml(r.name)}</span>
+                <span class="leader-team">${escHtml(r.team)}</span>
+                <span class="leader-val">${escHtml(r.val)}</span>
+            </div>`;
+        });
+        html += '</div>';
+    });
+    html += '</div></div>';
+    document.getElementById('content-area').innerHTML = html;
+}
+
+function renderGenericTable(doc, title) {
+    const tables = doc.querySelectorAll('table');
+    if (!tables.length) { showError('No data found.'); return; }
+
+    let html = `<div class="card"><div class="card-title">${escHtml(title)} <span>Current Week</span></div>`;
+    tables.forEach(table => {
+        const titleRow = table.querySelector('tr.dmrptsecttitle');
+        const subTitle = titleRow ? titleRow.textContent.trim() : '';
+        if (subTitle) html += `<h3 style="font-size:0.82em;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:#1e3c72;margin:18px 0 8px;padding-bottom:5px;border-bottom:1px solid #e9ecef;">${escHtml(subTitle)}</h3>`;
+
+        html += `<div class="dmb-wrap" style="margin-bottom:16px;"><table class="dmb-table">`;
+        let headerDone = false;
+        table.querySelectorAll('tr').forEach(row => {
+            if (row.classList.contains('dmrptsecttitle')) return;
+            const cells = row.querySelectorAll('td');
+            if (!cells.length) return;
+            const isBlank = Array.from(cells).every(td => !td.textContent.trim() || td.textContent.trim() === '\u00a0');
+            if (isBlank) return;
+
+            if (row.classList.contains('dmrptsecthdr')) {
+                if (!headerDone) { html += '<thead><tr>'; cells.forEach(td => html += `<th>${escHtml(td.textContent.trim())}</th>`); html += '</tr></thead><tbody>'; headerDone = true; }
+                return;
+            }
+            if (!headerDone) { html += '<tbody>'; headerDone = true; }
+            html += '<tr>';
+            cells.forEach(td => html += `<td>${escHtml(td.textContent.trim().replace(/\u00a0/g,''))}</td>`);
+            html += '</tr>';
+        });
+        html += '</tbody></table></div>';
+    });
+    html += '</div>';
+    document.getElementById('content-area').innerHTML = html;
+}
+
 function renderTeamSubPage(filename, teamName, text) {
     const doc = parseHTML(text);
     const h3 = doc.querySelector('h3');
     const subTitle = h3 ? h3.textContent.trim() : filename;
 
-    // Game file links open from dmb/games/
     doc.querySelectorAll('a[href]').forEach(a => {
         const href = a.getAttribute('href');
         if (href && href.match(/^\d+\.htm$/)) {
             a.setAttribute('href', `${DMB_GAMES}/${href}`);
             a.setAttribute('target', '_blank');
-            a.style.cssText = 'color:#1e3c72;font-weight:700;text-decoration:underline;';
         }
     });
 
     const tables = doc.querySelectorAll('table');
-    let html = `<div class="card" style="margin-top:0;">
-        <div class="card-title">${escHtml(subTitle)}</div>`;
+    let html = `<div class="card" style="margin-top:0;"><div class="card-title">${escHtml(subTitle)}</div>`;
 
     tables.forEach(table => {
         const titleRow = table.querySelector('tr.dmrptsecttitle');
         const secTitle = titleRow ? titleRow.textContent.trim() : '';
-        if (secTitle) {
-            html += `<h3 style="font-size:0.82em;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;
-                                color:#1e3c72;margin:18px 0 8px;padding-bottom:5px;border-bottom:1px solid #e9ecef;">
-                        ${escHtml(secTitle)}
-                     </h3>`;
-        }
+        if (secTitle) html += `<h3 style="font-size:0.82em;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:#1e3c72;margin:18px 0 8px;padding-bottom:5px;border-bottom:1px solid #e9ecef;">${escHtml(secTitle)}</h3>`;
 
         html += `<div class="dmb-wrap" style="margin-bottom:16px;"><table class="dmb-table">`;
-        let headerOpen = false;
-        let bodyOpen = false;
-        let headerRows = [];
+        let headerOpen = false, headerRows = [];
+
         table.querySelectorAll('tr').forEach(row => {
             if (row.classList.contains('dmrptsecttitle')) return;
             const cells = row.querySelectorAll('td');
@@ -1355,54 +556,34 @@ function renderTeamSubPage(filename, teamName, text) {
 
             if (headerOpen === 'collecting') {
                 html += '<thead>';
-                headerRows.forEach((hr, hri) => {
+                headerRows.forEach(hr => {
                     const isGroupRow = Array.from(hr.querySelectorAll('td')).some(td => parseInt(td.getAttribute('colspan')||'1') > 1);
                     html += '<tr>';
                     hr.querySelectorAll('td').forEach(td => {
                         const colspan = parseInt(td.getAttribute('colspan') || '1');
-                        const val     = td.textContent.trim().replace(/\u00a0/g, '');
-                        const cs      = colspan > 1 ? ` colspan="${colspan}"` : '';
-                        const align   = isGroupRow ? 'center' : (td.getAttribute('align') || 'left');
-                        const border  = isGroupRow && val ? ' border-bottom:2px solid rgba(255,255,255,0.4);' : '';
+                        const val = td.textContent.trim().replace(/\u00a0/g, '');
+                        const cs = colspan > 1 ? ` colspan="${colspan}"` : '';
+                        const align = isGroupRow ? 'center' : (td.getAttribute('align') || 'left');
+                        const border = isGroupRow && val ? ' border-bottom:2px solid rgba(255,255,255,0.4);' : '';
                         html += `<th${cs} style="text-align:${align};${border}">${escHtml(val)}</th>`;
                     });
                     html += '</tr>';
                 });
                 html += '</thead><tbody>';
                 headerOpen = true;
-                bodyOpen = true;
             }
 
             html += '<tr>';
             cells.forEach(td => {
                 const link = td.querySelector('a[target="_blank"]');
                 if (link) {
-                    const href  = link.getAttribute('href');
-                    const label = escHtml(td.textContent.trim());
-                    html += `<td><a href="${href}" target="_blank" style="color:#1e3c72;font-weight:700;text-decoration:underline;">${label}</a></td>`;
+                    html += `<td><a href="${escHtml(link.getAttribute('href'))}" target="_blank" style="color:#1e3c72;font-weight:700;text-decoration:underline;">${escHtml(td.textContent.trim())}</a></td>`;
                 } else {
-                    const val = td.textContent.trim().replace(/\u00a0/g, '');
-                    html += `<td>${escHtml(val)}</td>`;
+                    html += `<td>${escHtml(td.textContent.trim().replace(/\u00a0/g,''))}</td>`;
                 }
             });
             html += '</tr>';
         });
-        if (headerOpen === 'collecting') {
-            html += '<thead>';
-            headerRows.forEach(hr => {
-                const isGroupRow = Array.from(hr.querySelectorAll('td')).some(td => parseInt(td.getAttribute('colspan')||'1') > 1);
-                html += '<tr>';
-                hr.querySelectorAll('td').forEach(td => {
-                    const colspan = parseInt(td.getAttribute('colspan') || '1');
-                    const val     = td.textContent.trim().replace(/\u00a0/g, '');
-                    const cs      = colspan > 1 ? ` colspan="${colspan}"` : '';
-                    const align   = isGroupRow ? 'center' : (td.getAttribute('align') || 'left');
-                    html += `<th${cs} style="text-align:${align};">${escHtml(val)}</th>`;
-                });
-                html += '</tr>';
-            });
-            html += '</thead>';
-        }
         html += '</tbody></table></div>';
     });
 
@@ -1411,12 +592,7 @@ function renderTeamSubPage(filename, teamName, text) {
     if (sub) sub.innerHTML = html;
 }
 
-// ── Team List overview ──
 function renderTeamList() {
-    if (!teamList.length) {
-        document.getElementById('content-area').innerHTML = '<div class="empty-state"><div class="icon">🏟</div><h3>No teams found</h3></div>';
-        return;
-    }
     document.getElementById('content-area').innerHTML =
         `<div id="team-sub-content"><div class="empty-state"><div class="icon">🏟</div><h3>Select a team above</h3></div></div>`;
 }
@@ -1427,14 +603,9 @@ function renderTeamList() {
 function escHtml(s) {
     return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
-
-function setLoading(show) {
-    document.getElementById('loading').classList.toggle('show', show);
-}
-
-function showError(msg) {
-    document.getElementById('content-area').innerHTML = `<div class="error-state">⚠️ ${escHtml(msg)}</div>`;
-}
+function setLoading(show) { document.getElementById('loading').classList.toggle('show', show); }
+function setStatus(msg)   { document.getElementById('load-status').textContent = msg; }
+function showError(msg)   { document.getElementById('content-area').innerHTML = `<div class="error-state">⚠️ ${escHtml(msg)}</div>`; }
 </script>
 </body>
 </html>
