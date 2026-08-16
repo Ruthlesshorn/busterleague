@@ -7,88 +7,41 @@
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;700&display=swap" rel="stylesheet">
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
-body {
-font-family: 'DM Sans', sans-serif;
-background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
-min-height: 100vh;
-color: #333;
-}
+body { font-family: 'DM Sans', sans-serif; background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); min-height: 100vh; color: #333; }
 .container { max-width: 1600px; margin: 0 auto; padding: 20px; }
-/* Header */
-.header {
-background: linear-gradient(135deg, #c41e3a 0%, #d94e59 100%);
-color: white; padding: 24px 30px; border-radius: 12px;
-margin-bottom: 20px; box-shadow: 0 8px 32px rgba(0,0,0,0.3);
-display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;
-}
+.header { background: linear-gradient(135deg, #c41e3a 0%, #d94e59 100%); color: white; padding: 24px 30px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 8px 32px rgba(0,0,0,0.3); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
 .header-left h1 { font-family: 'Bebas Neue', sans-serif; font-size: 2em; letter-spacing: 2px; }
 .header-left p { opacity: 0.85; font-size: 0.9em; margin-top: 2px; }
 .btn { padding: 10px 20px; border-radius: 8px; font-family: 'DM Sans', sans-serif; font-weight: 700; font-size: 0.9em; cursor: pointer; border: none; text-decoration: none; display: inline-block; transition: all 0.2s; }
 .btn-ghost { background: rgba(255,255,255,0.2); color: white; }
 .btn-ghost:hover { background: rgba(255,255,255,0.3); }
-/* Controls bar */
-.controls-bar {
-background: white; border-radius: 12px; padding: 16px 20px;
-margin-bottom: 20px; box-shadow: 0 4px 16px rgba(0,0,0,0.15);
-display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
-}
+.controls-bar { background: white; border-radius: 12px; padding: 16px 20px; margin-bottom: 20px; box-shadow: 0 4px 16px rgba(0,0,0,0.15); display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
 .controls-bar label { font-weight: 800; font-size: 0.8em; text-transform: uppercase; letter-spacing: 1.5px; color: #1e3c72; }
-.controls-bar select {
-padding: 9px 14px; border: 2px solid #dee2e6; border-radius: 8px;
-font-family: 'DM Sans', sans-serif; font-size: 0.95em; font-weight: 600;
-color: #1e3c72; cursor: pointer; transition: border-color 0.2s; background: white;
-}
+.controls-bar select { padding: 9px 14px; border: 2px solid #dee2e6; border-radius: 8px; font-family: 'DM Sans', sans-serif; font-size: 0.95em; font-weight: 600; color: #1e3c72; cursor: pointer; background: white; }
 .controls-bar select:focus { outline: none; border-color: #c41e3a; }
-.controls-bar select:hover { border-color: #c41e3a; }
 .divider { width: 1px; height: 32px; background: #dee2e6; }
 .filter-chips { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
-.filter-chip {
-padding: 5px 14px; border-radius: 20px; border: 2px solid #dee2e6;
-background: white; font-size: 0.8em; font-weight: 700; cursor: pointer;
-color: #495057; transition: all 0.12s; user-select: none;
-}
+.filter-chip { padding: 5px 14px; border-radius: 20px; border: 2px solid #dee2e6; background: white; font-size: 0.8em; font-weight: 700; cursor: pointer; color: #495057; transition: all 0.12s; user-select: none; }
 .filter-chip:hover { border-color: #1e3c72; color: #1e3c72; }
 .filter-chip.active { background: #1e3c72; color: white; border-color: #1e3c72; }
 .filter-chip.active-alert { background: #c41e3a; color: white; border-color: #c41e3a; }
-.loading-indicator {
-display: none; font-size: 0.85em; color: #c41e3a; font-weight: 700;
-align-items: center; gap: 6px; margin-left: auto;
-}
+.loading-indicator { display: none; font-size: 0.85em; color: #c41e3a; font-weight: 700; align-items: center; gap: 6px; margin-left: auto; }
 .loading-indicator.show { display: flex; }
 .spinner { width: 14px; height: 14px; border: 2px solid #f0f0f0; border-top-color: #c41e3a; border-radius: 50%; animation: spin 0.7s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
-/* Summary cards */
-.summary-grid {
-display: grid;
-grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-gap: 14px;
-margin-bottom: 20px;
-}
-.summary-card {
-background: white; border-radius: 10px; padding: 16px 18px;
-box-shadow: 0 4px 16px rgba(0,0,0,0.12);
-}
+.summary-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; margin-bottom: 20px; }
+.summary-card { background: white; border-radius: 10px; padding: 16px 18px; box-shadow: 0 4px 16px rgba(0,0,0,0.12); }
 .summary-card .label { font-size: 0.72em; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; color: #6c757d; margin-bottom: 6px; }
 .summary-card .value { font-size: 1.8em; font-weight: 800; color: #1e3c72; line-height: 1; }
 .summary-card .sub { font-size: 0.8em; color: #6c757d; margin-top: 4px; }
 .summary-card.alert .value { color: #c41e3a; }
 .summary-card.good .value { color: #28a745; }
-/* Section tabs */
 .section-tabs { display: flex; gap: 6px; margin-bottom: 16px; }
-.section-tab {
-padding: 10px 20px; border-radius: 8px; border: 2px solid rgba(255,255,255,0.25);
-background: rgba(255,255,255,0.12); color: white; font-family: 'DM Sans', sans-serif;
-font-weight: 700; font-size: 0.88em; cursor: pointer; transition: all 0.15s;
-}
+.section-tab { padding: 10px 20px; border-radius: 8px; border: 2px solid rgba(255,255,255,0.25); background: rgba(255,255,255,0.12); color: white; font-family: 'DM Sans', sans-serif; font-weight: 700; font-size: 0.88em; cursor: pointer; transition: all 0.15s; }
 .section-tab:hover { background: rgba(255,255,255,0.22); }
 .section-tab.active { background: white; color: #1e3c72; border-color: white; }
-/* Tables */
 .card { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 4px 16px rgba(0,0,0,0.15); }
-.card-title {
-font-size: 0.82em; font-weight: 800; letter-spacing: 2px; text-transform: uppercase;
-color: #1e3c72; margin-bottom: 16px; padding-bottom: 10px; border-bottom: 2px solid #c41e3a;
-display: flex; justify-content: space-between; align-items: center;
-}
+.card-title { font-size: 0.82em; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: #1e3c72; margin-bottom: 16px; padding-bottom: 10px; border-bottom: 2px solid #c41e3a; display: flex; justify-content: space-between; align-items: center; }
 .card-title span { font-size: 1.1em; font-weight: 500; color: #6c757d; letter-spacing: 0; text-transform: none; }
 .table-wrap { overflow-x: auto; border-radius: 8px; border: 1px solid #dee2e6; }
 table { width: 100%; border-collapse: collapse; font-size: 0.87em; }
@@ -102,126 +55,86 @@ td.center { text-align: center; }
 tbody tr:hover { background: #f8f9fa; }
 tbody tr:nth-child(even) { background: #fafafa; }
 tbody tr:nth-child(even):hover { background: #f0f0f0; }
-/* Team header rows */
-tr.team-row td {
-background: #e8eef8; color: #1e3c72; font-weight: 800;
-font-size: 0.82em; letter-spacing: 1px; text-transform: uppercase;
-padding: 7px 12px;
-}
-/* Status badges */
-.badge {
-display: inline-block; padding: 2px 8px; border-radius: 4px;
-font-weight: 700; font-size: 0.78em; white-space: nowrap;
-}
+.badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-weight: 700; font-size: 0.78em; white-space: nowrap; }
 .badge-ok { background: #d1e7dd; color: #0a3622; }
 .badge-warning { background: #fff3cd; color: #664d03; }
 .badge-danger { background: #f8d7da; color: #58151c; }
 .badge-done { background: #cff4fc; color: #055160; }
 .badge-maxed { background: #f8d7da; color: #58151c; }
-/* Progress bar */
 .prog-wrap { display: flex; align-items: center; gap: 8px; min-width: 120px; }
 .prog-bar { flex: 1; height: 6px; background: #e9ecef; border-radius: 3px; overflow: hidden; min-width: 60px; }
 .prog-fill { height: 100%; border-radius: 3px; transition: width 0.3s; }
 .prog-pct { font-size: 0.8em; font-weight: 700; min-width: 36px; text-align: right; }
-/* Empty / error states */
 .empty-state { text-align: center; padding: 60px 20px; color: #6c757d; }
 .empty-state .icon { font-size: 3em; margin-bottom: 12px; }
 .empty-state h3 { font-size: 1.1em; margin-bottom: 6px; color: #495057; }
 .error-state { background: #fff5f5; border: 1px solid #f8d7da; border-radius: 8px; padding: 16px 20px; color: #842029; font-weight: 600; margin: 10px 0; }
-/* Sortable */
 th.sortable { cursor: pointer; user-select: none; }
 th.sortable:after { content: ' ⇅'; opacity: 0.35; font-size: 0.78em; }
 th.sort-asc:after { content: ' ↑'; opacity: 1; }
 th.sort-desc:after { content: ' ↓'; opacity: 1; }
-@media (max-width: 768px) {
-.header { flex-direction: column; gap: 12px; }
-.summary-grid { grid-template-columns: 1fr 1fr; }
-}
+@media (max-width: 768px) { .header { flex-direction: column; gap: 12px; } .summary-grid { grid-template-columns: 1fr 1fr; } }
 </style>
 </head>
 <body>
 <div class="container">
-<!-- Header -->
-<div class="header">
-  <div class="header-left">
-    <h1>⏱ Playing Time Tracker</h1>
-    <p>Keeper eligibility & start limits — Buster League 2025</p>
+  <div class="header">
+    <div class="header-left">
+      <h1>⏱ Playing Time Tracker</h1>
+      <p>Keeper eligibility & start limits — Buster League 2025</p>
+    </div>
+    <div style="display:flex;gap:10px;align-items:center;">
+      <a href="results.html" class="btn btn-ghost">Results →</a>
+      <a href="index.html" class="btn btn-ghost">Dashboard →</a>
+    </div>
   </div>
-  <div style="display:flex;gap:10px;align-items:center;">
-    <a href="results.html" class="btn btn-ghost">Results →</a>
-    <a href="index.html" class="btn btn-ghost">Dashboard →</a>
-  </div>
-</div>
 
-<!-- Controls -->
-<div class="controls-bar">
-  <label>Week</label>
-  <select id="week-select" onchange="loadWeek(this.value)">
-    <option value="">— Select a week —</option>
-  </select>
-  <div class="divider"></div>
-  <label>Team</label>
-  <select id="team-filter" onchange="render()">
-    <option value="all">All Teams</option>
-  </select>
-  <div class="divider"></div>
-  <label>Show</label>
-  <div class="filter-chips">
-    <span class="filter-chip active" data-filter="all" onclick="setFilter('all',this)">All</span>
-    <span class="filter-chip" data-filter="limited" onclick="setFilter('limited',this)">Start-Limited</span>
-    <span class="filter-chip" data-filter="maxed" onclick="setFilter('maxed',this)">Starts Maxed</span>
-    <span class="filter-chip" data-filter="not-qualified" onclick="setFilter('not-qualified',this)">Not Yet Qualified</span>
-    <span class="filter-chip" data-filter="qualified" onclick="setFilter('qualified',this)">Qualified ✓</span>
+  <div class="controls-bar">
+    <label>Team</label>
+    <select id="team-filter" onchange="render()">
+      <option value="all">All Teams</option>
+    </select>
+    <div class="divider"></div>
+    <label>Show</label>
+    <div class="filter-chips">
+      <span class="filter-chip active" data-filter="all" onclick="setFilter('all',this)">All</span>
+      <span class="filter-chip" data-filter="limited" onclick="setFilter('limited',this)">Start-Limited</span>
+      <span class="filter-chip" data-filter="maxed" onclick="setFilter('maxed',this)">Starts Maxed</span>
+      <span class="filter-chip" data-filter="not-qualified" onclick="setFilter('not-qualified',this)">Not Yet Qualified</span>
+      <span class="filter-chip" data-filter="qualified" onclick="setFilter('qualified',this)">Qualified ✓</span>
+    </div>
+    <div class="loading-indicator" id="loading">
+      <div class="spinner"></div> Loading…
+    </div>
   </div>
-  <div class="loading-indicator" id="loading">
-    <div class="spinner"></div> Loading…
+
+  <div class="summary-grid" id="summary-grid" style="display:none;"></div>
+
+  <div class="section-tabs">
+    <button class="section-tab active" onclick="showSection('batters',this)">🏏 Batters</button>
+    <button class="section-tab" onclick="showSection('pitchers',this)">⚾ Pitchers</button>
   </div>
-</div>
 
-<!-- Summary cards -->
-<div class="summary-grid" id="summary-grid" style="display:none;"></div>
-
-<!-- Section tabs -->
-<div class="section-tabs">
-  <button class="section-tab active" onclick="showSection('batters',this)">🏏 Batters</button>
-  <button class="section-tab" onclick="showSection('pitchers',this)">⚾ Pitchers</button>
-</div>
-
-<!-- Content -->
-<div id="content-area">
-  <div class="empty-state">
-    <div class="icon">⏱</div>
-    <h3>Select a week to view playing time</h3>
-    <p>Choose a week from the dropdown above.</p>
+  <div id="content-area">
+    <div class="empty-state">
+      <div class="icon">⏱</div>
+      <h3>Loading current week data…</h3>
+      <p>Reading from dmb/current/</p>
+    </div>
   </div>
-</div>
 </div>
 
 <script>
 // ═══════════════════════════════════════════════════════
-// CONFIGURATION — add new weeks here each week.
-// Add new weeks to the END of this array.
+// CONFIG — update DMB_FOLDER if your path changes
 // ═══════════════════════════════════════════════════════
-const WEEKS = [
-    'week-1',
-    'week-2',
-    'week-3',
-    'week-4',
-    'week-5',
-    'week-6',
-    'week-7',
-];
-
-// All org/team files are served from dmb/current/ (no per-week folders needed).
-const DMB_BASE    = 'dmb';
-const DMB_CURRENT = `${DMB_BASE}/current`;
+const DMB_FOLDER = 'dmb/current';
 const TOTAL_GAMES = 162;
 
 // ═══════════════════════════════════════════════════════
 // State
 // ═══════════════════════════════════════════════════════
 let players = [];
-let currentWeek = null;
 let currentSection = 'batters';
 let activeFilter = 'all';
 let fileCache = {};
@@ -234,44 +147,24 @@ let sortDir = 'asc';
 // ═══════════════════════════════════════════════════════
 window.addEventListener('DOMContentLoaded', async () => {
   setLoading(true);
-
-  // Populate week dropdown from hardcoded array
-  const sel = document.getElementById('week-select');
-  WEEKS.forEach((w, i) => {
-    const opt = document.createElement('option');
-    opt.value = w;
-    opt.textContent = `Week ${i + 1}`;
-    sel.appendChild(opt);
-  });
-
-  // Load players.json
   try {
-    const r = await fetch('players.json');
-    players = await r.json();
-  } catch(e) {
-    players = [];
-  }
-
-  // Default to latest week
-  const latest = WEEKS[WEEKS.length - 1];
-  sel.value = latest;
+    const res = await fetch('players.json');
+    if (res.ok) players = await res.json();
+  } catch(e) { players = []; }
+  await loadData();
   setLoading(false);
-  loadWeek(latest);
 });
 
 // ═══════════════════════════════════════════════════════
-// File fetching — all files come from dmb/current/
+// File fetching
 // ═══════════════════════════════════════════════════════
-async function fetchFile(folder, filename) {
-  // 'folder' param is kept for API compatibility but ignored —
-  // all files are in dmb/current/ regardless of selected week.
-  const url = `${DMB_CURRENT}/${filename}`;
-  if (fileCache[url]) return fileCache[url];
+async function fetchFile(filename) {
+  if (fileCache[filename]) return fileCache[filename];
   try {
-    const res = await fetch(url);
+    const res = await fetch(`${DMB_FOLDER}/${filename}`);
     if (!res.ok) return null;
     const text = await res.text();
-    fileCache[url] = text;
+    fileCache[filename] = text;
     return text;
   } catch(e) { return null; }
 }
@@ -283,44 +176,34 @@ function parseHTML(text) {
 // ═══════════════════════════════════════════════════════
 // Main loader
 // ═══════════════════════════════════════════════════════
-async function loadWeek(folder) {
-  if (!folder) return;
-  currentWeek = folder;
-  setLoading(true);
+async function loadData() {
   teamData = [];
-
-  // Clear cache on week change so fresh files are fetched
-  fileCache = {};
-
-  const teamList = await discoverTeams(folder);
+  const teamList = await discoverTeams();
   if (!teamList.length) {
-    setLoading(false);
     document.getElementById('content-area').innerHTML =
-      '<div class="error-state">⚠️ Could not load team list. Make sure the DMB files are uploaded to dmb/current/.</div>';
+      '<div class="error-state">⚠️ Could not load team list from dmb/current/lgindex1.htm. Make sure your DMB files are uploaded to dmb/current/.</div>';
     return;
   }
 
-  // Populate team filter
   const tf = document.getElementById('team-filter');
   tf.innerHTML = '<option value="all">All Teams</option>';
   teamList.forEach(t => {
     const opt = document.createElement('option');
     opt.value = t.abbrev;
-    opt.textContent = t.abbrev + ' — ' + t.name;
+    opt.textContent = `${t.abbrev} — ${t.name}`;
     tf.appendChild(opt);
   });
 
-  await Promise.all(teamList.map(t => loadTeamData(folder, t)));
-  setLoading(false);
+  await Promise.all(teamList.map(t => loadTeamData(t)));
   document.getElementById('summary-grid').style.display = 'grid';
   render();
 }
 
-async function discoverTeams(folder) {
+async function discoverTeams() {
   const teams = [];
   const seen = new Set();
   for (const lgFile of ['lgindex1.htm', 'lgindex2.htm']) {
-    const text = await fetchFile(folder, lgFile);
+    const text = await fetchFile(lgFile);
     if (!text) continue;
     const doc = parseHTML(text);
     doc.querySelectorAll('a[href*="tmindex"]').forEach(a => {
@@ -332,25 +215,18 @@ async function discoverTeams(folder) {
         if (m) {
           const n = m[1];
           const abbrevOverrides = {
-            'New York Mets': 'NYM',
-            'New York Yankees': 'NYY',
-            'Chicago White Sox': 'CWS',
-            'Chicago Cubs': 'CHC',
-            'Los Angeles Dodgers': 'LAD',
-            'Los Angeles Angels': 'LAA',
-            'San Francisco Giants':'SF',
-            'San Diego Padres': 'SD',
-            'Tampa Bay Rays': 'TB',
-            'Toronto Blue Jays': 'TOR',
+            'New York Mets': 'NYM', 'New York Yankees': 'NYY',
+            'Chicago White Sox': 'CWS', 'Chicago Cubs': 'CHC',
+            'Los Angeles Dodgers': 'LAD', 'Los Angeles Angels': 'LAA',
+            'San Francisco Giants': 'SF', 'San Diego Padres': 'SD',
+            'Tampa Bay Rays': 'TB', 'Toronto Blue Jays': 'TOR',
             'Kansas City Royals': 'KC',
           };
           const abbrev = abbrevOverrides[name] || name.replace(/\s+/g, '').toUpperCase().substring(0, 3);
-          teams.push({
-            abbrev,
-            name,
-            tmNum: n,
+          teams.push({ abbrev, name, tmNum: n,
             batFile: `tm${n}_tmbat.htm`,
             pchFile: `tm${n}_tmpch.htm`,
+            rosterFile: `tm${n}_tmroster.htm`,
           });
         }
       }
@@ -359,43 +235,45 @@ async function discoverTeams(folder) {
   return teams;
 }
 
-async function loadTeamData(folder, team) {
+async function loadTeamData(team) {
   const [batText, pchText, rosterText] = await Promise.all([
-    fetchFile(folder, team.batFile),
-    fetchFile(folder, team.pchFile),
-    fetchFile(folder, `tm${team.tmNum}_tmroster.htm`),
+    fetchFile(team.batFile),
+    fetchFile(team.pchFile),
+    fetchFile(team.rosterFile),
   ]);
-  const entry = {
-    abbrev: team.abbrev,
-    name: team.name,
-    gamesPlayed: 0,
-    batters: [],
-    pitchers: [],
-  };
+  const entry = { abbrev: team.abbrev, name: team.name, gamesPlayed: 0, batters: [], pitchers: [] };
   if (batText) parseBatFile(batText, entry, rosterText);
   if (pchText) parsePchFile(pchText, entry, rosterText);
   teamData.push(entry);
 }
 
-function normalizeStr(s) {
-  return (s || '').toLowerCase()
-    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-z0-9 ]/g, '')
-    .replace(/\s+/g, ' ').trim();
-}
-
 // ═══════════════════════════════════════════════════════
 // Parsers
 // ═══════════════════════════════════════════════════════
+function normalizeStr(s) {
+  return (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9 ]/g, '').replace(/\s+/g, ' ').trim();
+}
+
+function getCellByHeader(hdrs, cells, colName) {
+  const idx = hdrs.indexOf(colName);
+  if (idx < 0 || idx >= cells.length) return null;
+  return cells[idx] ? cells[idx].textContent.trim() : null;
+}
+
+function parseInnings(s) {
+  if (!s || s === '&nbsp' || s.trim() === '') return 0;
+  const parts = String(s).trim().split('.');
+  const full = parseInt(parts[0]) || 0;
+  const frac = parts[1] ? parseInt(parts[1]) : 0;
+  return full + frac / 3;
+}
+
 function parseBatFile(text, entry, rosterText) {
   const doc = parseHTML(text);
   const ageByName = parseBatterAgesFromRoster(rosterText);
-  const tables = doc.querySelectorAll('table');
-  let primaryCols = [], secondaryCols = [];
-  const primaryData = {};
-  const secondaryData = {};
+  const primaryData = {}, secondaryData = {};
 
-  tables.forEach(table => {
+  doc.querySelectorAll('table').forEach(table => {
     const titleCell = table.querySelector('tr.dmrptsecttitle td');
     const sectionName = titleCell ? titleCell.textContent.trim() : '';
     const hdrRow = table.querySelector('tr.dmrptsecthdr');
@@ -403,9 +281,7 @@ function parseBatFile(text, entry, rosterText) {
     const hdrs = Array.from(hdrRow.querySelectorAll('td')).map(td => td.textContent.trim());
 
     if (sectionName === 'Primary') {
-      primaryCols = hdrs;
-      const rows = table.querySelectorAll('tr.dmrptbody, tr.dmrptbody2');
-      rows.forEach(row => {
+      table.querySelectorAll('tr.dmrptbody, tr.dmrptbody2').forEach(row => {
         const cells = row.querySelectorAll('td');
         const name = cells[1] ? cells[1].textContent.trim() : '';
         if (!name || name === 'Total') return;
@@ -414,21 +290,9 @@ function parseBatFile(text, entry, rosterText) {
         primaryData[name] = { G, AB };
         if (G > entry.gamesPlayed) entry.gamesPlayed = G;
       });
-      const totalRow = Array.from(table.querySelectorAll('tr')).find(r => {
-        const c = r.querySelectorAll('td');
-        return c[1] && c[1].textContent.trim() === 'Total';
-      });
-      if (totalRow) {
-        const cells = totalRow.querySelectorAll('td');
-        const gVal = parseInt(getCellByHeader(hdrs, cells, 'G') || '0') || 0;
-        if (gVal > entry.gamesPlayed) entry.gamesPlayed = gVal;
-      }
     }
-
     if (sectionName === 'Secondary') {
-      secondaryCols = hdrs;
-      const rows = table.querySelectorAll('tr.dmrptbody, tr.dmrptbody2');
-      rows.forEach(row => {
+      table.querySelectorAll('tr.dmrptbody, tr.dmrptbody2').forEach(row => {
         const cells = row.querySelectorAll('td');
         const name = cells[1] ? cells[1].textContent.trim() : '';
         if (!name || name === 'Total') return;
@@ -449,108 +313,14 @@ function parseBatFile(text, entry, rosterText) {
     if (!actualAB && !pData.AB && !sData.GS) return;
     const pctAllowed = actualAB >= 400 ? null : (actualAB / 400);
     const startsAllowed = pctAllowed !== null ? pctAllowed * TOTAL_GAMES : null;
-    const dmStarts = sData.GS;
-    const dmAB = pData.AB;
-    const gp = entry.gamesPlayed;
-    const pctStarted = gp > 0 ? dmStarts / gp : 0;
+    const dmStarts = sData.GS, dmAB = pData.AB;
     const startsRemaining = startsAllowed !== null ? startsAllowed - dmStarts : null;
     const abNeeded = actualAB > 0 ? actualAB / 2 : null;
     const qualified = abNeeded !== null ? dmAB >= abNeeded : (actualAB === 0 ? null : true);
-    entry.batters.push({
-      name: dmName,
-      actualAB,
-      pctAllowed,
-      startsAllowed,
-      dmStarts,
-      dmAB,
-      pctStarted,
-      startsRemaining,
-      abNeeded,
-      qualified,
-      unlimited: pctAllowed === null,
-    });
+    entry.batters.push({ name: dmName, actualAB, pctAllowed, startsAllowed, dmStarts, dmAB,
+      pctStarted: entry.gamesPlayed > 0 ? dmStarts / entry.gamesPlayed : 0,
+      startsRemaining, abNeeded, qualified, unlimited: pctAllowed === null });
   });
-}
-
-function parsePchFile(text, entry, rosterText) {
-  const rosterPitchers = rosterText ? parsePitchersFromRoster(rosterText) : [];
-  const dmIPByName = {};
-  if (text) {
-    const doc = parseHTML(text);
-    doc.querySelectorAll('table').forEach(table => {
-      const titleCell = table.querySelector('tr.dmrptsecttitle td');
-      if (!titleCell || titleCell.textContent.trim() !== 'Primary') return;
-      const hdrRow = table.querySelector('tr.dmrptsecthdr');
-      if (!hdrRow) return;
-      const hdrs = Array.from(hdrRow.querySelectorAll('td')).map(td => td.textContent.trim());
-      table.querySelectorAll('tr.dmrptbody, tr.dmrptbody2').forEach(row => {
-        const cells = row.querySelectorAll('td');
-        const name = cells[1] ? cells[1].textContent.trim() : '';
-        if (!name || name === 'Total') return;
-        const innStr = getCellByHeader(hdrs, cells, 'INN') || '0';
-        dmIPByName[normalizeStr(name)] = parseInnings(innStr);
-      });
-    });
-  }
-
-  rosterPitchers.forEach(rp => {
-    const normRoster = normalizeStr(rp.name);
-    const dmIP = dmIPByName[normRoster] || 0;
-    const player = findPlayer(rp.name, entry.name, rp.age);
-    const actualIP = player ? (parseFloat(player.IP) || 0) : 0;
-    const ipNeeded = actualIP / 2;
-    const qualified = ipNeeded > 0 ? dmIP >= ipNeeded : false;
-    entry.pitchers.push({
-      name: rp.name,
-      actualIP,
-      ipNeeded,
-      dmIP,
-      qualified,
-      pctComplete: ipNeeded > 0 ? Math.min(dmIP / ipNeeded, 1) : (dmIP > 0 ? 1 : 0),
-    });
-  });
-
-  const rosterNorms = new Set(rosterPitchers.map(rp => normalizeStr(rp.name)));
-  Object.entries(dmIPByName).forEach(([normStat, dmIP]) => {
-    if (rosterNorms.has(normStat)) return;
-    const player = findPlayerByNorm(normStat);
-    const actualIP = player ? (parseFloat(player.IP) || 0) : 0;
-    const ipNeeded = actualIP / 2;
-    entry.pitchers.push({
-      name: player ? `${player.First} ${player.Last}` : normStat,
-      actualIP,
-      ipNeeded,
-      dmIP,
-      qualified: ipNeeded > 0 ? dmIP >= ipNeeded : false,
-      pctComplete: ipNeeded > 0 ? Math.min(dmIP / ipNeeded, 1) : 0,
-    });
-  });
-
-  const merged = {};
-  entry.pitchers.forEach(p => {
-    const norm = normalizeStr(p.name);
-    const parts = norm.split(' ').filter(Boolean);
-    const surname = parts[parts.length - 1];
-    const key = p.actualIP > 0 ? `${surname}|ip${p.actualIP}` : norm;
-    if (!merged[key]) {
-      merged[key] = p;
-    } else {
-      const existing = merged[key];
-      const better = (norm.length > normalizeStr(existing.name).length) ? p : existing;
-      const worse = (better === p) ? existing : p;
-      merged[key] = {
-        ...better,
-        actualIP: better.actualIP || worse.actualIP,
-        ipNeeded: better.ipNeeded || worse.ipNeeded,
-        dmIP: Math.max(better.dmIP, worse.dmIP),
-      };
-      merged[key].qualified = merged[key].ipNeeded > 0 ? merged[key].dmIP >= merged[key].ipNeeded : false;
-      merged[key].pctComplete = merged[key].ipNeeded > 0
-        ? Math.min(merged[key].dmIP / merged[key].ipNeeded, 1)
-        : (merged[key].dmIP > 0 ? 1 : 0);
-    }
-  });
-  entry.pitchers = Object.values(merged);
 }
 
 function parseBatterAgesFromRoster(rosterText) {
@@ -568,12 +338,71 @@ function parseBatterAgesFromRoster(rosterText) {
       const cells = row.querySelectorAll('td');
       const name = cells[1] ? cells[1].textContent.trim() : '';
       const age = cells[4] ? parseFloat(cells[4].textContent.trim()) : null;
-      if (name && name !== 'Total' && !isNaN(age)) {
-        ages[normalizeStr(name)] = age;
-      }
+      if (name && name !== 'Total' && !isNaN(age)) ages[normalizeStr(name)] = age;
     });
   });
   return ages;
+}
+
+function parsePchFile(text, entry, rosterText) {
+  const rosterPitchers = rosterText ? parsePitchersFromRoster(rosterText) : [];
+  const dmIPByName = {};
+  if (text) {
+    const doc = parseHTML(text);
+    doc.querySelectorAll('table').forEach(table => {
+      const titleCell = table.querySelector('tr.dmrptsecttitle td');
+      if (!titleCell || titleCell.textContent.trim() !== 'Primary') return;
+      const hdrRow = table.querySelector('tr.dmrptsecthdr');
+      if (!hdrRow) return;
+      const hdrs = Array.from(hdrRow.querySelectorAll('td')).map(td => td.textContent.trim());
+      table.querySelectorAll('tr.dmrptbody, tr.dmrptbody2').forEach(row => {
+        const cells = row.querySelectorAll('td');
+        const name = cells[1] ? cells[1].textContent.trim() : '';
+        if (!name || name === 'Total') return;
+        dmIPByName[normalizeStr(name)] = parseInnings(getCellByHeader(hdrs, cells, 'INN') || '0');
+      });
+    });
+  }
+
+  rosterPitchers.forEach(rp => {
+    const dmIP = dmIPByName[normalizeStr(rp.name)] || 0;
+    const player = findPlayer(rp.name, entry.name, rp.age);
+    const actualIP = player ? (parseFloat(player.IP) || 0) : 0;
+    const ipNeeded = actualIP / 2;
+    entry.pitchers.push({ name: rp.name, actualIP, ipNeeded, dmIP,
+      qualified: ipNeeded > 0 ? dmIP >= ipNeeded : false,
+      pctComplete: ipNeeded > 0 ? Math.min(dmIP / ipNeeded, 1) : (dmIP > 0 ? 1 : 0) });
+  });
+
+  const rosterNorms = new Set(rosterPitchers.map(rp => normalizeStr(rp.name)));
+  Object.entries(dmIPByName).forEach(([normStat, dmIP]) => {
+    if (rosterNorms.has(normStat)) return;
+    const player = findPlayerByNorm(normStat);
+    const actualIP = player ? (parseFloat(player.IP) || 0) : 0;
+    const ipNeeded = actualIP / 2;
+    entry.pitchers.push({ name: player ? `${player.First} ${player.Last}` : normStat,
+      actualIP, ipNeeded, dmIP, qualified: ipNeeded > 0 ? dmIP >= ipNeeded : false,
+      pctComplete: ipNeeded > 0 ? Math.min(dmIP / ipNeeded, 1) : 0 });
+  });
+
+  // Deduplicate
+  const merged = {};
+  entry.pitchers.forEach(p => {
+    const norm = normalizeStr(p.name);
+    const surname = norm.split(' ').filter(Boolean).pop();
+    const key = p.actualIP > 0 ? `${surname}|ip${p.actualIP}` : norm;
+    if (!merged[key]) { merged[key] = p; }
+    else {
+      const existing = merged[key];
+      const better = norm.length > normalizeStr(existing.name).length ? p : existing;
+      const worse = better === p ? existing : p;
+      merged[key] = { ...better, actualIP: better.actualIP || worse.actualIP,
+        ipNeeded: better.ipNeeded || worse.ipNeeded, dmIP: Math.max(better.dmIP, worse.dmIP) };
+      merged[key].qualified = merged[key].ipNeeded > 0 ? merged[key].dmIP >= merged[key].ipNeeded : false;
+      merged[key].pctComplete = merged[key].ipNeeded > 0 ? Math.min(merged[key].dmIP / merged[key].ipNeeded, 1) : (merged[key].dmIP > 0 ? 1 : 0);
+    }
+  });
+  entry.pitchers = Object.values(merged);
 }
 
 function parsePitchersFromRoster(text) {
@@ -590,33 +419,11 @@ function parsePitchersFromRoster(text) {
       const cells = row.querySelectorAll('td');
       const name = cells[1] ? cells[1].textContent.trim() : '';
       const age = cells[4] ? parseFloat(cells[4].textContent.trim()) : null;
-      if (name && name !== 'Total' && name !== 'Player') {
+      if (name && name !== 'Total' && name !== 'Player')
         pitchers.push({ name, age: isNaN(age) ? null : age });
-      }
     });
   });
   return pitchers;
-}
-
-function findPlayerByNorm(normName) {
-  return players.find(p => normalizeStr(`${p.First} ${p.Last}`) === normName) || null;
-}
-
-// ═══════════════════════════════════════════════════════
-// Helpers
-// ═══════════════════════════════════════════════════════
-function getCellByHeader(hdrs, cells, colName) {
-  const idx = hdrs.indexOf(colName);
-  if (idx < 0 || idx >= cells.length) return null;
-  return cells[idx] ? cells[idx].textContent.trim() : null;
-}
-
-function parseInnings(s) {
-  if (!s || s === '&nbsp' || s.trim() === '') return 0;
-  const parts = String(s).trim().split('.');
-  const full = parseInt(parts[0]) || 0;
-  const frac = parts[1] ? parseInt(parts[1]) : 0;
-  return full + frac / 3;
 }
 
 function findPlayer(dmName, teamName, age) {
@@ -624,10 +431,7 @@ function findPlayer(dmName, teamName, age) {
   let exactMatches = players.filter(p => normalizeStr(`${p.First} ${p.Last}`) === normalized);
   if (exactMatches.length === 1) return exactMatches[0];
   if (exactMatches.length > 1) {
-    if (age != null) {
-      const ageMatch = exactMatches.find(p => Math.abs((parseFloat(p.Age) || -999) - age) <= 1);
-      if (ageMatch) return ageMatch;
-    }
+    if (age != null) { const m = exactMatches.find(p => Math.abs((parseFloat(p.Age) || -999) - age) <= 1); if (m) return m; }
     return exactMatches[0];
   }
   const parts = normalized.split(' ').filter(Boolean);
@@ -635,26 +439,20 @@ function findPlayer(dmName, teamName, age) {
   const surnameMatches = players.filter(p => normalizeStr(p.Last) === surname);
   if (surnameMatches.length === 1) return surnameMatches[0];
   if (surnameMatches.length > 1) {
-    if (age != null) {
-      const ageMatch = surnameMatches.find(p => Math.abs((parseFloat(p.Age) || -999) - age) <= 1);
-      if (ageMatch) return ageMatch;
-    }
+    if (age != null) { const m = surnameMatches.find(p => Math.abs((parseFloat(p.Age) || -999) - age) <= 1); if (m) return m; }
     const firstInitial = parts[0] ? parts[0][0] : '';
-    const initialMatch = surnameMatches.find(p => normalizeStr(p.First)[0] === firstInitial);
-    if (initialMatch) return initialMatch;
-    return surnameMatches[0];
+    const m = surnameMatches.find(p => normalizeStr(p.First)[0] === firstInitial);
+    return m || surnameMatches[0];
   }
   return null;
 }
 
-function fmt1(n) { return n == null ? '—' : n.toFixed(1); }
-function fmtIP(n) {
-  if (!n) return '0.0';
-  const full = Math.floor(n);
-  const frac = Math.round((n - full) * 3);
-  return `${full}.${frac}`;
+function findPlayerByNorm(normName) {
+  return players.find(p => normalizeStr(`${p.First} ${p.Last}`) === normName) || null;
 }
+
 function fmtPct(n) { return n == null ? '—' : (n * 100).toFixed(1) + '%'; }
+function fmtIP(n) { if (!n) return '0.0'; const full = Math.floor(n); const frac = Math.round((n - full) * 3); return `${full}.${frac}`; }
 
 function setFilter(f, el) {
   activeFilter = f;
@@ -671,8 +469,11 @@ function showSection(section, el) {
   render();
 }
 
-function setLoading(show) {
-  document.getElementById('loading').classList.toggle('show', show);
+function setLoading(show) { document.getElementById('loading').classList.toggle('show', show); }
+
+function getFilteredTeams() {
+  const tf = document.getElementById('team-filter').value;
+  return tf === 'all' ? teamData : teamData.filter(t => t.abbrev === tf);
 }
 
 // ═══════════════════════════════════════════════════════
@@ -685,15 +486,9 @@ function render() {
   else renderPitchers();
 }
 
-function getFilteredTeams() {
-  const tf = document.getElementById('team-filter').value;
-  return tf === 'all' ? teamData : teamData.filter(t => t.abbrev === tf);
-}
-
 function renderSummary() {
   const teams = getFilteredTeams();
-  let totalBatters = 0, limitedBatters = 0, maxedBatters = 0, qualifiedBatters = 0;
-  let totalPitchers = 0, qualifiedPitchers = 0;
+  let totalBatters = 0, limitedBatters = 0, maxedBatters = 0, qualifiedBatters = 0, totalPitchers = 0, qualifiedPitchers = 0;
   teams.forEach(t => {
     t.batters.forEach(b => {
       if (!b.actualAB) return;
@@ -708,20 +503,13 @@ function renderSummary() {
       if (p.qualified) qualifiedPitchers++;
     });
   });
-  const grid = document.getElementById('summary-grid');
-  grid.innerHTML = [
-    { label: 'Start-Limited Batters', value: limitedBatters, sub: 'of ' + totalBatters + ' total', cls: limitedBatters > 0 ? 'alert' : '' },
+  document.getElementById('summary-grid').innerHTML = [
+    { label: 'Start-Limited Batters', value: limitedBatters, sub: `of ${totalBatters} total`, cls: limitedBatters > 0 ? 'alert' : '' },
     { label: 'Starts Maxed Out', value: maxedBatters, sub: 'cannot start further', cls: maxedBatters > 0 ? 'alert' : 'good' },
-    { label: 'Batters Qualified', value: qualifiedBatters, sub: 'of ' + totalBatters + ' tracked', cls: 'good' },
-    { label: 'Pitchers Qualified', value: qualifiedPitchers, sub: 'of ' + totalPitchers + ' tracked', cls: 'good' },
+    { label: 'Batters Qualified', value: qualifiedBatters, sub: `of ${totalBatters} tracked`, cls: 'good' },
+    { label: 'Pitchers Qualified', value: qualifiedPitchers, sub: `of ${totalPitchers} tracked`, cls: 'good' },
     { label: 'Games Played', value: teams[0] ? teams[0].gamesPlayed : '—', sub: 'of 162 this season', cls: '' },
-  ].map(s => `
-    <div class="summary-card ${s.cls}">
-      <div class="label">${s.label}</div>
-      <div class="value">${s.value}</div>
-      <div class="sub">${s.sub}</div>
-    </div>
-  `).join('');
+  ].map(s => `<div class="summary-card ${s.cls}"><div class="label">${s.label}</div><div class="value">${s.value}</div><div class="sub">${s.sub}</div></div>`).join('');
 }
 
 function renderBatters() {
@@ -738,85 +526,44 @@ function renderBatters() {
     });
   });
 
-  if (sortCol) {
-    rows.sort((a, b) => {
-      let av = a[sortCol], bv = b[sortCol];
-      if (av == null) av = sortDir === 'asc' ? Infinity : -Infinity;
-      if (bv == null) bv = sortDir === 'asc' ? Infinity : -Infinity;
-      if (typeof av === 'string') return sortDir === 'asc' ? av.localeCompare(bv) : bv.localeCompare(av);
-      return sortDir === 'asc' ? av - bv : bv - av;
-    });
-  }
+  if (sortCol) rows.sort((a, b) => {
+    let av = a[sortCol], bv = b[sortCol];
+    if (av == null) av = sortDir === 'asc' ? Infinity : -Infinity;
+    if (bv == null) bv = sortDir === 'asc' ? Infinity : -Infinity;
+    if (typeof av === 'string') return sortDir === 'asc' ? av.localeCompare(bv) : bv.localeCompare(av);
+    return sortDir === 'asc' ? av - bv : bv - av;
+  });
 
-  if (!rows.length) {
-    document.getElementById('content-area').innerHTML = `
-      <div class="card"><div class="empty-state">
-        <div class="icon">🏏</div>
-        <h3>No batters match the current filter</h3>
-      </div></div>`;
-    return;
-  }
+  if (!rows.length) { document.getElementById('content-area').innerHTML = `<div class="card"><div class="empty-state"><div class="icon">🏏</div><h3>No batters match the current filter</h3></div></div>`; return; }
 
   const thSort = (col, label, align='right') => {
     const cls = sortCol === col ? (sortDir === 'asc' ? 'sort-asc' : 'sort-desc') : '';
     return `<th class="sortable ${cls} ${align}" onclick="doSort('${col}')">${label}</th>`;
   };
 
-  let html = `<div class="card">
-    <div class="card-title">Batter Start Limits & Keeper Eligibility <span>${rows.length} players</span></div>
-    <div class="table-wrap"><table>
-    <thead><tr>
-      ${thSort('team','Team','left')}
-      ${thSort('name','Player','left')}
-      ${thSort('actualAB','Real AB','right')}
-      ${thSort('pctAllowed','Start % Allowed','center')}
-      ${thSort('startsAllowed','Starts Allowed','right')}
-      ${thSort('dmStarts','DMB Starts','right')}
-      ${thSort('pctStarted','% Started','center')}
-      ${thSort('startsRemaining','Starts Remaining','right')}
-      <th class="center">Start Status</th>
-      ${thSort('abNeeded','AB to Qualify','right')}
-      ${thSort('dmAB','DMB AB','right')}
-      <th class="center">Keeper Status</th>
+  let html = `<div class="card"><div class="card-title">Batter Start Limits & Keeper Eligibility <span>${rows.length} players</span></div>
+    <div class="table-wrap"><table><thead><tr>
+      ${thSort('team','Team','left')}${thSort('name','Player','left')}${thSort('actualAB','Real AB','right')}
+      ${thSort('pctAllowed','Start % Allowed','center')}${thSort('startsAllowed','Starts Allowed','right')}
+      ${thSort('dmStarts','DMB Starts','right')}${thSort('startsRemaining','Starts Remaining','right')}
+      <th class="center">Start Status</th>${thSort('abNeeded','AB to Qualify','right')}
+      ${thSort('dmAB','DMB AB','right')}<th class="center">Keeper Status</th>
     </tr></thead><tbody>`;
 
   rows.forEach(b => {
-    let startStatus = '';
-    if (b.unlimited) {
-      startStatus = '<span class="badge badge-ok">Unlimited</span>';
-    } else if (b.startsRemaining !== null && b.startsRemaining <= 0) {
-      startStatus = '<span class="badge badge-maxed">⛔ Maxed</span>';
-    } else if (b.startsRemaining !== null && b.startsRemaining <= 5) {
-      startStatus = '<span class="badge badge-warning">⚠️ Low</span>';
-    } else {
-      startStatus = '<span class="badge badge-ok">OK</span>';
-    }
+    let startStatus = b.unlimited ? '<span class="badge badge-ok">Unlimited</span>'
+      : b.startsRemaining !== null && b.startsRemaining <= 0 ? '<span class="badge badge-maxed">⛔ Maxed</span>'
+      : b.startsRemaining !== null && b.startsRemaining <= 5 ? '<span class="badge badge-warning">⚠️ Low</span>'
+      : '<span class="badge badge-ok">OK</span>';
 
-    let keeperStatus = '';
-    if (b.abNeeded === null) {
-      keeperStatus = '<span class="badge badge-ok">N/A</span>';
-    } else if (b.qualified) {
-      keeperStatus = '<span class="badge badge-done">✓ Qualified</span>';
-    } else {
-      const remaining = b.abNeeded - b.dmAB;
-      keeperStatus = `<span class="badge badge-danger">${Math.ceil(remaining)} AB needed</span>`;
-    }
+    let keeperStatus = b.abNeeded === null ? '<span class="badge badge-ok">N/A</span>'
+      : b.qualified ? '<span class="badge badge-done">✓ Qualified</span>'
+      : `<span class="badge badge-danger">${Math.ceil(b.abNeeded - b.dmAB)} AB needed</span>`;
 
     const startsPct = b.startsAllowed ? Math.min(b.dmStarts / b.startsAllowed, 1) : 0;
     const startsColor = startsPct >= 1 ? '#dc3545' : startsPct >= 0.85 ? '#ffc107' : '#28a745';
-    const startsBar = b.unlimited ? '<span style="color:#6c757d;font-size:0.82em;">No limit</span>' :
-      `<div class="prog-wrap">
-        <div class="prog-bar"><div class="prog-fill" style="width:${(startsPct*100).toFixed(0)}%;background:${startsColor};"></div></div>
-        <span class="prog-pct" style="color:${startsColor};">${(startsPct*100).toFixed(0)}%</span>
-      </div>`;
-
-    const abPct = b.abNeeded ? Math.min(b.dmAB / b.abNeeded, 1) : 1;
-    const abColor = abPct >= 1 ? '#28a745' : abPct >= 0.7 ? '#ffc107' : '#c41e3a';
-
-    const srDisplay = b.startsRemaining === null ? '—' :
-      `<span style="color:${b.startsRemaining <= 0 ? '#dc3545' : b.startsRemaining <= 5 ? '#e6a800' : '#333'};font-weight:${b.startsRemaining <= 5 ? '800' : '400'}">
-        ${b.startsRemaining.toFixed(1)}
-      </span>`;
+    const srDisplay = b.startsRemaining === null ? '—'
+      : `<span style="color:${b.startsRemaining <= 0 ? '#dc3545' : b.startsRemaining <= 5 ? '#e6a800' : '#333'};font-weight:${b.startsRemaining <= 5 ? '800' : '400'}">${b.startsRemaining.toFixed(1)}</span>`;
 
     html += `<tr>
       <td style="font-weight:700;color:#1e3c72;">${b.team}</td>
@@ -825,7 +572,6 @@ function renderBatters() {
       <td class="center">${b.unlimited ? '<span style="color:#6c757d;">N/A</span>' : fmtPct(b.pctAllowed)}</td>
       <td class="right">${b.startsAllowed !== null ? b.startsAllowed.toFixed(1) : '—'}</td>
       <td class="right"><strong>${b.dmStarts}</strong></td>
-      <td class="center">${startsBar}</td>
       <td class="right">${srDisplay}</td>
       <td class="center">${startStatus}</td>
       <td class="right">${b.abNeeded !== null ? b.abNeeded.toFixed(1) : '—'}</td>
@@ -851,65 +597,44 @@ function renderPitchers() {
     });
   });
 
-  if (sortCol) {
-    rows.sort((a, b) => {
-      let av = a[sortCol], bv = b[sortCol];
-      if (av == null) av = sortDir === 'asc' ? Infinity : -Infinity;
-      if (bv == null) bv = sortDir === 'asc' ? Infinity : -Infinity;
-      if (typeof av === 'string') return sortDir === 'asc' ? av.localeCompare(bv) : bv.localeCompare(av);
-      return sortDir === 'asc' ? av - bv : bv - av;
-    });
-  }
+  if (sortCol) rows.sort((a, b) => {
+    let av = a[sortCol], bv = b[sortCol];
+    if (av == null) av = sortDir === 'asc' ? Infinity : -Infinity;
+    if (bv == null) bv = sortDir === 'asc' ? Infinity : -Infinity;
+    if (typeof av === 'string') return sortDir === 'asc' ? av.localeCompare(bv) : bv.localeCompare(av);
+    return sortDir === 'asc' ? av - bv : bv - av;
+  });
 
-  if (!rows.length) {
-    document.getElementById('content-area').innerHTML = `
-      <div class="card"><div class="empty-state">
-        <div class="icon">⚾</div>
-        <h3>No pitchers match the current filter</h3>
-      </div></div>`;
-    return;
-  }
+  if (!rows.length) { document.getElementById('content-area').innerHTML = `<div class="card"><div class="empty-state"><div class="icon">⚾</div><h3>No pitchers match the current filter</h3></div></div>`; return; }
 
   const thSort = (col, label, align='right') => {
     const cls = sortCol === col ? (sortDir === 'asc' ? 'sort-asc' : 'sort-desc') : '';
     return `<th class="sortable ${cls} ${align}" onclick="doSort('${col}')">${label}</th>`;
   };
 
-  let html = `<div class="card">
-    <div class="card-title">Pitcher Keeper Eligibility <span>${rows.length} pitchers</span></div>
-    <div class="table-wrap"><table>
-    <thead><tr>
-      ${thSort('team','Team','left')}
-      ${thSort('name','Pitcher','left')}
-      ${thSort('actualIP','2025 Real IP','right')}
-      ${thSort('ipNeeded','IP Needed to Qualify','right')}
-      ${thSort('dmIP','DMB IP','right')}
-      <th class="center">Progress</th>
-      <th class="center">Keeper Status</th>
+  let html = `<div class="card"><div class="card-title">Pitcher Keeper Eligibility <span>${rows.length} pitchers</span></div>
+    <div class="table-wrap"><table><thead><tr>
+      ${thSort('team','Team','left')}${thSort('name','Pitcher','left')}
+      ${thSort('actualIP','2025 Real IP','right')}${thSort('ipNeeded','IP Needed','right')}
+      ${thSort('dmIP','DMB IP','right')}<th class="center">Progress</th><th class="center">Keeper Status</th>
     </tr></thead><tbody>`;
 
   rows.forEach(p => {
     const pct = p.ipNeeded > 0 ? Math.min(p.dmIP / p.ipNeeded, 1) : 1;
     const barColor = pct >= 1 ? '#28a745' : pct >= 0.6 ? '#ffc107' : '#c41e3a';
-    const progBar = `<div class="prog-wrap" style="min-width:140px;">
-      <div class="prog-bar" style="flex:1;">
-        <div class="prog-fill" style="width:${(pct*100).toFixed(0)}%;background:${barColor};"></div>
-      </div>
-      <span class="prog-pct" style="color:${barColor};">${(pct*100).toFixed(0)}%</span>
-    </div>`;
-
-    const keeperBadge = p.qualified
-      ? '<span class="badge badge-done">✓ Qualified</span>'
-      : `<span class="badge badge-danger">${fmtIP(p.ipNeeded - p.dmIP)} IP needed</span>`;
-
     html += `<tr>
       <td style="font-weight:700;color:#1e3c72;">${p.team}</td>
       <td style="font-weight:600;">${p.name}</td>
       <td class="right">${fmtIP(p.actualIP)}</td>
       <td class="right">${fmtIP(p.ipNeeded)}</td>
       <td class="right"><strong>${fmtIP(p.dmIP)}</strong></td>
-      <td class="center">${progBar}</td>
-      <td class="center">${keeperBadge}</td>
+      <td class="center">
+        <div class="prog-wrap" style="min-width:140px;">
+          <div class="prog-bar"><div class="prog-fill" style="width:${(pct*100).toFixed(0)}%;background:${barColor};"></div></div>
+          <span class="prog-pct" style="color:${barColor};">${(pct*100).toFixed(0)}%</span>
+        </div>
+      </td>
+      <td class="center">${p.qualified ? '<span class="badge badge-done">✓ Qualified</span>' : `<span class="badge badge-danger">${fmtIP(p.ipNeeded - p.dmIP)} IP needed</span>`}</td>
     </tr>`;
   });
 
@@ -918,12 +643,8 @@ function renderPitchers() {
 }
 
 function doSort(col) {
-  if (sortCol === col) {
-    sortDir = sortDir === 'asc' ? 'desc' : 'asc';
-  } else {
-    sortCol = col;
-    sortDir = 'asc';
-  }
+  sortDir = sortCol === col ? (sortDir === 'asc' ? 'desc' : 'asc') : 'asc';
+  sortCol = col;
   render();
 }
 </script>
