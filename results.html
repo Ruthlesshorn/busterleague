@@ -157,8 +157,16 @@ function isGameFile(filename) {
     return /^\d{13}\.htm$/i.test(filename);
 }
 
+// Game files are sharded into per-month subfolders (dmb/games/YYYY-MM/) so no
+// single folder exceeds GitHub's 1000-file limit. The month is embedded in
+// the first 6 digits (YYYYMM) of the 13-digit filename.
+function gamePath(filename) {
+    const bucket = `${filename.slice(0, 4)}-${filename.slice(4, 6)}`;
+    return `${DMB_GAMES}/${bucket}/${filename}`;
+}
+
 async function fetchFile(filename) {
-    const url = isGameFile(filename) ? `${DMB_GAMES}/${filename}` : `${DMB_CURRENT}/${filename}`;
+    const url = isGameFile(filename) ? gamePath(filename) : `${DMB_CURRENT}/${filename}`;
     if (fileCache[url]) return fileCache[url];
     try {
         const res = await fetch(url);
@@ -433,7 +441,7 @@ function renderGameResults(doc) {
 }
 
 async function openBoxScore(gameFile) {
-    window.open(`${DMB_GAMES}/${gameFile}`, '_blank');
+    window.open(gamePath(gameFile), '_blank');
 }
 
 function renderLeaders(doc, title) {
@@ -525,7 +533,7 @@ function renderTeamSubPage(filename, teamName, text) {
     doc.querySelectorAll('a[href]').forEach(a => {
         const href = a.getAttribute('href');
         if (href && href.match(/^\d+\.htm$/)) {
-            a.setAttribute('href', `${DMB_GAMES}/${href}`);
+            a.setAttribute('href', gamePath(href));
             a.setAttribute('target', '_blank');
         }
     });
