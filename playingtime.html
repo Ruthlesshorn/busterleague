@@ -195,8 +195,56 @@ async function loadData() {
   });
 
   await Promise.all(teamList.map(t => loadTeamData(t)));
+  mergeTradedPlayers();
   document.getElementById('summary-grid').style.display = 'grid';
   render();
+}
+
+// ═══════════════════════════════════════════════════════
+// Merge traded players — a player traded mid-season shows up in both
+// his old team's and new team's DMB reports (each with a partial-season
+// split of his starts/AB/IP). Combine those into one row on his current
+// team so playing-time limits reflect his full-season total.
+// ═══════════════════════════════════════════════════════
+function mergeTradedPlayers() {
+  mergePlayerGroup('batters', ['dmStarts', 'dmAB']);
+  mergePlayerGroup('pitchers', ['dmIP']);
+}
+
+function mergePlayerGroup(key, sumFields) {
+  const groups = {};
+  teamData.forEach((t, ti) => {
+    t[key].forEach((item, ii) => {
+      if (!item._pid) return;
+      (groups[item._pid] = groups[item._pid] || []).push({ ti, ii, item });
+    });
+  });
+
+  Object.values(groups).forEach(group => {
+    if (group.length < 2) return;
+    const current = group.find(g => g.item.onRoster);
+    if (!current) return; // no current team found for this player — leave entries as-is
+
+    sumFields.forEach(f => {
+      current.item[f] = group.reduce((sum, g) => sum + (g.item[f] || 0), 0);
+    });
+    recomputeDerived(key, current.item, teamData[current.ti]);
+
+    group.forEach(g => { if (g !== current) teamData[g.ti][key][g.ii] = null; });
+  });
+
+  teamData.forEach(t => { t[key] = t[key].filter(Boolean); });
+}
+
+function recomputeDerived(key, item, teamEntry) {
+  if (key === 'batters') {
+    item.pctStarted = teamEntry.gamesPlayed > 0 ? item.dmStarts / teamEntry.gamesPlayed : 0;
+    item.startsRemaining = item.startsAllowed !== null ? item.startsAllowed - item.dmStarts : null;
+    item.qualified = item.abNeeded !== null ? item.dmAB >= item.abNeeded : (item.actualAB === 0 ? null : true);
+  } else {
+    item.qualified = item.ipNeeded > 0 ? item.dmIP >= item.ipNeeded : false;
+    item.pctComplete = item.ipNeeded > 0 ? Math.min(item.dmIP / item.ipNeeded, 1) : (item.dmIP > 0 ? 1 : 0);
+  }
 }
 
 async function discoverTeams() {
@@ -270,7 +318,13 @@ function parseInnings(s) {
 
 function parseBatFile(text, entry, rosterText) {
   const doc = parseHTML(text);
-  const ageByName = parseBatterAgesFromRoster(rosterText);
+  const rosterBatters = rosterText ? parseRosterBatters(rosterText) : [];
+  const ageByName = {}, rosterNorms = new Set();
+  rosterBatters.forEach(rb => {
+    const norm = normalizeStr(rb.name);
+    rosterNorms.add(norm);
+    if (rb.age != null) ageByName[norm] = rb.age;
+  });
   const primaryData = {}, secondaryData = {};
 
   doc.querySelectorAll('table').forEach(table => {
@@ -319,13 +373,18 @@ function parseBatFile(text, entry, rosterText) {
     const qualified = abNeeded !== null ? dmAB >= abNeeded : (actualAB === 0 ? null : true);
     entry.batters.push({ name: dmName, actualAB, pctAllowed, startsAllowed, dmStarts, dmAB,
       pctStarted: entry.gamesPlayed > 0 ? dmStarts / entry.gamesPlayed : 0,
-      startsRemaining, abNeeded, qualified, unlimited: pctAllowed === null });
+      startsRemaining, abNeeded, qualified, unlimited: pctAllowed === null,
+      onRoster: rosterNorms.has(normalizeStr(dmName)),
+      _pid: player ? normalizeStr(`${player.First} ${player.Last}`) : normalizeStr(dmName) });
   });
 }
 
-function parseBatterAgesFromRoster(rosterText) {
-  const ages = {};
-  if (!rosterText) return ages;
+// Batters currently on a team's roster (name + age), from the roster file's Batter Ratings section.
+// A player traded away mid-season no longer appears here, even though their partial-season stats
+// still show up in the old team's tmbat report — this is how we tell "current team" from "former team".
+function parseRosterBatters(rosterText) {
+  const batters = [];
+  if (!rosterText) return batters;
   const doc = parseHTML(rosterText);
   let inBatterSection = false;
   doc.querySelectorAll('table').forEach(table => {
@@ -338,10 +397,10 @@ function parseBatterAgesFromRoster(rosterText) {
       const cells = row.querySelectorAll('td');
       const name = cells[1] ? cells[1].textContent.trim() : '';
       const age = cells[4] ? parseFloat(cells[4].textContent.trim()) : null;
-      if (name && name !== 'Total' && !isNaN(age)) ages[normalizeStr(name)] = age;
+      if (name && name !== 'Total' && name !== 'Player') batters.push({ name, age: isNaN(age) ? null : age });
     });
   });
-  return ages;
+  return batters;
 }
 
 function parsePchFile(text, entry, rosterText) {
@@ -371,7 +430,8 @@ function parsePchFile(text, entry, rosterText) {
     const ipNeeded = actualIP / 2;
     entry.pitchers.push({ name: rp.name, actualIP, ipNeeded, dmIP,
       qualified: ipNeeded > 0 ? dmIP >= ipNeeded : false,
-      pctComplete: ipNeeded > 0 ? Math.min(dmIP / ipNeeded, 1) : (dmIP > 0 ? 1 : 0) });
+      pctComplete: ipNeeded > 0 ? Math.min(dmIP / ipNeeded, 1) : (dmIP > 0 ? 1 : 0),
+      onRoster: true, _pid: player ? normalizeStr(`${player.First} ${player.Last}`) : normalizeStr(rp.name) });
   });
 
   const rosterNorms = new Set(rosterPitchers.map(rp => normalizeStr(rp.name)));
@@ -382,7 +442,8 @@ function parsePchFile(text, entry, rosterText) {
     const ipNeeded = actualIP / 2;
     entry.pitchers.push({ name: player ? `${player.First} ${player.Last}` : normStat,
       actualIP, ipNeeded, dmIP, qualified: ipNeeded > 0 ? dmIP >= ipNeeded : false,
-      pctComplete: ipNeeded > 0 ? Math.min(dmIP / ipNeeded, 1) : 0 });
+      pctComplete: ipNeeded > 0 ? Math.min(dmIP / ipNeeded, 1) : 0,
+      onRoster: false, _pid: player ? normalizeStr(`${player.First} ${player.Last}`) : normStat });
   });
 
   // Deduplicate
@@ -397,7 +458,8 @@ function parsePchFile(text, entry, rosterText) {
       const better = norm.length > normalizeStr(existing.name).length ? p : existing;
       const worse = better === p ? existing : p;
       merged[key] = { ...better, actualIP: better.actualIP || worse.actualIP,
-        ipNeeded: better.ipNeeded || worse.ipNeeded, dmIP: Math.max(better.dmIP, worse.dmIP) };
+        ipNeeded: better.ipNeeded || worse.ipNeeded, dmIP: Math.max(better.dmIP, worse.dmIP),
+        onRoster: better.onRoster || worse.onRoster };
       merged[key].qualified = merged[key].ipNeeded > 0 ? merged[key].dmIP >= merged[key].ipNeeded : false;
       merged[key].pctComplete = merged[key].ipNeeded > 0 ? Math.min(merged[key].dmIP / merged[key].ipNeeded, 1) : (merged[key].dmIP > 0 ? 1 : 0);
     }
