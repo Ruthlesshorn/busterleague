@@ -609,7 +609,7 @@ function renderBatters() {
       ${thSort('pctAllowed','Start % Allowed','center')}${thSort('startsAllowed','Starts Allowed','right')}
       ${thSort('dmStarts','DMB Starts','right')}${thSort('startsRemaining','Starts Remaining','right')}
       <th class="center">Start Status</th>${thSort('abNeeded','AB to Qualify','right')}
-      ${thSort('dmAB','DMB AB','right')}<th class="center">Keeper Status</th>
+      ${thSort('dmAB','DMB AB','right')}<th class="center">Progress</th><th class="center">Keeper Status</th>
     </tr></thead><tbody>`;
 
   rows.forEach(b => {
@@ -621,6 +621,14 @@ function renderBatters() {
     let keeperStatus = b.abNeeded === null ? '<span class="badge badge-ok">N/A</span>'
       : b.qualified ? '<span class="badge badge-done">✓ Qualified</span>'
       : `<span class="badge badge-danger">${Math.ceil(b.abNeeded - b.dmAB)} AB needed</span>`;
+
+    const abPct = b.abNeeded !== null && b.abNeeded > 0 ? Math.min(b.dmAB / b.abNeeded, 1) : null;
+    const abBarColor = abPct === null ? '#6c757d' : abPct >= 1 ? '#28a745' : abPct >= 0.6 ? '#ffc107' : '#c41e3a';
+    const abProgress = abPct === null ? '<span style="color:#6c757d;">N/A</span>'
+      : `<div class="prog-wrap" style="min-width:140px;">
+          <div class="prog-bar"><div class="prog-fill" style="width:${(abPct*100).toFixed(0)}%;background:${abBarColor};"></div></div>
+          <span class="prog-pct" style="color:${abBarColor};">${(abPct*100).toFixed(0)}%</span>
+        </div>`;
 
     const startsPct = b.startsAllowed ? Math.min(b.dmStarts / b.startsAllowed, 1) : 0;
     const startsColor = startsPct >= 1 ? '#dc3545' : startsPct >= 0.85 ? '#ffc107' : '#28a745';
@@ -638,6 +646,7 @@ function renderBatters() {
       <td class="center">${startStatus}</td>
       <td class="right">${b.abNeeded !== null ? b.abNeeded.toFixed(1) : '—'}</td>
       <td class="right"><strong>${b.dmAB}</strong></td>
+      <td class="center">${abProgress}</td>
       <td class="center">${keeperStatus}</td>
     </tr>`;
   });
